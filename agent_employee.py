@@ -28,9 +28,10 @@ class Employee(Agent):
 
     def step(self):
         '''
-        Infection step: if an employee is infected, it iterates through all
-        other employees and patients and tries to infect them. Infections
-        are staged and only applied in the "advance"-step
+        Infection step: if an employee is infected and not in quarantine, it 
+        iterates through all other patients and employees tries to 
+        infect them. Infections are staged here and only applied in the 
+        "advance"-step to simulate "simultaneous" interaction
         '''
         # check for external infection
         if (self.infected == False) and (self.exposed == False) and\

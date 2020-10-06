@@ -35,28 +35,29 @@ class Patient(Agent):
         are staged and only applied in the "advance"-step
         '''
         if self.infected:
-            # get a list of neighbor IDs from the interaction network
-            neighbors = [tup[1] for tup in list(self.model.G.edges(self.ID))]
-            # get the neighboring agents from the scheduler using their IDs
-            neighbors = [a for a in self.model.schedule.agents if a.ID in neighbors]
+            if not self.quarantined:
+                # get a list of neighbor IDs from the interaction network
+                neighbors = [tup[1] for tup in list(self.model.G.edges(self.ID))]
+                # get the neighboring agents from the scheduler using their IDs
+                neighbors = [a for a in self.model.schedule.agents if a.ID in neighbors]
 
-            for a in neighbors:
-                if (a.exposed == False) and (a.infected == False) and \
-                   (a.recovered == False) and (a.contact_to_infected == False):
-                    # draw random number for transmission
-                    transmission = self.random.random()
-                    # get link strength from the interaction network
-                    transmission = transmission * self.model.G[self.ID][a.ID]['weight']
+                for a in neighbors:
+                    if (a.exposed == False) and (a.infected == False) and \
+                       (a.recovered == False) and (a.contact_to_infected == False):
+                        # draw random number for transmission
+                        transmission = self.random.random()
+                        # get link strength from the interaction network
+                        transmission = transmission * self.model.G[self.ID][a.ID]['weight']
 
-                    if self.verbose > 1: 
-                        print('checking gransmission from {} to {}'\
-                            .format(self.unique_id, a.unique_id))
-                        print('tranmission prob {}'.format(transmission))
-                    if transmission <= self.model.transmission_risk_patient_patient:
-                        a.contact_to_infected = True
-                        self.transmissions += 1
-                        if self.verbose > 0: print('transmission: {} -> {}'\
-                            .format(self.unique_id, a.unique_id))
+                        if self.verbose > 1: 
+                            print('checking gransmission from {} to {}'\
+                                .format(self.unique_id, a.unique_id))
+                            print('tranmission prob {}'.format(transmission))
+                        if transmission <= self.model.transmission_risk_patient_patient:
+                            a.contact_to_infected = True
+                            self.transmissions += 1
+                            if self.verbose > 0: print('transmission: {} -> {}'\
+                                .format(self.unique_id, a.unique_id))
 
     '''
     Advancing step: applies infections, checks counters and sets infection 

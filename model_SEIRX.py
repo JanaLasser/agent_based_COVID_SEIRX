@@ -54,15 +54,15 @@ class SIR(Model):
     '''
     def __init__(self, G, N_employees, verbosity):
         self.verbosity = verbosity
-        self.Nstep = 0
+        self.Nstep = 0 # internal step counter used to launch screening tests
 
-        # durations. NOTE: all durations are inclusive, i.e. comparisons
-        # are "<=" and ">="
-        self.infection_duration = 14
-        self.exposure_duration = 2
-        self.time_until_testable = 1
-        self.time_testable = 7
-        self.quarantine_duration = 10
+        ## durations
+        #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
+        self.infection_duration = 14 # number of days agents stay infectuous
+        self.exposure_duration = 2 # days after transmission until agent becomes infectuous
+        self.time_until_testable = 1 # days after becoming infectuous until becoming testable
+        self.time_testable = 7 # days after becoming infectuous while still testable
+        self.quarantine_duration = 10 # duration of quarantine
         
         # infection risk
         self.transmission_risk_patient_patient = 0.01
@@ -74,18 +74,19 @@ class SIR(Model):
         self.index_probability = 0.01 # for every employee in every step
 
         # testing strategy
-        self.testing_interval = 3
+        self.testing_interval = 3 # days
         self.Testing = Testing(self, self.testing_interval,
                      self.verbosity)
 
-        # agents and their interactions
-        self.G = G
+        ## agents and their interactions
+        self.G = G # interaction graph of patients
         IDs = list(G.nodes)
         self.num_agents = len(IDs) + N_employees
         self.num_patients = len(IDs)
         self.num_employees = N_employees
-        self.schedule = SimultaneousActivation(self)
 
+        # add patient and employee agents to the scheduler
+        self.schedule = SimultaneousActivation(self)
         for ID in IDs:
             p = Patient(ID, self, verbosity)
             self.schedule.add(p)
@@ -94,9 +95,8 @@ class SIR(Model):
             e = Employee(i, self, verbosity)
             self.schedule.add(e)
         
-        # infect initial patient
-        #self.schedule.agents[0].exposed = True
-        
+        # data collectors to save population counts and patient / employee
+        # states every time step
         self.datacollector = DataCollector(
             model_reporters = {'E_patient':count_E_patient,
                                'I_patient':count_I_patient,
@@ -114,8 +114,10 @@ class SIR(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+        # launches an employee screen every testing_interval step
         if self.Nstep % self.testing_interval == 0:
             cases = self.Testing.screen('employee')
+            # if infected employees are detected, an patient screen is launched
             if cases > 0:
                 _ = self.Testing.screen('patient')
 
