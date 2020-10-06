@@ -23,6 +23,7 @@ class Employee(Agent):
         # counters
         self.days_exposed = 0
         self.days_infected = 0
+        self.days_quarantined = 0
         self.transmissions = 0
 
     def step(self):
@@ -41,63 +42,56 @@ class Employee(Agent):
                     print('employee {} is index case'.format(self.unique_id))
 
         if self.infected:
-            # get a list of patients
-            patients = [a for a in self.model.schedule.agents if a.type == 'patient']
-            # get a list of employees
-            employees = [a for a in self.model.schedule.agents if a.type == 'employee']
+            # determine if patient is in quarantine
+            if not self.quarantined:
+                # get a list of patients
+                patients = [a for a in self.model.schedule.agents if a.type == 'patient']
+                # get a list of employees
+                employees = [a for a in self.model.schedule.agents if a.type == 'employee']
 
-            # code transmission to employees and transmission to patients separately
-            # to allow for differences in transmissions later
+                # code transmission to employees and transmission to patients separately
+                # to allow for differences in transmissions later
 
-            # transmission from patients to patients
-            for p in patients:
-                if (p.exposed == False) and (p.infected == False) and \
-                   (p.recovered == False) and (p.contact_to_infected == False):
-                    # draw random number for transmission
-                    transmission = self.random.random()
-                    
-                    if self.verbose > 1: 
-                        print('checking gransmission from employee {} to patient {}'\
-                            .format(self.unique_id, p.unique_id))
-                        print('tranmission prob {}'.format(transmission))
-                    if transmission <= self.model.transmission_risk_employee_patient:
-                        p.contact_to_infected = True
-                        self.transmissions += 1
-                        if self.verbose > 0: print('transmission: employee {} -> patient {}'\
-                            .format(self.unique_id, p.unique_id))
+                # transmission from patients to patients
+                for p in patients:
+                    if (p.exposed == False) and (p.infected == False) and \
+                       (p.recovered == False) and (p.contact_to_infected == False):
+                        # draw random number for transmission
+                        transmission = self.random.random()
+                        
+                        if self.verbose > 1: 
+                            print('checking gransmission from employee {} to patient {}'\
+                                .format(self.unique_id, p.unique_id))
+                            print('tranmission prob {}'.format(transmission))
+                        if transmission <= self.model.transmission_risk_employee_patient:
+                            p.contact_to_infected = True
+                            self.transmissions += 1
+                            if self.verbose > 0: print('transmission: employee {} -> patient {}'\
+                                .format(self.unique_id, p.unique_id))
 
-            # transmission from employees to employees
-            for e in employees:
-                if (e.exposed == False) and (e.infected == False) and\
-                   (e.recovered == False) and (e.contact_to_infected == False):
-                    transmission = self.random.random()
+                # transmission from employees to employees
+                for e in employees:
+                    if (e.exposed == False) and (e.infected == False) and\
+                       (e.recovered == False) and (e.contact_to_infected == False):
+                        transmission = self.random.random()
 
-                    if self.verbose > 1: 
-                        print('checking gransmission from employee {} to employee {}'\
-                            .format(self.unique_id, e.unique_id))
-                        print('tranmission prob {}'.format(transmission))
-                    if transmission <= self.model.transmission_risk_employee_employee:
-                        e.contact_to_infected = True
-                        self.transmissions += 1
-                        if self.verbose > 0: print('transmission: employee {} -> patient {}'\
-                            .format(self.unique_id, e.unique_id))
+                        if self.verbose > 1: 
+                            print('checking gransmission from employee {} to employee {}'\
+                                .format(self.unique_id, e.unique_id))
+                            print('tranmission prob {}'.format(transmission))
+                        if transmission <= self.model.transmission_risk_employee_employee:
+                            e.contact_to_infected = True
+                            self.transmissions += 1
+                            if self.verbose > 0: print('transmission: employee {} -> patient {}'\
+                                .format(self.unique_id, e.unique_id))
 
         '''
         Advancing step: applies infections, checks counters and sets infection 
         states accordingly
         '''
     def advance(self):
-        #print('employee ID: {}'.format(self.unique_id))
-        #print('contact to infected: {}'.format(self.contact_to_infected))
-        #print('exposed: {}'.format(self.exposed))
         if self.infected:
-            # determine if patient is testable
-            if (self.days_infected >= self.model.time_until_testable and\
-               (self.days_infected) <= self.model.time_testable) and (self.testable == False):
-                if self.verbose > 0: print('testable {}'.format(self.unique_id))
-                self.testable = True
-
-            # determine if patient has recovered
+            # determine if employee has recovered
             if self.days_infected >= self.model.infection_duration:
                 self.infected = False
                 self.recovered = True
@@ -105,7 +99,15 @@ class Employee(Agent):
             else:
                 self.days_infected += 1
 
-        # determine if patient has transitioned from exposed to infected
+        # determine if employee is testable
+        if (self.infected == True) and (self.days_infected >= self.model.time_until_testable and\
+           (self.days_infected) <= self.model.time_testable):
+            if self.verbose > 0: print('employee testable {}'.format(self.unique_id))
+            self.testable = True
+        else:
+            self.testable = False
+
+        # determine if employee has transitioned from exposed to infected
         if self.exposed:
             if self.days_exposed >= self.model.exposure_duration:
                 if self.verbose > 0: print('employee infected {}'.format(self.unique_id))
@@ -113,6 +115,14 @@ class Employee(Agent):
                 self.infected = True
             else:
                 self.days_exposed += 1
+
+        # determine if employee is released from quarantine
+        if self.quarantined:
+            if self.days_quarantined >= self.model.quarantine_duration:
+                if self.verbose > 0: print('employee released from quarantine {}'.format(self.unique_id))
+                self.quarantined = False
+            else:
+                self.days_quarantined += 1
 
         # determine if a transmission to the infected occurred
         if self.contact_to_infected == True:

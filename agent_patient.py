@@ -24,6 +24,7 @@ class Patient(Agent):
         # counters
         self.days_exposed = 0
         self.days_infected = 0
+        self.days_quarantined = 0
         self.transmissions = 0
         
 
@@ -63,12 +64,6 @@ class Patient(Agent):
     '''
     def advance(self):
         if self.infected:
-            # determine if patient is testable
-            if (self.days_infected >= self.model.time_until_testable and\
-               (self.days_infected) <= self.model.time_testable):
-                if self.verbose > 0: print('testable {}'.format(self.unique_id))
-                self.testable = True
-
             # determine if patient has recovered
             if self.days_infected >= self.model.infection_duration:
                 self.infected = False
@@ -76,6 +71,14 @@ class Patient(Agent):
                 if self.verbose > 0: print('recovered {}'.format(self.unique_id))
             else:
                 self.days_infected += 1
+
+        # determine if patient is testable
+        if (self.infected) and (self.days_infected >= self.model.time_until_testable and\
+           (self.days_infected) <= self.model.time_testable):
+            if self.verbose > 0: print('testable {}'.format(self.unique_id))
+            self.testable = True
+        else:
+            self.testable = False
 
         # determine if patient has transitioned from exposed to infected
         if self.exposed:
@@ -86,6 +89,14 @@ class Patient(Agent):
                 self.infected = True
             else:
                 self.days_exposed += 1
+
+        # determine if patient is released from quarantine
+        if self.quarantined:
+            if self.days_quarantined >= self.model.quarantine_duration:
+                if self.verbose > 0: print('employee released from quarantine {}'.format(self.unique_id))
+                self.quarantined = False
+            else:
+                self.days_quarantined += 1
 
         # determine if a transmission to the infected occurred
         if self.contact_to_infected == True:
