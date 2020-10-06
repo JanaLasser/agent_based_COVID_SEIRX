@@ -50,7 +50,7 @@ class Patient(Agent):
                         print('checking gransmission from {} to {}'\
                             .format(self.unique_id, a.unique_id))
                         print('tranmission prob {}'.format(transmission))
-                    if transmission <= self.model.infection_risk:
+                    if transmission <= self.model.transmission_risk_patient_patient:
                         a.contact_to_infected = True
                         self.transmissions += 1
                         if self.verbose > 0: print('transmission: {} -> {}'\
