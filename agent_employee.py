@@ -15,6 +15,7 @@ class Employee(Agent):
         self.infected = False
         self.recovered = False
         self.testable = False
+        self.quarantined = False
 
         # staging states
         self.contact_to_infected = False
@@ -92,7 +93,8 @@ class Employee(Agent):
         if self.infected:
             # determine if patient is testable
             if (self.days_infected >= self.model.time_until_testable and\
-               (self.days_infected) <= self.model.time_testable):
+               (self.days_infected) <= self.model.time_testable) and (self.testable == False):
+                if self.verbose > 0: print('testable {}'.format(self.unique_id))
                 self.testable = True
 
             # determine if patient has recovered

@@ -16,6 +16,7 @@ class Patient(Agent):
         self.infected = False
         self.recovered = False
         self.testable = False
+        self.quarantined = False
 
         # staging states
         self.contact_to_infected = False
@@ -65,6 +66,7 @@ class Patient(Agent):
             # determine if patient is testable
             if (self.days_infected >= self.model.time_until_testable and\
                (self.days_infected) <= self.model.time_testable):
+                if self.verbose > 0: print('testable {}'.format(self.unique_id))
                 self.testable = True
 
             # determine if patient has recovered

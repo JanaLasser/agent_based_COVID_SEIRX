@@ -5,6 +5,7 @@ from mesa.datacollection import DataCollector
 
 from agent_patient import Patient
 from agent_employee import Employee
+from testing_strategy import Testing
 
 def count_E_patient(model):
     E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
@@ -43,6 +44,7 @@ class SIR(Model):
         self.exposure_duration = 2
         self.time_until_testable = 1
         self.time_testable = 7
+        self.quarantine_duration = 10
         
         # infection risk
         self.transmission_risk_patient_patient = 0.01
@@ -52,6 +54,11 @@ class SIR(Model):
 
         # index case probability
         self.index_probability = 0.01 # for every employee in every step
+
+        # testing strategy
+        self.testing_interval = 7
+        self.testing_target = 'employee'
+        self.Testing = Testing(self, self.testing_interval, self.testing_target)
 
         # agents and their interactions
         self.G = G
@@ -81,3 +88,4 @@ class SIR(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+        self.Testing.screen()
