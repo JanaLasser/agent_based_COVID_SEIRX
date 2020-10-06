@@ -52,6 +52,9 @@ def draw_states(model, step, ax):
 		ypos.append(y_start - i%ncol * y_step)
 	ax.scatter(xpos, ypos, color=color_list)
 
+	ax.text(x_start, y_stop - 0.2, 'employees')
+	ax.text(-0.2, y_stop - 0.2, 'patients')
+
 
 	ax.set_frame_on(False)
 	ax.set_xticks([])
