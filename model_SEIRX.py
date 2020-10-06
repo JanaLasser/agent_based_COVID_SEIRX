@@ -22,7 +22,7 @@ class SIR(Model):
     '''
     def __init__(self, N, verbosity):
         self.num_agents = N
-        self.schedule = RandomActivation(self)
+        self.schedule = SimultaneousActivation(self)
         self.infection_duration = 14
         self.exposure_duration = 1
         
