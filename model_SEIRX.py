@@ -74,7 +74,7 @@ class SIR(Model):
         self.index_probability = 0.01 # for every employee in every step
 
         # testing strategy
-        self.testing_interval = 7
+        self.testing_interval = 3
         self.Testing = Testing(self, self.testing_interval,
                      self.verbosity)
 
