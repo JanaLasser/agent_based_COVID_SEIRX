@@ -51,7 +51,7 @@ class SIR(Model):
         self.transmission_risk_patient_employee = 0.01 # not used so far
 
         # index case probability
-        self.index_probability = 0.001 # for every employee in every step
+        self.index_probability = 0.01 # for every employee in every step
 
         # agents and their interactions
         self.G = G
@@ -70,7 +70,7 @@ class SIR(Model):
             self.schedule.add(e)
         
         # infect initial patient
-        self.schedule.agents[0].exposed = True
+        #self.schedule.agents[0].exposed = True
         
         self.datacollector = DataCollector(
             model_reporters = {'E_patient':count_E_patient,
