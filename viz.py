@@ -97,8 +97,9 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N, \
 		 label='X', color=colors['quarantined'])
 	ax.plot(pop_numbers['T_{}'.format(agent_type)]/N, '--',\
-		 label='T', color=colors['testable'])
+		 label='testable', color=colors['testable'])
 	ax.legend()
 	ax.set_xlabel('steps')
 	ax.set_ylabel('pdf')
 	ax.set_ylim(-0.05, 1.05)
+	ax.set_title('{} (N={})'.format(agent_type, N))
