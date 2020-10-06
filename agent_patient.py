@@ -1,5 +1,6 @@
 from mesa import Agent
 
+
 class Patient(Agent):
     '''
     A patient with a health status
@@ -8,13 +9,15 @@ class Patient(Agent):
         super().__init__(unique_id, model)
         self.verbose = verbosity
         self.ID = unique_id
+        self.type = 'patient'
 
         # infection states
         self.exposed = False
         self.infected = False
         self.recovered = False
+        self.testable = False
 
-        # stating states
+        # staging states
         self.contact_to_infected = False
 
         # counters
@@ -58,10 +61,21 @@ class Patient(Agent):
     states accordingly
     '''
     def advance(self):
-        if self.contact_to_infected == True:
-            self.exposed = True
-            self.contact_to_infected = False
+        if self.infected:
+            # determine if patient is testable
+            if (self.days_infected >= self.model.time_until_testable and\
+               (self.days_infected) <= self.model.time_testable):
+                self.testable = True
 
+            # determine if patient has recovered
+            if self.days_infected >= self.model.infection_duration:
+                self.infected = False
+                self.recovered = True
+                if self.verbose > 0: print('recovered {}'.format(self.unique_id))
+            else:
+                self.days_infected += 1
+
+        # determine if patient has transitioned from exposed to infected
         if self.exposed:
             if self.verbose > 0: print('exposed: {}'.format(self.unique_id))
             if self.days_exposed >= self.model.exposure_duration:
@@ -70,14 +84,15 @@ class Patient(Agent):
                 self.infected = True
             else:
                 self.days_exposed += 1
+
+        # determine if a transmission to the infected occurred
+        if self.contact_to_infected == True:
+            self.exposed = True
+            self.contact_to_infected = False
+
+
             
-        if self.infected:
-            if self.days_infected >= self.model.infection_duration:
-                self.infected = False
-                self.recovered = True
-                if self.verbose > 0: print('recovered {}'.format(self.unique_id))
-            else:
-                self.days_infected += 1
+
 
             
 

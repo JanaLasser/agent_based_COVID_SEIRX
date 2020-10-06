@@ -14,7 +14,11 @@ def count_I(model):
 def count_R(model):
     R = np.asarray([a.recovered for a in model.schedule.agents]).sum()
     return R
-
+def get_state(agent):
+    if agent.exposed == True: return 'exposed'
+    elif agent.infected == True: return 'infected'
+    elif agent.recovered == True: return 'recovered'
+    else: return 'susceptible'
 
 class SIR(Model):
     '''
@@ -27,7 +31,10 @@ class SIR(Model):
         self.num_agents = len(IDs)
         self.schedule = SimultaneousActivation(self)
         self.infection_duration = 14
-        self.exposure_duration = 1
+        self.exposure_duration = 2
+        self.time_until_testable = 1
+        self.time_testable = 7
+
         self.G = G
         
         for ID in IDs:
@@ -42,7 +49,8 @@ class SIR(Model):
         self.datacollector = DataCollector(
             model_reporters = {'E':count_E,
                                'I':count_I,
-                               'R':count_R})
+                               'R':count_R},
+            agent_reporters = {'state':get_state})
         
     def step(self):
         self.datacollector.collect(self)
