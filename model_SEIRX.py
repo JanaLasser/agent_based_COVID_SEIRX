@@ -18,16 +18,20 @@ def count_R(model):
 
 class SIR(Model):
     '''
-    A model with a number of patients that reproduces the SIR dynamics
+    A model with a number of patients that reproduces the SEIR dynamics
+    G: interaction graph between agents
+    verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, N, verbosity):
-        self.num_agents = N
+    def __init__(self, G, verbosity):
+        IDs = list(G.nodes)
+        self.num_agents = len(IDs)
         self.schedule = SimultaneousActivation(self)
         self.infection_duration = 14
         self.exposure_duration = 1
+        self.G = G
         
-        for i in range(self.num_agents):
-            a = Patient(i, self, verbosity)
+        for ID in IDs:
+            a = Patient(ID, self, verbosity)
             self.schedule.add(a)
         
         self.infection_risk = 0.01
