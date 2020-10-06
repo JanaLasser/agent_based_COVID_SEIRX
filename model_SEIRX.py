@@ -4,15 +4,25 @@ from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
 from agent_patient import Patient
+from agent_employee import Employee
 
-def count_E(model):
-    E = np.asarray([a.exposed for a in model.schedule.agents]).sum()
+def count_E_patient(model):
+    E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
     return E
-def count_I(model):
-    I = np.asarray([a.infected for a in model.schedule.agents]).sum()
+def count_I_patient(model):
+    I = np.asarray([a.infected for a in model.schedule.agents if a.type == 'patient']).sum()
     return I
-def count_R(model):
-    R = np.asarray([a.recovered for a in model.schedule.agents]).sum()
+def count_R_patient(model):
+    R = np.asarray([a.recovered for a in model.schedule.agents if a.type == 'patient']).sum()
+    return R
+def count_E_employee(model):
+    E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'employee']).sum()
+    return E
+def count_I_employee(model):
+    I = np.asarray([a.infected for a in model.schedule.agents if a.type == 'employee']).sum()
+    return I
+def count_R_employee(model):
+    R = np.asarray([a.recovered for a in model.schedule.agents if a.type == 'employee']).sum()
     return R
 def get_state(agent):
     if agent.exposed == True: return 'exposed'
@@ -26,30 +36,46 @@ class SIR(Model):
     G: interaction graph between agents
     verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, G, verbosity):
-        IDs = list(G.nodes)
-        self.num_agents = len(IDs)
-        self.schedule = SimultaneousActivation(self)
+    def __init__(self, G, N_employees, verbosity):
+        # durations. NOTE: all durations are inclusive, i.e. comparisons
+        # are "<=" and ">="
         self.infection_duration = 14
         self.exposure_duration = 2
         self.time_until_testable = 1
         self.time_testable = 7
+        
+        # infection risk
+        self.transmission_risk_patient_patient = 0.01
+        self.transmission_risk_employee_patient = 0.01
+        self.transmission_risk_employee_employee = 0.01
+        self.transmission_risk_patient_employee = 0.01 # not used so far
 
+        # index case probability
+        self.index_probability = 0.001 # for every employee in every step
+
+        # agents and their interactions
         self.G = G
-        
+        IDs = list(G.nodes)
+        self.num_agents = len(IDs) + N_employees
+        self.num_patients = len(IDs)
+        self.num_employees = N_employees
+        self.schedule = SimultaneousActivation(self)
+
         for ID in IDs:
-            a = Patient(ID, self, verbosity)
-            self.schedule.add(a)
-        
-        self.infection_risk = 0.01
+            p = Patient(ID, self, verbosity)
+            self.schedule.add(p)
+
+        for i in range(1, N_employees + 1):
+            e = Employee(i, self, verbosity)
+            self.schedule.add(e)
         
         # infect initial patient
         self.schedule.agents[0].exposed = True
         
         self.datacollector = DataCollector(
-            model_reporters = {'E':count_E,
-                               'I':count_I,
-                               'R':count_R},
+            model_reporters = {'E_patient':count_E_patient,
+                               'I_patient':count_I_patient,
+                               'R_patient':count_R_patient},
             agent_reporters = {'state':get_state})
         
     def step(self):
