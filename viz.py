@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import networkx as nx
 import numpy as np
 
@@ -92,6 +93,8 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='E', color=colors['exposed'])
 	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N, \
 		 label='I', color=colors['infected'])
+	ax.plot(pop_numbers['I_symptomatic_{}'.format(agent_type)]/N, \
+		 label='I symptomatic', color=colors['infected'], alpha=0.3)
 	ax.plot(pop_numbers['R_{}'.format(agent_type)]/N, \
 		 label='R', color=colors['recovered'])
 	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N, \
@@ -107,4 +110,6 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.set_xlabel('steps')
 	ax.set_ylabel('pdf')
 	ax.set_ylim(-0.05, 1.05)
+	ax.xaxis.set_major_locator(MultipleLocator(10))
+	ax.xaxis.set_minor_locator(MultipleLocator(1))
 	ax.set_title('{} (N={})'.format(agent_type, N))
