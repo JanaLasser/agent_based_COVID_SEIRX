@@ -28,7 +28,7 @@ def draw_states(model, step, pos, ax):
 	nodes.sort()
 	
 	for u, v in list(G.edges):
-		weight = G[u][v]['weight']
+		weight = G[u][v]['weight']**2 + 0.01
 		ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
 			color='k', linewidth=weight, zorder=1)
 
@@ -74,9 +74,21 @@ def draw_states(model, step, pos, ax):
 	ax.set_xticks([])
 	ax.set_yticks([])
 
+	handles, labels = ax.get_legend_handles_labels()
+	S_handle = plt.scatter([0],[1], color=colors['susceptible'], s=50)
+	E_handle = plt.scatter([0],[1], color=colors['exposed'], s=50)
+	I_handle = plt.scatter([0],[1], color=colors['infected'], s=50)
+	X_handle = plt.scatter([0],[1], edgecolors='k', facecolors='none', s=50, linewidths=2)
+	R_handle = plt.scatter([0],[1], color=colors['recovered'], s=50)
+
+	#Create legend from custom artist/label lists
+	ax.legend([S_handle, E_handle, I_handle, X_handle, R_handle],
+	          ['susceptible', 'exposed', 'infected', 'quarantined', 'recovered'],
+	           fontsize=8, bbox_to_anchor=[1, 1, 0.25, 0])
+
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
-	if agent_type == 'patient':
+	if agent_type == 'patients':
 		N = model.num_patients
 	elif agent_type == 'employee':
 		N = model.num_employees
@@ -106,10 +118,20 @@ def draw_infection_timeline(model, agent_type, ax):
 	for i, screen in enumerate(pop_numbers['screen']):
 		if screen:
 			ax.plot([i, i], [0, 1], '--', color='k', alpha=0.3)
-	ax.legend()
+
+
+	# legend with custom artist for the screening lines
+	handles, labels = ax.get_legend_handles_labels()
+	screen_handle = plt.Line2D((0,1),(0,0), color='k', linestyle='--', alpha=0.3)
+
+	#Create legend from custom artist/label lists
+	ax.legend([handle for i,handle in enumerate(handles)] + [screen_handle],
+	          [label for i,label in enumerate(labels)] + ['screen'],\
+	           ncol=2, loc=9, fontsize=8)
+
 	ax.set_xlabel('steps')
 	ax.set_ylabel('pdf')
 	ax.set_ylim(-0.05, 1.05)
-	ax.xaxis.set_major_locator(MultipleLocator(10))
-	ax.xaxis.set_minor_locator(MultipleLocator(1))
+	ax.xaxis.set_major_locator(MultipleLocator(20))
+	ax.xaxis.set_minor_locator(MultipleLocator(5))
 	ax.set_title('{} (N={})'.format(agent_type, N))
