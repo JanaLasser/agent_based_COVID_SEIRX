@@ -98,6 +98,11 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='X', color=colors['quarantined'])
 	ax.plot(pop_numbers['T_{}'.format(agent_type)]/N, '--',\
 		 label='testable', color=colors['testable'])
+
+	# draw screen lines
+	for i, screen in enumerate(pop_numbers['screen']):
+		if screen:
+			ax.plot([i, i], [0, 1], '--', color='k', alpha=0.3)
 	ax.legend()
 	ax.set_xlabel('steps')
 	ax.set_ylabel('pdf')

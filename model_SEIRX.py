@@ -37,6 +37,8 @@ def count_X_employee(model):
 def count_T_employee(model):
     T = np.asarray([a.testable for a in model.schedule.agents if a.type == 'employee']).sum()
     return T
+def check_screen(model):
+    return model.screen
 def get_infection_state(agent):
     if agent.exposed == True: return 'exposed'
     elif agent.infected == True: return 'infected'
@@ -99,6 +101,9 @@ class SIR(Model):
         for i in range(1, N_employees + 1):
             e = Employee(i, self, verbosity)
             self.schedule.add(e)
+
+        # flag that indicates whether a screen took place this turn
+        self.screen = False
         
         # data collectors to save population counts and patient / employee
         # states every time step
@@ -112,7 +117,8 @@ class SIR(Model):
                                'I_employee':count_I_employee,
                                'R_employee':count_R_employee,
                                'X_employee':count_X_employee,
-                               'T_employee':count_T_employee},
+                               'T_employee':count_T_employee,
+                               'screen':check_screen},
             agent_reporters = {'infection_state':get_infection_state,
                                'quarantine_state':get_quarantine_state})
         
@@ -140,6 +146,7 @@ class SIR(Model):
         if self.verbosity > 0:
             print('{} agents in quarantine'.format(len(quarantined_agents)))
         if len(quarantined_agents) > 0:
+            self.screen = True
             # screen employees
             employees_to_screen = [a for a in self.schedule.agents if \
                 (a.type == 'employee' and a.quarantined == False)]
@@ -159,6 +166,8 @@ class SIR(Model):
                     if self.verbosity > 0:
                         print('tested patient {}'.format(a.ID))
                     a.test_positive = True
+        else:
+            self.screen = False
 
         # launches an employee screen every testing_interval step
         #if self.Nstep % self.testing_interval == 0:
