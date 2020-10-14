@@ -85,7 +85,7 @@ class SIR(Model):
         self.time_until_test_result = 2
         
         # infection risk
-        self.transmission_risk_patient_patient = 0.001 # per infected per day
+        self.transmission_risk_patient_patient = 0.0005 # per infected per day
         self.transmission_risk_employee_patient = 0.005 # per infected per day
         self.transmission_risk_employee_employee = 0.005 # per infected per day1
         self.transmission_risk_patient_employee = 0.005 # not used so far
@@ -181,7 +181,7 @@ class SIR(Model):
                     for K1_contact in K1_contacts:
                         if self.verbosity > 0:
                             print('quarantine {} {}'.format(K1_contact.type, K1_contact.ID))
-                        K1_contact.quarantine = True
+                        K1_contact.quarantined = True
 
             # indicate that a screen should happen
             self.new_positive_tests = True
