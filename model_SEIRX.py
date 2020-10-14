@@ -52,26 +52,30 @@ class SIR(Model):
     G: interaction graph between agents
     verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, G, N_employees, verbosity):
+    def __init__(self, G, N_employees, verbosity, seed):
         self.verbosity = verbosity
         self.Nstep = 0 # internal step counter used to launch screening tests
 
         ## durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
-        self.infection_duration = 14 # number of days agents stay infectuous
-        self.exposure_duration = 2 # days after transmission until agent becomes infectuous
-        self.time_until_testable = 1 # days after becoming infectuous until becoming testable
-        self.time_testable = 7 # days after becoming infectuous while still testable
+        self.infection_duration = 12 # number of days agents stay infectuous
+        self.exposure_duration = 5 # days after transmission until agent becomes infectuous
+        self.time_until_symptoms = 2 # days after becoming infectuous until becoming testable
+        self.time_testable = 10 # days after becoming infectuous while still testable
         self.quarantine_duration = 10 # duration of quarantine
+        self.time_until_test_result = 2
         
         # infection risk
-        self.transmission_risk_patient_patient = 0.01
-        self.transmission_risk_employee_patient = 0.01
-        self.transmission_risk_employee_employee = 0.01
+        self.transmission_risk_patient_patient = 0.01 # per infected per day
+        self.transmission_risk_employee_patient = 0.01 # per infected per day
+        self.transmission_risk_employee_employee = 0.01 # per infected per day1
         self.transmission_risk_patient_employee = 0.01 # not used so far
 
         # index case probability
         self.index_probability = 0.01 # for every employee in every step
+
+        # symptom probability
+        self.symptom_probability = 0.5
 
         # testing strategy
         self.testing_interval = 3 # days
@@ -81,6 +85,7 @@ class SIR(Model):
         ## agents and their interactions
         self.G = G # interaction graph of patients
         IDs = list(G.nodes)
+        #IDs = [i+1 for i in range(len(G.nodes))]
         self.num_agents = len(IDs) + N_employees
         self.num_patients = len(IDs)
         self.num_employees = N_employees
@@ -114,11 +119,52 @@ class SIR(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+        # find symptomatic agents that have not been tested yet
+        symptomatic_agents = np.asarray([a for a in self.schedule.agents \
+            if (a.symptoms == True and a.test_positive == False)])
+        for a in symptomatic_agents:
+            # right now, the time between being infected and being potentially
+            # symptomatic and the time between being infected and being testable
+            # is the same. But since this can potentially change in the future,
+            # we only set test_positive = True if the agent is testable at the
+            # time of testing
+            if a.testable:
+                if self.verbosity > 0:
+                    print('tested {} {}'.format(a.type, a.ID))
+                a.test_positive = True
+
+        # if there is a test-positive agent (i.e. an agent in quarantine),
+        # launch a test-screen
+        quarantined_agents = np.asarray([a for a in self.schedule.agents \
+            if a.quarantined == True])
+        if self.verbosity > 0:
+            print('{} agents in quarantine'.format(len(quarantined_agents)))
+        if len(quarantined_agents) > 0:
+            # screen employees
+            employees_to_screen = [a for a in self.schedule.agents if \
+                (a.type == 'employee' and a.quarantined == False)]
+            if self.verbosity > 0: print('initiating employee screen')
+            for a in employees_to_screen:
+                if a.testable:
+                    if self.verbosity > 0:
+                        print('tested employee {}'.format(a.ID))
+                    a.test_positive = True
+
+            # screen patients
+            patients_to_screen = [a for a in self.schedule.agents if \
+                (a.type == 'patient' and a.quarantined == False)]
+            if self.verbosity > 0: print('initiating patient screen')
+            for a in patients_to_screen:
+                if a.testable:
+                    if self.verbosity > 0:
+                        print('tested patient {}'.format(a.ID))
+                    a.test_positive = True
+
         # launches an employee screen every testing_interval step
-        if self.Nstep % self.testing_interval == 0:
-            cases = self.Testing.screen('employee')
+        #if self.Nstep % self.testing_interval == 0:
+        #    cases = self.Testing.screen('employee')
             # if infected employees are detected, an patient screen is launched
-            if cases > 0:
-                _ = self.Testing.screen('patient')
+        #    if cases > 0:
+        #        _ = self.Testing.screen('patient')
 
         self.Nstep += 1
