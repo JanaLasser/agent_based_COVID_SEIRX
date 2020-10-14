@@ -13,6 +13,7 @@ class Employee(Agent):
         # infection states
         self.exposed = False
         self.infected = False
+        self.symptomatic_course = False
         self.symptoms = False
         self.recovered = False
         self.testable = False
@@ -104,6 +105,10 @@ class Employee(Agent):
             self.days_since_tested += 1
 
         if self.infected:
+        	# determine if employee shows symptoms
+            if self.symptomatic_course and self.days_infected >= self.time_until_symptoms and\
+                self.days_infected < model.infection_duration:
+                self.symptoms = True
             # determine if employee has recovered
             if self.days_infected >= self.model.infection_duration:
                 self.infected = False
@@ -131,7 +136,7 @@ class Employee(Agent):
                 if self.random.random() <= self.model.symptom_probability:
                 	if self.verbose > 0:
                 		print('employee {} shows symptoms'.format(self.ID))
-                	self.symptoms = True
+                	self.symptomatic_course = True
                 else:
                 	if self.verbose > 0:
                 		print('employee {} shows no symptoms'.format(self.ID))
