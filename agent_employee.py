@@ -17,8 +17,11 @@ class Employee(Agent):
         self.symptoms = False
         self.recovered = False
         self.testable = False
-        self.test_positive = False
+        self.tested = False
         self.quarantined = False
+
+        # sample given for test
+        self.sample = None
 
         # staging states
         self.contact_to_infected = False
@@ -95,19 +98,28 @@ class Employee(Agent):
         states accordingly
         '''
     def advance(self):
-    	# determine if there is a result from a positive test and send employee
-        # into quarantine accordingly
-        if self.test_positive and self.days_since_tested >= self.model.time_until_test_result:
-            self.quarantined = True
-            if self.verbose > 0:
-                print('quarantined employee {}'.format(self.ID))
-        elif self.test_positive and self.days_since_tested < self.model.time_until_test_result:
+        # determine if there is a test result and act accordingly
+        if self.tested and self.days_since_tested >= self.model.time_until_test_result:
+            if self.sample == 'positive':
+                self.model.newly_positive_agents.append(self)
+                self.days_since_tested = 0
+                self.tested = False
+                self.sample = None
+            elif self.sample == 'negative':
+                self.quarantine = False
+                self.days_since_tested = 0
+                self.tested = False
+                self.sample = None
+
+        elif self.tested and self.days_since_tested < self.model.time_until_test_result:
             self.days_since_tested += 1
+        else:
+            pass
 
         if self.infected:
         	# determine if employee shows symptoms
-            if self.symptomatic_course and self.days_infected >= self.time_until_symptoms and\
-                self.days_infected < model.infection_duration:
+            if self.symptomatic_course and self.days_infected >= self.model.time_until_symptoms and\
+                self.days_infected < self.model.infection_duration:
                 self.symptoms = True
             # determine if employee has recovered
             if self.days_infected >= self.model.infection_duration:
@@ -119,12 +131,13 @@ class Employee(Agent):
                 self.days_infected += 1
 
         # determine if employee is testable
-        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and\
-           (self.days_infected) <= self.model.time_testable):
-            if self.verbose > 0: print('employee testable {}'.format(self.unique_id))
-            self.testable = True
-        else:
-            self.testable = False
+        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and (self.days_infected) <= self.model.time_testable):
+        	if self.testable == False:
+        		if self.verbose > 0: 
+        			print('employee testable {}'.format(self.unique_id))
+    			self.testable = True
+    		else:
+    			self.testable = False
 
         # determine if employee has transitioned from exposed to infected
         if self.exposed:
