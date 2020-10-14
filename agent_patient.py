@@ -18,8 +18,11 @@ class Patient(Agent):
         self.symptoms = False
         self.recovered = False
         self.testable = False
-        self.test_positive = False
+        self.tested = False
         self.quarantined = False
+
+        # sample given for test
+        self.sample = None
 
         # staging states
         self.contact_to_infected = False
@@ -69,19 +72,28 @@ class Patient(Agent):
     states accordingly
     '''
     def advance(self):
-        # determine if there is a result from a positive test and send patient
-        # into quarantine accordingly
-        if self.test_positive and self.days_since_tested >= self.model.time_until_test_result:
-            self.quarantined = True
-            if self.verbose > 0:
-                print('quarantined patient {}'.format(self.ID))
-        elif self.test_positive and self.days_since_tested < self.model.time_until_test_result:
+        # determine if there is a test result and act accordingly
+        if self.tested and self.days_since_tested >= self.model.time_until_test_result:
+            if self.sample == 'positive':
+                self.model.newly_positive_agents.append(self)
+                self.days_since_tested = 0
+                self.tested = False
+                self.sample = None
+            elif self.sample == 'negative':
+                self.quarantine = False
+                self.days_since_tested = 0
+                self.tested = False
+                self.sample = None
+
+        elif self.tested and self.days_since_tested < self.model.time_until_test_result:
             self.days_since_tested += 1
+        else:
+            pass
 
         if self.infected:
             # determine if patient shows symptoms
-            if self.symptomatic_course and self.days_infected >= self.time_until_symptoms and\
-                self.days_infected < model.infection_duration:
+            if self.symptomatic_course and self.days_infected >= self.model.time_until_symptoms and\
+                self.days_infected < self.model.infection_duration:
                 self.symptoms = True
             # determine if patient has recovered
             if self.days_infected >= self.model.infection_duration:
@@ -93,12 +105,18 @@ class Patient(Agent):
                 self.days_infected += 1
 
         # determine if patient is testable
-        if (self.infected) and (self.days_infected >= self.model.time_until_symptoms and\
-           (self.days_infected) <= self.model.time_testable):
-            if self.verbose > 0: print('testable patient {}'.format(self.unique_id))
-            self.testable = True
+        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and \
+            (self.days_infected) <= self.model.time_testable):
+            if self.testable == False:
+                if self.verbose > 0:
+                    if self.symptomatic_course:
+                        print('patient {} testable (symptoms)'.format(self.unique_id))
+                    else:
+                        print('patient {} testable (no symptoms)'.format(self.unique_id))
+                self.testable = True
         else:
             self.testable = False
+
 
         # determine if patient has transitioned from exposed to infected
         if self.exposed:
@@ -107,14 +125,9 @@ class Patient(Agent):
                 if self.verbose > 0: print('infected patient {}'.format(self.unique_id))
                 self.exposed = False
                 self.infected = True
-                # determine if infected patient shows symptoms
+                # determine if infected patient will have symptomatic infection
                 if self.random.random() <= self.model.symptom_probability:
-                    if self.verbose > 0:
-                        print('patient {} shows symptoms'.format(self.ID))
                     self.symptomatic_course = True
-                else:
-                    if self.verbose > 0:
-                        print('patient {} shows no symptoms'.format(self.ID))
             else:
                 self.days_exposed += 1
 
