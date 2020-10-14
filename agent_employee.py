@@ -2,7 +2,7 @@ from mesa import Agent
 
 class Employee(Agent):
     '''
-    A patient with a health status
+    An employee with an infection status
     '''
     def __init__(self, unique_id, model, verbosity):
         super().__init__(unique_id, model)
@@ -13,8 +13,10 @@ class Employee(Agent):
         # infection states
         self.exposed = False
         self.infected = False
+        self.symptoms = False
         self.recovered = False
         self.testable = False
+        self.test_positive = False
         self.quarantined = False
 
         # staging states
@@ -24,6 +26,7 @@ class Employee(Agent):
         self.days_exposed = 0
         self.days_infected = 0
         self.days_quarantined = 0
+        self.days_since_tested = 0
         self.transmissions = 0
 
     def step(self):
@@ -91,17 +94,27 @@ class Employee(Agent):
         states accordingly
         '''
     def advance(self):
+    	# determine if there is a result from a positive test and send employee
+        # into quarantine accordingly
+        if self.test_positive and self.days_since_tested >= self.model.time_until_test_result:
+            self.quarantined = True
+            if self.verbose > 0:
+                print('quarantined employee {}'.format(self.ID))
+        elif self.test_positive and self.days_since_tested < self.model.time_until_test_result:
+            self.days_since_tested += 1
+
         if self.infected:
             # determine if employee has recovered
             if self.days_infected >= self.model.infection_duration:
                 self.infected = False
+                self.symptoms = False
                 self.recovered = True
                 if self.verbose > 0: print('employee recovered {}'.format(self.unique_id))
             else:
                 self.days_infected += 1
 
         # determine if employee is testable
-        if (self.infected == True) and (self.days_infected >= self.model.time_until_testable and\
+        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and\
            (self.days_infected) <= self.model.time_testable):
             if self.verbose > 0: print('employee testable {}'.format(self.unique_id))
             self.testable = True
@@ -114,6 +127,14 @@ class Employee(Agent):
                 if self.verbose > 0: print('employee infected {}'.format(self.unique_id))
                 self.exposed = False
                 self.infected = True
+                # determine if infected employee shows symptoms
+                if self.random.random() <= self.model.symptom_probability:
+                	if self.verbose > 0:
+                		print('employee {} shows symptoms'.format(self.ID))
+                	self.symptoms = True
+                else:
+                	if self.verbose > 0:
+                		print('employee {} shows no symptoms'.format(self.ID))
             else:
                 self.days_exposed += 1
 
