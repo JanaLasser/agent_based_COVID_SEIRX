@@ -1,17 +1,10 @@
 class Testing():
-	def __init__(self, model, interval, verbosity):
-		self.interval = interval
+	def __init__(self, model, follow_up_interval, screening_interval_patients, 
+		screening_interval_employees, verbosity):
+		self.follow_up_interval = follow_up_interval
+		self.screening_interval_patients = screening_interval_patients
+		self.screening_interval_employees = screening_interval_employees
 		self.model = model
 		self.verbosity = verbosity
 		self.K1_areas = ['zimmer', 'tisch']
 
-	def screen(self, target='employee'):
-		screening_targets = [a for a in self.model.schedule.agents if a.type == target]
-		cases = 0
-		for t in screening_targets:
-			if t.testable:
-				t.quarantined = True
-				cases += 1
-				if self.verbosity > 0: print('found infection!')
-
-		return cases
