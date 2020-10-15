@@ -33,7 +33,7 @@ class Patient(Agent):
         self.days_quarantined = 0
         self.days_since_tested = 0
         self.transmissions = 0
-        self.transmission_targets = []
+        self.transmission_targets = {}
         
 
     def step(self):
@@ -60,7 +60,8 @@ class Patient(Agent):
                         # draw random number for transmission
                         transmission = self.random.random() * modifier
                         # get link strength from the interaction network
-                        transmission = transmission * self.model.G[self.ID][a.ID]['weight']
+                        area = self.model.G[self.ID][a.ID]['area']
+                        transmission = transmission * self.model.infection_risk_area_weights[area]
 
                         if self.verbose > 1: 
                             print('checking gransmission from patient {} to {}'\
@@ -69,7 +70,7 @@ class Patient(Agent):
                         if transmission <= self.model.transmission_risk_patient_patient:
                             a.contact_to_infected = True
                             self.transmissions += 1
-                            self.transmission_targets.append(a.ID)
+                            self.transmission_targets.update({self.model.Nstep:a.ID})
                             if self.verbose > 0: print('transmission: patient {} -> patient {}'\
                                 .format(self.unique_id, a.unique_id))
 
@@ -88,7 +89,7 @@ class Patient(Agent):
                         if transmission <= self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1
-                            self.transmission_targets.append(a.ID)
+                            self.transmission_targets.update({self.model.Nstep:e.ID})
                             if self.verbose > 0:
                                 print('transmission: patient {} -> employee {}'
                                       .format(self.unique_id, e.unique_id))
