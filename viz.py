@@ -122,19 +122,26 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='testable', color=colors['testable'])
 
 	# draw screen lines
-	for i, screen in enumerate(pop_numbers['screen']):
+	for i, screen in enumerate(pop_numbers['screen_patients']):
 		if screen:
-			ax.plot([i, i], [0, 1], '--', color='k', alpha=0.3)
+			ax.plot([i, i], [0, 1], '--', color='green', alpha=0.3)
+	for i, screen in enumerate(pop_numbers['screen_employees']):
+		if screen:
+			ax.plot([i, i], [0, 1], '--', color='red', alpha=0.3)
 
 
 	# legend with custom artist for the screening lines
 	handles, labels = ax.get_legend_handles_labels()
-	screen_handle = plt.Line2D((0,1),(0,0), color='k', linestyle='--', alpha=0.3)
+	patient_screen_handle = plt.Line2D((0,1),(0,0), color='green',
+		 linestyle='--', alpha=0.3)
+	employee_screen_handle = plt.Line2D((0,1),(0,0), color='red',
+		 linestyle='--', alpha=0.3)
 
 	#Create legend from custom artist/label lists
-	ax.legend([handle for i,handle in enumerate(handles)] + [screen_handle],
-	          [label for i,label in enumerate(labels)] + ['screen'],\
-	           ncol=2, loc=9, fontsize=8)
+	ax.legend([handle for i,handle in enumerate(handles)] + \
+			[patient_screen_handle, employee_screen_handle],
+	          [label for i,label in enumerate(labels)] + \
+	          ['patient screen', 'employee_screen'], ncol=2, loc=9, fontsize=8)
 
 	ax.set_xlabel('steps')
 	ax.set_ylabel('pdf')
