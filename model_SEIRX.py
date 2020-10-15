@@ -70,8 +70,9 @@ class SIR(Model):
     G: interaction graph between agents
     verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, G, num_employees, verbosity):
+    def __init__(self, G, num_employees, verbosity, testing=True):
         self.verbosity = verbosity
+        self.testing = testing # flag to turn off the testing strategy
         self.running = True # needed for the batch runner
         self.Nstep = 0 # internal step counter used to launch screening tests
 
@@ -90,9 +91,12 @@ class SIR(Model):
         self.transmission_risk_employee_patient = 0.005 # per infected per day
         self.transmission_risk_employee_employee = 0.005 # per infected per day1
         self.transmission_risk_patient_employee = 0.005 # not used so far
+        self.infection_risk_area_weights = {'zimmer':1, 
+                                            'tisch':0.5,
+                                            'wohnbereich':0.1}
 
         # index case probability
-        self.index_probability = 0.001 # for every employee in every step
+        self.index_probability = 0.01 # for every employee in every step
 
         # symptom probability
         self.symptom_probability = 0.4
@@ -167,72 +171,73 @@ class SIR(Model):
         
     def step(self):
         self.schedule.step()
-        # act on new test results
-        if len(self.newly_positive_agents) > 0:
-            if self.verbosity > 0: print('new positive test')
-            # send all K1 contacts of positive agents into quarantine
-            # patients. NOTE: so far this is only implemented for patients
-            for a in self.newly_positive_agents:
-                if a.type == 'patient':
-                    # find all agents that share edges with the given agent
-                    # that are classified as K1 contact areas in the testing
-                    # strategy
-                    K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
-                        e[2]['area'] in self.Testing.K1_areas]
-                    K1_contacts = [a for a in self.schedule.agents if \
-                        (a.type == 'patient' and a.ID in K1_contacts)]
-                    for K1_contact in K1_contacts:
-                        if self.verbosity > 0:
-                            print('quarantine {} {}'.format(K1_contact.type, K1_contact.ID))
-                        K1_contact.quarantined = True
+        if self.testing:
+            # act on new test results
+            if len(self.newly_positive_agents) > 0:
+                if self.verbosity > 0: print('new positive test')
+                # send all K1 contacts of positive agents into quarantine
+                # patients. NOTE: so far this is only implemented for patients
+                for a in self.newly_positive_agents:
+                    if a.type == 'patient':
+                        # find all agents that share edges with the given agent
+                        # that are classified as K1 contact areas in the testing
+                        # strategy
+                        K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
+                            e[2]['area'] in self.Testing.K1_areas]
+                        K1_contacts = [a for a in self.schedule.agents if \
+                            (a.type == 'patient' and a.ID in K1_contacts)]
+                        for K1_contact in K1_contacts:
+                            if self.verbosity > 0:
+                                print('quarantine {} {}'.format(K1_contact.type, K1_contact.ID))
+                            K1_contact.quarantined = True
 
-            # indicate that a screen should happen
-            self.new_positive_tests = True
-            self.newly_positive_agents = []
-        else:
-            self.new_positive_tests = False
-
-        ## screening:
-        # a screen should take place if
-        # (a) there are newly positive cases and the last screen was more than 
-        # Testing.interval steps ago or
-        # (b) as a follow-up screen for a screen that was initiated becuase of
-        # new positive cases
-        if (self.days_since_last_screen == None or \
-            self.days_since_last_screen >= self.Testing.interval):
-            # (a)
-            if self.new_positive_tests == True:
-                if self.verbosity > 0: print('initiating screen because of positive test(s)')
-                self.test_agents()
-                self.screened = True
-                self.days_since_last_screen = 0
-                self.scheduled_follow_up_screen = True
-            # (b)
-            elif self.scheduled_follow_up_screen == True:
-                if self.verbosity > 0: print('initiating follow-up screen')
-                self.test_agents()
-                self.screened = True
-                self.days_since_last_screen = 0
-                self.scheduled_follow_up_screen = False 
-        else:
-            self.screened = False
-            if self.days_since_last_screen != None:
-                self.days_since_last_screen += 1
-
-
-        # find symptomatic agents that have not been tested yet and are not in
-        # quarantine and test them
-        newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
-            if (a.symptoms == True and a.tested == False and a.quarantined == False)])
-        for a in newly_symptomatic_agents:
-            # all symptomatic agents are quarantined by default
-            a.quarantined = True
-            a.tested = True
-            if a.testable:
-                if self.verbosity > 0: print('tested {} {}'.format(a.type, a.ID))
-                a.sample = 'positive'
+                # indicate that a screen should happen
+                self.new_positive_tests = True
+                self.newly_positive_agents = []
             else:
-                a.sample = 'negative'
+                self.new_positive_tests = False
+
+            ## screening:
+            # a screen should take place if
+            # (a) there are newly positive cases and the last screen was more than 
+            # Testing.interval steps ago or
+            # (b) as a follow-up screen for a screen that was initiated becuase of
+            # new positive cases
+            if (self.days_since_last_screen == None or \
+                self.days_since_last_screen >= self.Testing.interval):
+                # (a)
+                if self.new_positive_tests == True:
+                    if self.verbosity > 0: print('initiating screen because of positive test(s)')
+                    self.test_agents()
+                    self.screened = True
+                    self.days_since_last_screen = 0
+                    self.scheduled_follow_up_screen = True
+                # (b)
+                elif self.scheduled_follow_up_screen == True:
+                    if self.verbosity > 0: print('initiating follow-up screen')
+                    self.test_agents()
+                    self.screened = True
+                    self.days_since_last_screen = 0
+                    self.scheduled_follow_up_screen = False 
+            else:
+                self.screened = False
+                if self.days_since_last_screen != None:
+                    self.days_since_last_screen += 1
+
+
+            # find symptomatic agents that have not been tested yet and are not in
+            # quarantine and test them
+            newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
+                if (a.symptoms == True and a.tested == False and a.quarantined == False)])
+            for a in newly_symptomatic_agents:
+                # all symptomatic agents are quarantined by default
+                a.quarantined = True
+                a.tested = True
+                if a.testable:
+                    if self.verbosity > 0: print('tested {} {}'.format(a.type, a.ID))
+                    a.sample = 'positive'
+                else:
+                    a.sample = 'negative'
 
         # launches an employee screen every testing_interval step
         #if self.Nstep % self.testing_interval == 0:
