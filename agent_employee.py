@@ -90,7 +90,7 @@ class Employee(Agent):
                 for e in employees:
                     if (e.exposed == False) and (e.infected == False) and\
                        (e.recovered == False) and (e.contact_to_infected == False):
-                        transmission = self.random.random()
+                        transmission = self.random.random() * modifier
 
                         if self.verbose > 1:
                             print('checking gransmission from employee {} to employee {}'
