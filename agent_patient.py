@@ -33,6 +33,7 @@ class Patient(Agent):
         self.days_quarantined = 0
         self.days_since_tested = 0
         self.transmissions = 0
+        self.transmission_targets = []
         
 
     def step(self):
@@ -68,6 +69,7 @@ class Patient(Agent):
                         if transmission <= self.model.transmission_risk_patient_patient:
                             a.contact_to_infected = True
                             self.transmissions += 1
+                            self.transmission_targets.append(a.ID)
                             if self.verbose > 0: print('transmission: patient {} -> patient {}'\
                                 .format(self.unique_id, a.unique_id))
 
@@ -86,6 +88,7 @@ class Patient(Agent):
                         if transmission <= self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1
+                            self.transmission_targets.append(a.ID)
                             if self.verbose > 0:
                                 print('transmission: patient {} -> employee {}'
                                       .format(self.unique_id, e.unique_id))
