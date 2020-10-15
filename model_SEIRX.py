@@ -71,7 +71,7 @@ class SIR(Model):
     verbosity: verbosity level [0, 1, 2]
     '''
     def __init__(self, G, num_employees, verbosity, testing=True, 
-        time_until_test_result=2):
+        time_until_test_result=2, index_probability=0.01):
         self.verbosity = verbosity
         self.testing = testing # flag to turn off the testing strategy
         self.running = True # needed for the batch runner
@@ -97,7 +97,7 @@ class SIR(Model):
                                             'wohnbereich':1}
 
         # index case probability
-        self.index_probability = 0.01 # for every employee in every step
+        self.index_probability = index_probability # for every employee in every step
 
         # symptom probability
         self.symptom_probability = 0.4
@@ -245,7 +245,7 @@ class SIR(Model):
             # if infected employees are detected, an patient screen is launched
         #    if cases > 0:
         #        _ = self.Testing.screen('patient')
-        
+
         self.schedule.step()
         self.datacollector.collect(self)
         self.Nstep += 1
