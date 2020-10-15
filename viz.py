@@ -88,7 +88,7 @@ def draw_states(model, step, pos, ax):
 
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
-	if agent_type == 'patients':
+	if agent_type == 'patient':
 		N = model.num_patients
 	elif agent_type == 'employee':
 		N = model.num_employees
