@@ -58,10 +58,10 @@ class Patient(Agent):
                     if (a.exposed == False) and (a.infected == False) and \
                        (a.recovered == False) and (a.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random() * modifier
+                        transmission = self.random.random() / modifier
                         # get link strength from the interaction network
                         area = self.model.G[self.ID][a.ID]['area']
-                        transmission = transmission * self.model.infection_risk_area_weights[area]
+                        transmission = transmission / self.model.infection_risk_area_weights[area]
 
                         if self.verbose > 1: 
                             print('checking gransmission from patient {} to {}'\
@@ -80,7 +80,7 @@ class Patient(Agent):
                 for e in employees:
                     if (e.exposed == False) and (e.infected == False) and\
                        (e.recovered == False) and (e.contact_to_infected == False):
-                        transmission = self.random.random() * modifier
+                        transmission = self.random.random() / modifier
 
                         if self.verbose > 1:
                             print('checking gransmission from patient {} to employee {}'

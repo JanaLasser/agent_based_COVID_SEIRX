@@ -74,7 +74,7 @@ class Employee(Agent):
                     if (p.exposed == False) and (p.infected == False) and \
                        (p.recovered == False) and (p.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random() * modifier
+                        transmission = self.random.random() / modifier
 
                         if self.verbose > 1:
                             print('checking gransmission from employee {} to patient {}'
@@ -92,7 +92,7 @@ class Employee(Agent):
                 for e in employees:
                     if (e.exposed == False) and (e.infected == False) and\
                        (e.recovered == False) and (e.contact_to_infected == False):
-                        transmission = self.random.random() * modifier
+                        transmission = self.random.random() / modifier
 
                         if self.verbose > 1:
                             print('checking gransmission from employee {} to employee {}'
