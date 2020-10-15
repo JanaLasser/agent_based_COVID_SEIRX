@@ -70,7 +70,8 @@ class SIR(Model):
     G: interaction graph between agents
     verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, G, num_employees, verbosity, testing=True):
+    def __init__(self, G, num_employees, verbosity, testing=True, 
+        time_until_test_result=2):
         self.verbosity = verbosity
         self.testing = testing # flag to turn off the testing strategy
         self.running = True # needed for the batch runner
@@ -84,16 +85,16 @@ class SIR(Model):
         self.time_until_symptoms = 2 # days after becoming infectuous until showing symptoms
         self.time_testable = 7 # days after becoming infectuous while still testable
         self.quarantine_duration = 10 # duration of quarantine
-        self.time_until_test_result = 2
+        self.time_until_test_result = time_until_test_result
         
         # infection risk
-        self.transmission_risk_patient_patient = 0.0005 # per infected per day
-        self.transmission_risk_employee_patient = 0.005 # per infected per day
-        self.transmission_risk_employee_employee = 0.005 # per infected per day1
-        self.transmission_risk_patient_employee = 0.005 # not used so far
-        self.infection_risk_area_weights = {'zimmer':1, 
-                                            'tisch':0.5,
-                                            'wohnbereich':0.1}
+        self.transmission_risk_patient_patient = 0.008 # per infected per day
+        self.transmission_risk_employee_patient = 0.008 # per infected per day
+        self.transmission_risk_employee_employee = 0.008 # per infected per day1
+        self.transmission_risk_patient_employee = 0.008 # not used so far
+        self.infection_risk_area_weights = {'zimmer':7, 
+                                            'tisch':3,
+                                            'wohnbereich':1}
 
         # index case probability
         self.index_probability = 0.01 # for every employee in every step
@@ -170,7 +171,6 @@ class SIR(Model):
                         a.sample = 'negative'
         
     def step(self):
-        self.schedule.step()
         if self.testing:
             # act on new test results
             if len(self.newly_positive_agents) > 0:
@@ -245,5 +245,7 @@ class SIR(Model):
             # if infected employees are detected, an patient screen is launched
         #    if cases > 0:
         #        _ = self.Testing.screen('patient')
+        
+        self.schedule.step()
         self.datacollector.collect(self)
         self.Nstep += 1
