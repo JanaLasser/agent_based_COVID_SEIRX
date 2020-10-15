@@ -3,6 +3,7 @@ class Testing():
 		self.interval = interval
 		self.model = model
 		self.verbosity = verbosity
+		self.K1_areas = ['zimmer', 'tisch']
 
 	def screen(self, target='employee'):
 		screening_targets = [a for a in self.model.schedule.agents if a.type == target]
