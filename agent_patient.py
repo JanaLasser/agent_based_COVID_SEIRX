@@ -44,6 +44,10 @@ class Patient(Agent):
         '''
         if self.infected:
             if not self.quarantined:
+                modifier = 1
+                if self.symptomatic_course == False:
+                    modifier = self.model.subclinical_modifier
+
                 # get a list of neighbor IDs from the interaction network
                 neighbors = [tup[1] for tup in list(self.model.G.edges(self.ID))]
                 # get the neighboring agents from the scheduler using their IDs
@@ -53,7 +57,7 @@ class Patient(Agent):
                     if (a.exposed == False) and (a.infected == False) and \
                        (a.recovered == False) and (a.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random()
+                        transmission = self.random.random() * modifier
                         # get link strength from the interaction network
                         transmission = transmission * self.model.G[self.ID][a.ID]['weight']
 

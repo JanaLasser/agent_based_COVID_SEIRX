@@ -70,17 +70,18 @@ class SIR(Model):
     G: interaction graph between agents
     verbosity: verbosity level [0, 1, 2]
     '''
-    def __init__(self, G, N_employees, verbosity, seed):
+    def __init__(self, G, num_employees, verbosity):
         self.verbosity = verbosity
+        self.running = True # needed for the batch runner
         self.Nstep = 0 # internal step counter used to launch screening tests
 
         ## durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
-        self.infection_duration = 12 # number of days agents stay infectuous
+        self.infection_duration = 9 # number of days agents stay infectuous
         self.exposure_duration = 5 # days after transmission until agent becomes infectuous
         self.time_until_testable = 2 # days after becoming infectuous until becoming testable
         self.time_until_symptoms = 2 # days after becoming infectuous until showing symptoms
-        self.time_testable = 10 # days after becoming infectuous while still testable
+        self.time_testable = 7 # days after becoming infectuous while still testable
         self.quarantine_duration = 10 # duration of quarantine
         self.time_until_test_result = 2
         
@@ -94,7 +95,9 @@ class SIR(Model):
         self.index_probability = 0.001 # for every employee in every step
 
         # symptom probability
-        self.symptom_probability = 0.5
+        self.symptom_probability = 0.4
+        # modifier for infectiosness for asymptomatic cases
+        self.subclinical_modifier = 0.5
 
         # testing strategy
         self.testing_interval = 3 # days
@@ -105,9 +108,9 @@ class SIR(Model):
         self.G = G # interaction graph of patients
         IDs = list(G.nodes)
         #IDs = [i+1 for i in range(len(G.nodes))]
-        self.num_agents = len(IDs) + N_employees
+        self.num_agents = len(IDs) + num_employees
         self.num_patients = len(IDs)
-        self.num_employees = N_employees
+        self.num_employees = num_employees
 
         # add patient and employee agents to the scheduler
         self.schedule = SimultaneousActivation(self)
@@ -115,7 +118,7 @@ class SIR(Model):
             p = Patient(ID, self, verbosity)
             self.schedule.add(p)
 
-        for i in range(1, N_employees + 1):
+        for i in range(1, num_employees + 1):
             e = Employee(i, self, verbosity)
             self.schedule.add(e)
 

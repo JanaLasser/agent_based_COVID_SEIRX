@@ -54,6 +54,10 @@ class Employee(Agent):
         if self.infected:
             # determine if patient is in quarantine
             if not self.quarantined:
+                modifier = 1
+                if self.symptomatic_course == False:
+                    modifier = self.model.subclinical_modifier
+
                 # get a list of patients
                 patients = [
                     a for a in self.model.schedule.agents if a.type == 'patient']
@@ -69,7 +73,7 @@ class Employee(Agent):
                     if (p.exposed == False) and (p.infected == False) and \
                        (p.recovered == False) and (p.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random()
+                        transmission = self.random.random() * modifier
 
                         if self.verbose > 1:
                             print('checking gransmission from employee {} to patient {}'
@@ -139,14 +143,16 @@ class Employee(Agent):
                 self.days_infected += 1
 
         # determine if employee is testable
-        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and \
-        	(self.days_infected) <= self.model.time_testable):
+        if (self.infected == True) and (self.days_infected >= self.model.time_until_symptoms and
+                                        (self.days_infected) <= self.model.time_testable):
             if self.testable == False:
                 if self.verbose > 0:
                     if self.symptomatic_course:
-                        print('employee {} testable (symptoms)'.format(self.unique_id))
+                        print('employee {} testable (symptoms)'.format(
+                            self.unique_id))
                     else:
-                        print('employee {} testable (no symptoms)'.format(self.unique_id))
+                        print('employee {} testable (no symptoms)'.format(
+                            self.unique_id))
                 self.testable = True
         else:
             self.testable = False
