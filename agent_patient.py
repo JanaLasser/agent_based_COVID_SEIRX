@@ -62,14 +62,33 @@ class Patient(Agent):
                         transmission = transmission * self.model.G[self.ID][a.ID]['weight']
 
                         if self.verbose > 1: 
-                            print('checking gransmission from {} to {}'\
+                            print('checking gransmission from patient {} to {}'\
                                 .format(self.unique_id, a.unique_id))
                             print('tranmission prob {}'.format(transmission))
                         if transmission <= self.model.transmission_risk_patient_patient:
                             a.contact_to_infected = True
                             self.transmissions += 1
-                            if self.verbose > 0: print('transmission: {} -> {}'\
+                            if self.verbose > 0: print('transmission: patient {} -> patient {}'\
                                 .format(self.unique_id, a.unique_id))
+
+                # transmission from patients to employees
+                employees = [
+                    a for a in self.model.schedule.agents if a.type == 'employee']
+                for e in employees:
+                    if (e.exposed == False) and (e.infected == False) and\
+                       (e.recovered == False) and (e.contact_to_infected == False):
+                        transmission = self.random.random() * modifier
+
+                        if self.verbose > 1:
+                            print('checking gransmission from patient {} to employee {}'
+                                  .format(self.unique_id, e.unique_id))
+                            print('tranmission prob {}'.format(transmission))
+                        if transmission <= self.model.transmission_risk_employee_employee:
+                            e.contact_to_infected = True
+                            self.transmissions += 1
+                            if self.verbose > 0:
+                                print('transmission: patient {} -> employee {}'
+                                      .format(self.unique_id, e.unique_id))
 
     '''
     Advancing step: applies infections, checks counters and sets infection 
