@@ -29,8 +29,11 @@ def draw_states(model, step, pos, ax):
 	
 	for u, v in list(G.edges):
 		weight = G[u][v]['weight']**2 + 0.01
-		ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
+		try:
+			ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
 			color='k', linewidth=weight, zorder=1)
+		except KeyError:
+			print('warning: edge ({}, {}) not found in position map'.format(u, v))
 
 	for n in nodes:
 		if quarantine_states[n]:
@@ -75,15 +78,19 @@ def draw_states(model, step, pos, ax):
 	ax.set_yticks([])
 
 	handles, labels = ax.get_legend_handles_labels()
-	S_handle = plt.scatter([0],[1], color=colors['susceptible'], s=50)
-	E_handle = plt.scatter([0],[1], color=colors['exposed'], s=50)
-	I_handle = plt.scatter([0],[1], color=colors['infected'], s=50)
-	X_handle = plt.scatter([0],[1], edgecolors='k', facecolors='none', s=50, linewidths=2)
-	R_handle = plt.scatter([0],[1], color=colors['recovered'], s=50)
-
+	S_handle = plt.Line2D((0,1),(0,0), color=colors['susceptible'],
+		 marker='o', linestyle='', markersize=8)
+	E_handle = plt.Line2D((0,1),(0,0), color=colors['exposed'],
+		 marker='o', linestyle='', markersize=8)
+	I_handle = plt.Line2D((0,1),(0,0), color=colors['infected'],
+		 marker='o', linestyle='', markersize=8)
+	R_handle = plt.Line2D((0,1),(0,0), color=colors['recovered'],
+		 marker='o', linestyle='', markersize=8)
+	X_handle = plt.Line2D((0,1),(0,0), color='k',marker='o', 
+		linestyle='', markersize=8, mfc='none', mew=2)
 	#Create legend from custom artist/label lists
-	ax.legend([S_handle, E_handle, I_handle, X_handle, R_handle],
-	          ['susceptible', 'exposed', 'infected', 'quarantined', 'recovered'],
+	ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
+	          ['susceptible', 'exposed', 'infected', 'recovered', 'quarantined'],
 	           fontsize=8, bbox_to_anchor=[1, 1, 0.25, 0])
 
 def draw_infection_timeline(model, agent_type, ax):
