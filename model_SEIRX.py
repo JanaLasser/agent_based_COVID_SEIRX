@@ -74,11 +74,15 @@ class SIR(Model):
     '''
     def __init__(self, G, num_employees, verbosity=0, testing=True,
         time_until_test_result=2, index_probability=0.01, follow_up_interval=4,
-        screening_interval_patients=3, screening_interval_employees=3, seed=0):
+        screening_interval_patients=3, screening_interval_employees=3, 
+        index_case_mode='continuous', seed=0):
 
         self.verbosity = verbosity
         self.testing = testing # flag to turn off the testing strategy
         self.running = True # needed for the batch runner
+
+        assert index_case_mode in ['single', 'continuous']
+        self.index_case_mode = index_case_mode
         self.Nstep = 0 # internal step counter used to launch screening tests
 
         ## durations
@@ -108,10 +112,6 @@ class SIR(Model):
         # modifier for infectiosness for asymptomatic cases
         self.subclinical_modifier = 0.5
 
-        # testing strategy
-        self.Testing = Testing(self, follow_up_interval, screening_interval_patients,
-                     screening_interval_employees, verbosity)
-
         ## agents and their interactions
         self.G = G # interaction graph of patients
         IDs = list(G.nodes)
@@ -130,6 +130,13 @@ class SIR(Model):
             e = Employee(i, self, verbosity)
             self.schedule.add(e)
 
+        # infect the first employee to introduce the disease. 
+        if self.index_case_mode == 'single':
+            employees = [a for a in self.schedule.agents if a.type == 'employee']
+            employees[0].exposed = True
+            if self.verbosity > 0:
+                print('employee exposed: {}'.format(employees[0].ID))
+
         # flag that indicates whether a screen took place this turn in a given
         # agent group
         self.screened_patients = False
@@ -142,7 +149,22 @@ class SIR(Model):
 
         # counter for days since the last test screen
         self.days_since_last_patient_screen = 0
-        self.days_since_last_employee_screen = 0
+        if self.index_case_mode == 'continuous':
+            self.days_since_last_employee_screen = 0
+        # NOTE: if we initialize this variable with 0 as well, we introduce a
+        # bias since in 'single index case mode' the first index case will always
+        # become exposed in step 0 and we want to realize random states of the
+        # preventive scenning procedure with respect to the incidence of the
+        # index case
+        elif screening_interval_employees != None:
+            self.days_since_last_employee_screen = \
+                self.random.choice(range(0, screening_interval_employees + 1))
+        else:
+            self.days_since_last_employee_screen = 0
+
+        # testing strategy
+        self.Testing = Testing(self, follow_up_interval, screening_interval_patients,
+                     screening_interval_employees, verbosity)
         
         # data collectors to save population counts and patient / employee
         # states every time step
@@ -176,6 +198,8 @@ class SIR(Model):
             else:
                 print('unknown agent group!')
             
+            if self.verbosity > 1:
+                print([a.ID for a in untested_agents])
             for a in untested_agents:
                 a.tested = True
                 if a.testable == True:
@@ -186,8 +210,6 @@ class SIR(Model):
                     a.sample = 'negative'
         
     def step(self):
-        if self.verbosity > 1: 
-            print('days since last screen: {}'.format(self.days_since_last_screen))
         if self.testing:
             # act on new test results
             if len(self.newly_positive_agents) > 0:
@@ -237,7 +259,7 @@ class SIR(Model):
                 self.scheduled_follow_up_screen = True
             # (b)
             elif self.scheduled_follow_up_screen == True \
-                and self.days_since_last_patient_screen > self.Testing.follow_up_interval:
+                and self.days_since_last_patient_screen >= self.Testing.follow_up_interval:
                 if self.verbosity > 0: print('initiating follow-up screen')
                 self.test_agents('patient')
                 self.screened_patients = True
@@ -251,7 +273,7 @@ class SIR(Model):
                   self.Testing.screening_interval_employees != None):
                 # preventive patient screens
                 if self.Testing.screening_interval_patients != None and\
-                   self.days_since_last_patient_screen > self.Testing.screening_interval_patients:
+                   self.days_since_last_patient_screen >= self.Testing.screening_interval_patients:
                     if self.verbosity > 0: print('initiating preventive patient screen')
                     self.test_agents('patient')
                     self.screened_patients = True
@@ -262,9 +284,9 @@ class SIR(Model):
 
                 # preventive employee screens
                 if self.Testing.screening_interval_employees != None and\
-                   self.days_since_last_employee_screen > self.Testing.screening_interval_employees:
+                   self.days_since_last_employee_screen >= self.Testing.screening_interval_employees:
                    if self.verbosity > 0: print('initiating preventive employee screen')
-                   self.test_agents('employees')
+                   self.test_agents('employee')
                    self.screened_employees = True
                    self.days_since_last_employee_screen = 0 
                 else:
@@ -283,6 +305,8 @@ class SIR(Model):
                 if (a.symptoms == True and a.tested == False and a.quarantined == False)])
             for a in newly_symptomatic_agents:
                 # all symptomatic agents are quarantined by default
+                if self.verbosity > 0:
+                    print('quarantined: {} {}'.format(a.type, a.ID))
                 a.quarantined = True
                 a.tested = True
                 if a.testable:

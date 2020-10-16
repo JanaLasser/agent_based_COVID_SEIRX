@@ -43,14 +43,16 @@ class Employee(Agent):
         infect them. Infections are staged here and only applied in the 
         "advance"-step to simulate "simultaneous" interaction
         '''
-        # check for external infection
-        if (self.infected == False) and (self.exposed == False) and\
-           (self.recovered == False):
-            index_transmission = self.random.random()
-            if index_transmission <= self.model.index_probability:
-                self.contact_to_infected = True
-                if self.verbose > 0:
-                    print('employee {} is index case'.format(self.unique_id))
+        # check for external infection in continuous index case mode
+        if self.model.index_case_mode == 'continuous':
+	        if (self.infected == False) and (self.exposed == False) and\
+	           (self.recovered == False):
+	            index_transmission = self.random.random()
+	            if index_transmission <= self.model.index_probability:
+	                self.contact_to_infected = True
+	                if self.verbose > 0:
+	                    print('employee {} is index case'.format(self.unique_id))
+
 
         if self.infected:
             # determine if patient is in quarantine
@@ -76,10 +78,6 @@ class Employee(Agent):
                         # draw random number for transmission
                         transmission = self.random.random() / modifier
 
-                        if self.verbose > 1:
-                            print('checking gransmission from employee {} to patient {}'
-                                  .format(self.unique_id, p.unique_id))
-                            print('tranmission prob {}'.format(transmission))
                         if transmission <= self.model.transmission_risk_employee_patient:
                             p.contact_to_infected = True
                             self.transmissions += 1
@@ -94,10 +92,6 @@ class Employee(Agent):
                        (e.recovered == False) and (e.contact_to_infected == False):
                         transmission = self.random.random() / modifier
 
-                        if self.verbose > 1:
-                            print('checking gransmission from employee {} to employee {}'
-                                  .format(self.unique_id, e.unique_id))
-                            print('tranmission prob {}'.format(transmission))
                         if transmission <= self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1

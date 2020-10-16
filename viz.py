@@ -144,7 +144,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	          ['patient screen', 'employee_screen'], ncol=2, loc=9, fontsize=8)
 
 	ax.set_xlabel('steps')
-	ax.set_ylabel('pdf')
+	ax.set_ylabel('probability density')
 	ax.set_ylim(-0.05, 1.05)
 	ax.xaxis.set_major_locator(MultipleLocator(20))
 	ax.xaxis.set_minor_locator(MultipleLocator(5))

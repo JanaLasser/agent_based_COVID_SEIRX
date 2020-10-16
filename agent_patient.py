@@ -63,10 +63,6 @@ class Patient(Agent):
                         area = self.model.G[self.ID][a.ID]['area']
                         transmission = transmission / self.model.infection_risk_area_weights[area]
 
-                        if self.verbose > 1: 
-                            print('checking gransmission from patient {} to {}'\
-                                .format(self.unique_id, a.unique_id))
-                            print('tranmission prob {}'.format(transmission))
                         if transmission <= self.model.transmission_risk_patient_patient:
                             a.contact_to_infected = True
                             self.transmissions += 1
@@ -82,10 +78,6 @@ class Patient(Agent):
                        (e.recovered == False) and (e.contact_to_infected == False):
                         transmission = self.random.random() / modifier
 
-                        if self.verbose > 1:
-                            print('checking gransmission from patient {} to employee {}'
-                                  .format(self.unique_id, e.unique_id))
-                            print('tranmission prob {}'.format(transmission))
                         if transmission <= self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1
