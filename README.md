@@ -43,20 +43,20 @@ The assumptions made by the model to simplify the dynamics of infection spread a
 
 ## Installation (Linux)
 1. Clone the repository:  
-```git clone https://github.com/JanaLasser/SEIRX_nursing_homes.git```
-2. Create and activate a virtual environment
-```python3 -m venv .my_venv```
-```source .my_venv/bin/activate```
-3. Update pip
-``` pip install --upgrade pip```
-4. Install dependencies
-```pip install -r requirements.txt```
+```git clone https://github.com/JanaLasser/SEIRX_nursing_homes.git```  
+2. Create and activate a virtual environment  
+```python3 -m venv .my_venv```  
+```source .my_venv/bin/activate```  
+3. Update pip  
+``` pip install --upgrade pip```  
+4. Install dependencies  
+```pip install -r requirements.txt```  
 
 ## Running the simulation
 The following requires the activation of the virtual environment you created during installation
 ```source .my_venv/bin/activate```
 
-ToDo
+I provide an exemplary [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/example.ipynb) that illustrates how a simulation model is set up and run, how results are visualised and how data from a model run can be collected.
 
 ## Acknowledgements
 I would like to thank Peter Klimek for the fruitful discussions that led to the development of this project.
