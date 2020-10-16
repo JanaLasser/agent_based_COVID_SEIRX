@@ -7,7 +7,7 @@ A simple simulation to explore the spread of COVID-19 in nursing homes via agent
 
 Reference:  
 
-*Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing homes*
+_Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing homes_
 
 ## Simulation design
 ### Infections
