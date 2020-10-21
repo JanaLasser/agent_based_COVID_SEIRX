@@ -41,10 +41,6 @@ The assumptions made by the model to simplify the dynamics of infection spread a
 * **Interaction of employees with inhabitants**: We assume that every employee interacts with every inhabitant every day and has a basic probability to transmit an infection.
 * **Interaction of employees with employees**: We assume that every employee interacts with every other employee every day and has a basic probability to transmit an infection.
 
-## Exploration without installation
-You can try the simulation online in a binder-environment without downloading or installing anything: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JanaLasser/SEIRX_nursing_homes/master)
-
-
 ## Installation (Linux)
 1. Clone the repository:  
 ```git clone https://github.com/JanaLasser/SEIRX_nursing_homes.git```  
