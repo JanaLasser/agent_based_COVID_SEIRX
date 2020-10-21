@@ -53,10 +53,10 @@ The assumptions made by the model to simplify the dynamics of infection spread a
 ```pip install -r requirements.txt```  
 
 ## Running the simulation
-The following requires the activation of the virtual environment you created during installation
+The following requires the activation of the virtual environment you created during installation  
 ```source .my_venv/bin/activate```
 
 I provide an exemplary [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/example.ipynb) that illustrates how a simulation model is set up and run, how results are visualised and how data from a model run can be collected.
 
 ## Acknowledgements
-I would like to thank Peter Klimek for the fruitful discussions that led to the development of this project.
+I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from Caritas Austria for the fruitful discussions that led to the development of this project.
