@@ -103,9 +103,9 @@ class SIR(Model):
         self.transmission_risk_employee_patient = 0.008 # per infected per day
         self.transmission_risk_employee_employee = 0.008 # per infected per day1
         self.transmission_risk_patient_employee = 0.008 # not used so far
-        self.infection_risk_area_weights = {'zimmer':7, 
-                                            'tisch':3,
-                                            'wohnbereich':1}
+        self.infection_risk_area_weights = {'room':7, 
+                                            'table':3,
+                                            'quarters':1}
 
         # index case probability
         self.index_probability = index_probability # for every employee in every step
