@@ -1,4 +1,5 @@
 import numpy as np
+import networkx as nx
 from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
@@ -7,6 +8,10 @@ from agent_patient import Patient
 from agent_employee import Employee
 from testing_strategy import Testing
 
+# NOTE: "patients" and "inhabitants" are used interchangeably in the documentation
+
+
+## data collection functions ##
 def count_E_patient(model):
     E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
     return E
@@ -66,61 +71,147 @@ def get_quarantine_state(agent):
     if agent.quarantined == True: return True
     else: return False
 
+## parameter sanity check functions
+def test_positive(var):
+	assert var >= 0, 'negative number'
+	return var
+def test_bool(var):
+	assert type(var) == bool, 'not a bool'
+	return var
+def test_positive_int(var):
+	assert type(var) == int, 'not an integer'
+	assert var >= 0, 'negative number'
+	return var
+def test_area_dict(var):
+	assert type(var) == dict, 'not a dictionary'
+	assert set(var.keys()) == {'room', 'table', 'quarters'}, \
+		'does not contain the correct area types (has to be room, table, quarters)'
+	return var
+def test_probability(var):
+	assert type(var) == float, 'not a float'
+	assert var >= 0, 'probability negative'
+	assert var <= 1, 'probability larger than 1'
+	return var
+def test_graph(var):
+	assert type(var) == nx.Graph, 'not a networkx graph'
+	assert len(var.nodes) > 0, 'graph has no nodes'
+	assert len(var.edges) > 0, 'graph has no edges'
+	nested_list = [list(e[2].values()) for e in var.edges(data=True)]
+	areas = set([item for sublist in nested_list for item in sublist])
+	for a in areas:
+		assert a in {'room', 'table', 'quarters'}, 'area not recognised'
+	return var
+def test_index_case_mode(var):
+	assert var in ['single', 'continuous'], 'inknown index case mode'
+	return var
+
 class SIR(Model):
     '''
-    A model with a number of patients that reproduces the SEIR dynamics
-    G: interaction graph between agents
-    verbosity: verbosity level [0, 1, 2]
+    A model with a number of patients/inhabitatns and employees that reproduces 
+    the SEIRX dynamics of pandemic spread in a long time care facility. Note: 
+    all times are set to correspond to days
+
+    G: networkx undirected graph, interaction graph between inhabitants. 
+    Note: the number of nodes in G also sets the number of inhabitants
+    num_employees: integer, number of employees
+    verbosity: integer in [0, 1, 2], controls text output to std out to track
+    simulation progress and transmission dynamics
+    testing: bool, toggles testing/tracing activities of the facility
+    infection_duration: positive integer, sets the time an infected agent stays
+    infectious
+    exposure_duration: positive integer, sets the time from transmission to 
+    becoming infectious
+	time_until_testable: positive integer, sets the time between becoming 
+	infectious and being testable, i.e. returning a positive result upon testing
+    time_until_symptoms: positive integer, sets the time between becoming 
+    infectious and (potentially) developing symptoms
+    time_testable: positive integer, sets the time after becoming infectious
+    during which an agent is testable
+    quarantine_duration: positive integer, sets the time a positively tested
+    agent is quarantined
+    symptom_probability: float in the range [0, 1], sets the probability for a
+    symptomatic disease course
+    subclinical_modifier: float, modifies the infectiousness of asymptomatic
+    cases
+    infection_risk_area_weights: dictionary of the form {'room':int, 'table':int,
+    'quarters':int} that sets transmission risk multipliers for different living
+    areas of inhabitants
+    time_until_test_result: positive integer, sets the time until a test result
+    arrives after an agent has been tested
+    follow_up_testing_interval: positive integer, sets the time a follow-up
+    screen is run after an initial screen triggered by a positive test result
+    screening_interval_patients: positive integer, sets the time for regular
+    preventive screens of the patient population
+    screening_interval_employees: positive integer, sets the time for regular
+    preventive screens of the employee population
+    index_case_mode: string, can be 'continuous' or 'single'. If 'continuous', 
+    new index cases can be introduced by employees in every simulation time step.
+    If 'single', one employee is an index case (exposed) in the first time step
+    of the simulation but no further index cases are introduced throughout the
+    course of the simulation
+    index_probability: float, sets the probability an employee will become an
+    index case in one simulation time step if index_case_mode = 'continuous'
+    seed: positive integer, fixes the seed of the simulation to enable 
+    repeatable simulation runs
     '''
     def __init__(self, G, num_employees, verbosity=0, testing=True,
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
-    	symptom_probability=0.4, subclinical_modifier=1,
+    	symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room':7, 'table':3, 'quarters':1},
-        time_until_test_result=2, index_probability=0.01, follow_up_interval=4,
+        time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3, 
-        index_case_mode='continuous', seed=0):
+        index_case_mode='continuous', index_probability=0.01, seed=0):
 
-        self.verbosity = verbosity
-        self.testing = testing # flag to turn off the testing strategy
-        self.running = True # needed for the batch runner
+    	# sets the level of detail of text output to stdout (0 = no output)
+        self.verbosity = test_positive_int(verbosity)
+        # flag to turn off the testing & tracing strategy
+        self.testing = test_bool(testing) 
+        self.running = True # needed for the batch runner implemented by mesa
 
-        assert index_case_mode in ['single', 'continuous']
-        self.index_case_mode = index_case_mode
+        # one of two ways to introduce index cases into the system
+        self.index_case_mode = test_index_case_mode(index_case_mode)
         self.Nstep = 0 # internal step counter used to launch screening tests
 
         ## durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
-        self.infection_duration = infection_duration # number of days agents stay infectuous
-        self.exposure_duration = exposure_duration # days after transmission until agent becomes infectuous
-        self.time_until_testable = time_until_testable # days after becoming infectuous until becoming testable
-        self.time_until_symptoms = time_until_symptoms # days after becoming infectuous until showing symptoms
-        self.time_testable = time_testable # days after becoming infectuous while still testable
-        self.quarantine_duration = quarantine_duration # duration of quarantine
-        self.time_until_test_result = time_until_test_result
+        # number of days agents stay infectuous
+        self.infection_duration = test_positive_int(infection_duration) 
+        # days after transmission until agent becomes infectuous
+        self.exposure_duration = test_positive_int(exposure_duration) 
+        # days after becoming infectuous until becoming testable
+        self.time_until_testable = test_positive_int(time_until_testable) 
+        # days after becoming infectuous until showing symptoms
+        self.time_until_symptoms = test_positive_int(time_until_symptoms) 
+        # days after becoming infectuous while still testable
+        self.time_testable = test_positive_int(time_testable) 
+        # duration of quarantine
+        self.quarantine_duration = test_positive_int(quarantine_duration) 
+        # time until a result returns from a test
+        self.time_until_test_result = test_positive_int(time_until_test_result)
         
         # infection risk
         self.transmission_risk_patient_patient = 0.008 # per infected per day
         self.transmission_risk_employee_patient = 0.008 # per infected per day
         self.transmission_risk_employee_employee = 0.008 # per infected per day1
-        self.transmission_risk_patient_employee = 0.008 # not used so far
-        self.infection_risk_area_weights = infection_risk_area_weights
+        self.transmission_risk_patient_employee = 0.008 # per infected per day
+        self.infection_risk_area_weights = test_area_dict(infection_risk_area_weights)
 
-        # index case probability
-        self.index_probability = index_probability # for every employee in every step
+        # index case probability for every employee in every step
+        self.index_probability = test_probability(index_probability) 
 
         # symptom probability
-        self.symptom_probability = symptom_probability
+        self.symptom_probability = test_probability(symptom_probability)
         # modifier for infectiosness for asymptomatic cases
-        self.subclinical_modifier = subclinical_modifier
+        self.subclinical_modifier = test_positive(subclinical_modifier)
 
         ## agents and their interactions
-        self.G = G # interaction graph of patients
+        self.G = test_graph(G) # interaction graph of patients
         IDs = list(G.nodes)
-        #IDs = [i+1 for i in range(len(G.nodes))]
-        self.num_agents = len(IDs) + num_employees
+        self.num_employees = test_positive_int(num_employees)
+        self.num_agents = len(IDs) + self.num_employees
         self.num_patients = len(IDs)
-        self.num_employees = num_employees
+        
 
         # add patient and employee agents to the scheduler
         self.schedule = SimultaneousActivation(self)
@@ -165,7 +256,7 @@ class SIR(Model):
             self.days_since_last_employee_screen = 0
 
         # testing strategy
-        self.Testing = Testing(self, follow_up_interval, screening_interval_patients,
+        self.Testing = Testing(self, follow_up_testing_interval, screening_interval_patients,
                      screening_interval_employees, verbosity)
         
         # data collectors to save population counts and patient / employee
@@ -261,7 +352,7 @@ class SIR(Model):
                 self.scheduled_follow_up_screen = True
             # (b)
             elif self.scheduled_follow_up_screen == True \
-                and self.days_since_last_patient_screen >= self.Testing.follow_up_interval:
+                and self.days_since_last_patient_screen >= self.Testing.follow_up_testing_interval:
                 if self.verbosity > 0: print('initiating follow-up screen')
                 self.test_agents('patient')
                 self.screened_patients = True
