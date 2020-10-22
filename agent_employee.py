@@ -1,5 +1,7 @@
 from mesa import Agent
 
+# NOTE: "patients" and "inhabitants" are used interchangeably in the documentation
+
 
 class Employee(Agent):
     '''
@@ -57,9 +59,15 @@ class Employee(Agent):
         if self.infected:
             # determine if patient is in quarantine
             if not self.quarantined:
-                modifier = 1
+                # infectiousness is constant and high during the first 2 days (pre-symptomatic)
+                # and then decreases monotonically for 8 days until agents are not infectious 
+                # anymore 10 days after the onset of infectiousness
+                modifier = 1 - max(0, self.days_infected - 2) / 8
+
+                # if infectiousness is modified for asymptomatic cases, moltiply the asymptomatic
+                # modifier with the days-infected modifier 
                 if self.symptomatic_course == False:
-                    modifier = self.model.subclinical_modifier
+                    modifier *= self.model.subclinical_modifier
 
                 # get a list of patients
                 patients = [

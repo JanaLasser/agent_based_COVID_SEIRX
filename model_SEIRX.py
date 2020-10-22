@@ -76,6 +76,7 @@ class SIR(Model):
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.4, subclinical_modifier=1,
+    	infection_risk_area_weights={'room':7, 'table':3, 'quarters':1},
         time_until_test_result=2, index_probability=0.01, follow_up_interval=4,
         screening_interval_patients=3, screening_interval_employees=3, 
         index_case_mode='continuous', seed=0):
@@ -103,9 +104,7 @@ class SIR(Model):
         self.transmission_risk_employee_patient = 0.008 # per infected per day
         self.transmission_risk_employee_employee = 0.008 # per infected per day1
         self.transmission_risk_patient_employee = 0.008 # not used so far
-        self.infection_risk_area_weights = {'room':7, 
-                                            'table':3,
-                                            'quarters':1}
+        self.infection_risk_area_weights = infection_risk_area_weights
 
         # index case probability
         self.index_probability = index_probability # for every employee in every step
