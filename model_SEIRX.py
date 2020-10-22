@@ -73,6 +73,9 @@ class SIR(Model):
     verbosity: verbosity level [0, 1, 2]
     '''
     def __init__(self, G, num_employees, verbosity=0, testing=True,
+    	infection_duration=10, exposure_duration=5, time_until_testable=2,
+    	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
+    	symptom_probability=0.4, subclinical_modifier=1,
         time_until_test_result=2, index_probability=0.01, follow_up_interval=4,
         screening_interval_patients=3, screening_interval_employees=3, 
         index_case_mode='continuous', seed=0):
@@ -87,12 +90,12 @@ class SIR(Model):
 
         ## durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
-        self.infection_duration = 9 # number of days agents stay infectuous
-        self.exposure_duration = 5 # days after transmission until agent becomes infectuous
-        self.time_until_testable = 2 # days after becoming infectuous until becoming testable
-        self.time_until_symptoms = 2 # days after becoming infectuous until showing symptoms
-        self.time_testable = 7 # days after becoming infectuous while still testable
-        self.quarantine_duration = 10 # duration of quarantine
+        self.infection_duration = infection_duration # number of days agents stay infectuous
+        self.exposure_duration = exposure_duration # days after transmission until agent becomes infectuous
+        self.time_until_testable = time_until_testable # days after becoming infectuous until becoming testable
+        self.time_until_symptoms = time_until_symptoms # days after becoming infectuous until showing symptoms
+        self.time_testable = time_testable # days after becoming infectuous while still testable
+        self.quarantine_duration = quarantine_duration # duration of quarantine
         self.time_until_test_result = time_until_test_result
         
         # infection risk
@@ -108,9 +111,9 @@ class SIR(Model):
         self.index_probability = index_probability # for every employee in every step
 
         # symptom probability
-        self.symptom_probability = 0.4
+        self.symptom_probability = symptom_probability
         # modifier for infectiosness for asymptomatic cases
-        self.subclinical_modifier = 0.5
+        self.subclinical_modifier = subclinical_modifier
 
         ## agents and their interactions
         self.G = G # interaction graph of patients
