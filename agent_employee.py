@@ -50,7 +50,7 @@ class Employee(Agent):
 	        if (self.infected == False) and (self.exposed == False) and\
 	           (self.recovered == False):
 	            index_transmission = self.random.random()
-	            if index_transmission <= self.model.index_probability:
+	            if index_transmission <= self.model.index_probability_employee:
 	                self.contact_to_infected = True
 	                if self.verbose > 0:
 	                    print('employee {} is index case'.format(self.unique_id))

@@ -149,7 +149,7 @@ class SIR(Model):
     If 'single', one employee is an index case (exposed) in the first time step
     of the simulation but no further index cases are introduced throughout the
     course of the simulation
-    index_probability: float, sets the probability an employee will become an
+    index_probability_employee: float, sets the probability an employee will become an
     index case in one simulation time step if index_case_mode = 'continuous'
     seed: positive integer, fixes the seed of the simulation to enable 
     repeatable simulation runs
@@ -161,7 +161,8 @@ class SIR(Model):
     	infection_risk_area_weights={'room':7, 'table':3, 'quarters':1},
         time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3, 
-        index_case_mode='continuous', index_probability=0.01, seed=0):
+        index_case_mode='continuous', index_probability_employee=0.01,
+        index_probability_patient=0.01, seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = test_positive_int(verbosity)
@@ -198,7 +199,8 @@ class SIR(Model):
         self.infection_risk_area_weights = test_area_dict(infection_risk_area_weights)
 
         # index case probability for every employee in every step
-        self.index_probability = test_probability(index_probability) 
+        self.index_probability_employee = test_probability(index_probability_employee)
+        self.index_probability_patient = test_probability(index_probability_patient)
 
         # symptom probability
         self.symptom_probability = test_probability(symptom_probability)
@@ -211,7 +213,6 @@ class SIR(Model):
         self.num_employees = test_positive_int(num_employees)
         self.num_agents = len(IDs) + self.num_employees
         self.num_patients = len(IDs)
-        
 
         # add patient and employee agents to the scheduler
         self.schedule = SimultaneousActivation(self)
