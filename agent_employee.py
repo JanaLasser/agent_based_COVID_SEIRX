@@ -22,6 +22,7 @@ class Employee(Agent):
         self.recovered = False
         self.testable = False
         self.tested = False
+        self.known_positive = False
         self.quarantined = False
 
         # sample given for test
@@ -84,9 +85,9 @@ class Employee(Agent):
                     if (p.exposed == False) and (p.infected == False) and \
                        (p.recovered == False) and (p.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random() / modifier
+                        transmission = self.random.random() * modifier
 
-                        if transmission <= self.model.transmission_risk_employee_patient:
+                        if transmission > 1 - self.model.transmission_risk_employee_patient:
                             p.contact_to_infected = True
                             self.transmissions += 1
                             self.transmission_targets.update({self.model.Nstep:p.ID})
@@ -98,14 +99,14 @@ class Employee(Agent):
                 for e in employees:
                     if (e.exposed == False) and (e.infected == False) and\
                        (e.recovered == False) and (e.contact_to_infected == False):
-                        transmission = self.random.random() / modifier
+                        transmission = self.random.random()* modifier
 
-                        if transmission <= self.model.transmission_risk_employee_employee:
+                        if transmission > 1 - self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1
                             self.transmission_targets.update({self.model.Nstep:e.ID})
                             if self.verbose > 0:
-                                print('transmission: employee {} -> patient {}'
+                                print('transmission: employee {} -> employee {}'
                                       .format(self.unique_id, e.unique_id))
 
         '''
@@ -118,6 +119,7 @@ class Employee(Agent):
         if self.tested and self.days_since_tested >= self.model.time_until_test_result:
             if self.sample == 'positive':
                 self.model.newly_positive_agents.append(self)
+                self.known_positive = True
                 self.days_since_tested = 0
                 self.tested = False
                 self.sample = None
@@ -143,7 +145,7 @@ class Employee(Agent):
                 self.symptoms = False
                 self.recovered = True
                 if self.verbose > 0:
-                    print('employee recovered {}'.format(self.unique_id))
+                    print('employee recovered: {}'.format(self.unique_id))
             else:
                 self.days_infected += 1
 
@@ -166,7 +168,7 @@ class Employee(Agent):
         if self.exposed:
             if self.days_exposed >= self.model.exposure_duration:
                 if self.verbose > 0:
-                    print('employee infected {}'.format(self.unique_id))
+                    print('employee infectious: {}'.format(self.unique_id))
                 self.exposed = False
                 self.infected = True
                 # determine if infected employee shows symptoms
@@ -179,7 +181,7 @@ class Employee(Agent):
         if self.quarantined:
             if self.days_quarantined >= self.model.quarantine_duration:
                 if self.verbose > 0:
-                    print('employee released from quarantine {}'.format(
+                    print('employee released from quarantine: {}'.format(
                         self.unique_id))
                 self.quarantined = False
             else:

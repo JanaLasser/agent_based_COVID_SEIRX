@@ -20,6 +20,7 @@ class Patient(Agent):
         self.recovered = False
         self.testable = False
         self.tested = False
+        self.known_positive = False
         self.quarantined = False
 
         # sample given for test
@@ -75,12 +76,12 @@ class Patient(Agent):
                     if (a.exposed == False) and (a.infected == False) and \
                        (a.recovered == False) and (a.contact_to_infected == False):
                         # draw random number for transmission
-                        transmission = self.random.random() / modifier
+                        transmission = self.random.random() * modifier
                         # get link strength from the interaction network
                         area = self.model.G[self.ID][a.ID]['area']
-                        transmission = transmission / self.model.infection_risk_area_weights[area]
+                        transmission = transmission * self.model.infection_risk_area_weights[area]
 
-                        if transmission <= self.model.transmission_risk_patient_patient:
+                        if transmission > 1 - self.model.transmission_risk_patient_patient:
                             a.contact_to_infected = True
                             self.transmissions += 1
                             self.transmission_targets.update({self.model.Nstep:a.ID})
@@ -93,9 +94,9 @@ class Patient(Agent):
                 for e in employees:
                     if (e.exposed == False) and (e.infected == False) and\
                        (e.recovered == False) and (e.contact_to_infected == False):
-                        transmission = self.random.random() / modifier
+                        transmission = self.random.random() * modifier
 
-                        if transmission <= self.model.transmission_risk_employee_employee:
+                        if transmission > 1 - self.model.transmission_risk_employee_employee:
                             e.contact_to_infected = True
                             self.transmissions += 1
                             self.transmission_targets.update({self.model.Nstep:e.ID})
@@ -112,6 +113,7 @@ class Patient(Agent):
         if self.tested and self.days_since_tested >= self.model.time_until_test_result:
             if self.sample == 'positive':
                 self.model.newly_positive_agents.append(self)
+                self.known_positive = True
                 self.days_since_tested = 0
                 self.tested = False
                 self.sample = None
@@ -136,7 +138,7 @@ class Patient(Agent):
                 self.infected = False
                 self.symptoms = False
                 self.recovered = True
-                if self.verbose > 0: print('recovered patient {}'.format(self.unique_id))
+                if self.verbose > 0: print('patient recovered: {}'.format(self.unique_id))
             else:
                 self.days_infected += 1
 
@@ -158,7 +160,7 @@ class Patient(Agent):
         if self.exposed:
             #if self.verbose > 0: print('exposed: {}'.format(self.unique_id))
             if self.days_exposed >= self.model.exposure_duration:
-                if self.verbose > 0: print('infected patient {}'.format(self.unique_id))
+                if self.verbose > 0: print('patient infectious: {}'.format(self.unique_id))
                 self.exposed = False
                 self.infected = True
                 # determine if infected patient will have symptomatic infection
@@ -170,7 +172,7 @@ class Patient(Agent):
         # determine if patient is released from quarantine
         if self.quarantined:
             if self.days_quarantined >= self.model.quarantine_duration:
-                if self.verbose > 0: print('employee released from quarantine {}'.format(self.unique_id))
+                if self.verbose > 0: print('patient released from quarantine {}'.format(self.unique_id))
                 self.quarantined = False
             else:
                 self.days_quarantined += 1

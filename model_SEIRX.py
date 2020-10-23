@@ -161,7 +161,7 @@ def test_graph(var):
 
 def test_index_case_mode(var):
 	assert var in ['single_employee', 'single_patient', 'continuous_employee',
-	'continuous_inhabitant', 'continuous_both'], 'inknown index case mode'
+	'continuous_patient', 'continuous_both'], 'unknown index case mode'
 	return var
 
 
@@ -277,6 +277,9 @@ class SIR(Model):
 
         # agents and their interactions
         self.G = test_graph(G)  # interaction graph of patients
+        for e in G.edges(data=True):
+            G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
+
         IDs = list(G.nodes)
         self.num_employees = test_positive_int(num_employees)
         self.num_agents = len(IDs) + self.num_employees
@@ -289,7 +292,7 @@ class SIR(Model):
             self.schedule.add(p)
 
         for i in range(1, num_employees + 1):
-            e = Employee(i, self, verbosity)
+            e = Employee('e{}'.format(i), self, verbosity)
             self.schedule.add(e)
 
         # infect the first employee to introduce the disease.
@@ -305,7 +308,7 @@ class SIR(Model):
             patients = [a for a in self.schedule.agents if a.type == 'patient']
             patients[0].exposed = True
             if self.verbosity > 0:
-                print('patients exposed: {}'.format(patients[0].ID))
+                print('patient exposed: {}'.format(patients[0].ID))
 
         # flag that indicates whether a screen took place this turn in a given
         # agent group
@@ -326,7 +329,7 @@ class SIR(Model):
         # have to randomly pick the "days_since_last_X_screen" as well
         self.days_since_last_patient_screen = 0
         if self.index_case_mode in ['continuous_employee',
-        				'continuous_inhabitant', 'continuous_both']:
+        				'continuous_patient', 'continuous_both']:
             self.days_since_last_employee_screen = 0
             self.days_since_last_patient_screen = 0
 
@@ -370,7 +373,8 @@ class SIR(Model):
 
     def test_agents(self, agent_group):
         untested_agents = [a for a in self.schedule.agents if \
-            (a.tested == False and a.type == agent_group)]
+            (a.tested == False and a.known_positive == False \
+                and a.type == agent_group)]
 
         if len(untested_agents) > 0:
             if agent_group == 'patient': 
@@ -395,11 +399,15 @@ class SIR(Model):
         if self.testing:
             # act on new test results
             if len(self.newly_positive_agents) > 0:
-                if self.verbosity > 0: print('new positive test(s)')
+                if self.verbosity > 0: print('new positive test(s) from {}'\
+                    .format([a.ID for a in self.newly_positive_agents]))
                 # send all K1 contacts of positive agents into quarantine
                 # patients. NOTE: so far this is only implemented for patients
                 for a in self.newly_positive_agents:
-                    a.quarantined = True
+                    if a.quarantined == False:
+                        a.quarantined = True
+                        if self.verbosity > 0:
+                            print('qurantined {} {}'.format(a.type, a.ID))
                     if a.type == 'patient':
                         # find all agents that share edges with the given agent
                         # that are classified as K1 contact areas in the testing
