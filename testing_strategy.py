@@ -6,5 +6,5 @@ class Testing():
 		self.screening_interval_employees = screening_interval_employees
 		self.model = model
 		self.verbosity = verbosity
-		self.K1_areas = ['zimmer', 'tisch']
+		self.K1_areas = ['room', 'table']
 
