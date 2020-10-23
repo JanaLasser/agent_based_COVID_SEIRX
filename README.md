@@ -1,5 +1,5 @@
 # Agent based simulation of the spread of COVID-19 in nursing homes
-**Jana Lasser, Complexity Science Hub Vienna (lasser@csh.ac.at)**
+**Author: Jana Lasser, Complexity Science Hub Vienna (lasser@csh.ac.at)**
 
 A simple simulation to explore the spread of COVID-19 in nursing homes via agent-based modeling (ABM) of inhabitants and employees of nursing homes. The model follows an SEIRX approach, building on the agent based simulation framework [mesa](https://mesa.readthedocs.io/en/master/) in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X). The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and implements an empirically measured contact network of nursing home inhabitants.
 
@@ -61,7 +61,7 @@ The following requires the activation of the virtual environment you created dur
 I provide an exemplary [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/example.ipynb) that illustrates how a simulation model is set up and run, how results are visualised and how data from a model run can be collected.
 
 ## Acknowledgements
-I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from Caritas Austria for the fruitful discussions that led to the development of this project.
+I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from [Caritas Austria](https://www.caritas.at/) for the fruitful discussions that led to the development of this project.
 
 ## References
 Linton, N. M., Kobayashi, T., Yang, Y., Hayashi, K., Akhmetzhanov, A. R., Jung, S. M., ... & Nishiura, H. (2020). Incubation period and other epidemiological characteristics of 2019 novel coronavirus infections with right truncation: a statistical analysis of publicly available case data. Journal of clinical medicine, 9(2), 538. [DOI: 10.3390/jcm9020538](https://doi.org/10.3390/jcm9020538)  
