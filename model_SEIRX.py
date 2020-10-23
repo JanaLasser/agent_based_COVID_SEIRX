@@ -13,85 +13,141 @@ from testing_strategy import Testing
 
 ## data collection functions ##
 def count_E_patient(model):
-    E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
+    E = np.asarray(
+        [a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
     return E
+
+
 def count_I_patient(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if a.type == 'patient']).sum()
+    I = np.asarray(
+        [a.infected for a in model.schedule.agents if a.type == 'patient']).sum()
     return I
+
+
 def count_I_symptomatic_patient(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if \
+    I = np.asarray([a.infected for a in model.schedule.agents if
         (a.type == 'patient'and a.symptomatic_course)]).sum()
     return I
+
+
 def count_I_asymptomatic_patient(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if \
+    I = np.asarray([a.infected for a in model.schedule.agents if
         (a.type == 'patient'and a.symptomatic_course == False)]).sum()
     return I
+
+
 def count_R_patient(model):
-    R = np.asarray([a.recovered for a in model.schedule.agents if a.type == 'patient']).sum()
+    R = np.asarray(
+        [a.recovered for a in model.schedule.agents if a.type == 'patient']).sum()
     return R
+
+
 def count_X_patient(model):
-    X = np.asarray([a.quarantined for a in model.schedule.agents if a.type == 'patient']).sum()
+    X = np.asarray(
+        [a.quarantined for a in model.schedule.agents if a.type == 'patient']).sum()
     return X
+
+
 def count_T_patient(model):
-    T = np.asarray([a.testable for a in model.schedule.agents if a.type == 'patient']).sum()
+    T = np.asarray(
+        [a.testable for a in model.schedule.agents if a.type == 'patient']).sum()
     return T
+
+
 def count_E_employee(model):
-    E = np.asarray([a.exposed for a in model.schedule.agents if a.type == 'employee']).sum()
+    E = np.asarray(
+        [a.exposed for a in model.schedule.agents if a.type == 'employee']).sum()
     return E
+
+
 def count_I_employee(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if a.type == 'employee']).sum()
+    I = np.asarray(
+        [a.infected for a in model.schedule.agents if a.type == 'employee']).sum()
     return I
+
+
 def count_I_symptomatic_employee(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if \
+    I = np.asarray([a.infected for a in model.schedule.agents if
         (a.type == 'employee'and a.symptomatic_course)]).sum()
     return I
+
+
 def count_I_asymptomatic_employee(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if \
+    I = np.asarray([a.infected for a in model.schedule.agents if
         (a.type == 'employee'and a.symptomatic_course == False)]).sum()
     return I
+
+
 def count_R_employee(model):
-    R = np.asarray([a.recovered for a in model.schedule.agents if a.type == 'employee']).sum()
+    R = np.asarray(
+        [a.recovered for a in model.schedule.agents if a.type == 'employee']).sum()
     return R
+
+
 def count_X_employee(model):
-    X = np.asarray([a.quarantined for a in model.schedule.agents if a.type == 'employee']).sum()
+    X = np.asarray(
+        [a.quarantined for a in model.schedule.agents if a.type == 'employee']).sum()
     return X
+
+
 def count_T_employee(model):
-    T = np.asarray([a.testable for a in model.schedule.agents if a.type == 'employee']).sum()
+    T = np.asarray(
+        [a.testable for a in model.schedule.agents if a.type == 'employee']).sum()
     return T
+
+
 def check_patient_screen(model):
     return model.screened_patients
+
+
 def check_employee_screen(model):
     return model.screened_employees
+
+
 def get_infection_state(agent):
     if agent.exposed == True: return 'exposed'
     elif agent.infected == True: return 'infected'
     elif agent.recovered == True: return 'recovered'
     else: return 'susceptible'
+
+
 def get_quarantine_state(agent):
     if agent.quarantined == True: return True
     else: return False
 
-## parameter sanity check functions
+# parameter sanity check functions
+
+
 def test_positive(var):
 	assert var >= 0, 'negative number'
 	return var
+
+
 def test_bool(var):
 	assert type(var) == bool, 'not a bool'
 	return var
+
+
 def test_positive_int(var):
 	assert type(var) == int, 'not an integer'
 	assert var >= 0, 'negative number'
 	return var
+
+
 def test_area_dict(var):
 	assert type(var) == dict, 'not a dictionary'
 	assert set(var.keys()) == {'room', 'table', 'quarters'}, \
 		'does not contain the correct area types (has to be room, table, quarters)'
 	return var
+
+
 def test_probability(var):
 	assert type(var) == float, 'not a float'
 	assert var >= 0, 'probability negative'
 	assert var <= 1, 'probability larger than 1'
 	return var
+
+
 def test_graph(var):
 	assert type(var) == nx.Graph, 'not a networkx graph'
 	assert len(var.nodes) > 0, 'graph has no nodes'
@@ -101,17 +157,21 @@ def test_graph(var):
 	for a in areas:
 		assert a in {'room', 'table', 'quarters'}, 'area not recognised'
 	return var
+
+
 def test_index_case_mode(var):
-	assert var in ['single', 'continuous'], 'inknown index case mode'
+	assert var in ['single_employee', 'single_patient', 'continuous_employee',
+	'continuous_inhabitant', 'continuous_both'], 'inknown index case mode'
 	return var
+
 
 class SIR(Model):
     '''
-    A model with a number of patients/inhabitatns and employees that reproduces 
-    the SEIRX dynamics of pandemic spread in a long time care facility. Note: 
+    A model with a number of patients/inhabitatns and employees that reproduces
+    the SEIRX dynamics of pandemic spread in a long time care facility. Note:
     all times are set to correspond to days
 
-    G: networkx undirected graph, interaction graph between inhabitants. 
+    G: networkx undirected graph, interaction graph between inhabitants.
     Note: the number of nodes in G also sets the number of inhabitants
     num_employees: integer, number of employees
     verbosity: integer in [0, 1, 2], controls text output to std out to track
@@ -119,11 +179,11 @@ class SIR(Model):
     testing: bool, toggles testing/tracing activities of the facility
     infection_duration: positive integer, sets the time an infected agent stays
     infectious
-    exposure_duration: positive integer, sets the time from transmission to 
+    exposure_duration: positive integer, sets the time from transmission to
     becoming infectious
-	time_until_testable: positive integer, sets the time between becoming 
+	time_until_testable: positive integer, sets the time between becoming
 	infectious and being testable, i.e. returning a positive result upon testing
-    time_until_symptoms: positive integer, sets the time between becoming 
+    time_until_symptoms: positive integer, sets the time between becoming
     infectious and (potentially) developing symptoms
     time_testable: positive integer, sets the time after becoming infectious
     during which an agent is testable
@@ -144,71 +204,79 @@ class SIR(Model):
     preventive screens of the patient population
     screening_interval_employees: positive integer, sets the time for regular
     preventive screens of the employee population
-    index_case_mode: string, can be 'continuous' or 'single'. If 'continuous', 
+    index_case_mode: string, can be 'continuous' or 'single'. If 'continuous',
     new index cases can be introduced by employees in every simulation time step.
     If 'single', one employee is an index case (exposed) in the first time step
     of the simulation but no further index cases are introduced throughout the
     course of the simulation
-    index_probability_employee: float, sets the probability an employee will become an
-    index case in one simulation time step if index_case_mode = 'continuous'
-    seed: positive integer, fixes the seed of the simulation to enable 
+    index_probability_employee: float, sets the probability an employee will
+    become an index case in one simulation time step if index_case_mode is one
+    of 'continuous_employee' or 'continuous_both'
+    index_probability_patient: float, sets the probability an employee will
+    become an index case in one simulation time step if index_case_mode is one
+    of 'continuous_inhabitant' or 'continuous_both'
+    seed: positive integer, fixes the seed of the simulation to enable
     repeatable simulation runs
     '''
+
     def __init__(self, G, num_employees, verbosity=0, testing=True,
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room':7, 'table':3, 'quarters':1},
+    	infection_risk_area_weights={'room': 7, 'table': 3, 'quarters': 1},
         time_until_test_result=2, follow_up_testing_interval=4,
-        screening_interval_patients=3, screening_interval_employees=3, 
+        screening_interval_patients=3, screening_interval_employees=3,
         index_case_mode='continuous', index_probability_employee=0.01,
         index_probability_patient=0.01, seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = test_positive_int(verbosity)
         # flag to turn off the testing & tracing strategy
-        self.testing = test_bool(testing) 
-        self.running = True # needed for the batch runner implemented by mesa
+        self.testing = test_bool(testing)
+        self.running = True  # needed for the batch runner implemented by mesa
 
         # one of two ways to introduce index cases into the system
         self.index_case_mode = test_index_case_mode(index_case_mode)
-        self.Nstep = 0 # internal step counter used to launch screening tests
+        self.Nstep = 0  # internal step counter used to launch screening tests
 
-        ## durations
+        # durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
         # number of days agents stay infectuous
-        self.infection_duration = test_positive_int(infection_duration) 
+        self.infection_duration = test_positive_int(infection_duration)
         # days after transmission until agent becomes infectuous
-        self.exposure_duration = test_positive_int(exposure_duration) 
+        self.exposure_duration = test_positive_int(exposure_duration)
         # days after becoming infectuous until becoming testable
-        self.time_until_testable = test_positive_int(time_until_testable) 
+        self.time_until_testable = test_positive_int(time_until_testable)
         # days after becoming infectuous until showing symptoms
-        self.time_until_symptoms = test_positive_int(time_until_symptoms) 
+        self.time_until_symptoms = test_positive_int(time_until_symptoms)
         # days after becoming infectuous while still testable
-        self.time_testable = test_positive_int(time_testable) 
+        self.time_testable = test_positive_int(time_testable)
         # duration of quarantine
-        self.quarantine_duration = test_positive_int(quarantine_duration) 
+        self.quarantine_duration = test_positive_int(quarantine_duration)
         # time until a result returns from a test
         self.time_until_test_result = test_positive_int(time_until_test_result)
-        
+
         # infection risk
-        self.transmission_risk_patient_patient = 0.008 # per infected per day
-        self.transmission_risk_employee_patient = 0.008 # per infected per day
-        self.transmission_risk_employee_employee = 0.008 # per infected per day1
-        self.transmission_risk_patient_employee = 0.008 # per infected per day
-        self.infection_risk_area_weights = test_area_dict(infection_risk_area_weights)
+        self.transmission_risk_patient_patient = 0.008  # per infected per day
+        self.transmission_risk_employee_patient = 0.008  # per infected per day
+        self.transmission_risk_employee_employee = 0.008  # per infected per day1
+        self.transmission_risk_patient_employee = 0.008  # per infected per day
+        self.infection_risk_area_weights = test_area_dict(
+            infection_risk_area_weights)
 
         # index case probability for every employee in every step
-        self.index_probability_employee = test_probability(index_probability_employee)
-        self.index_probability_patient = test_probability(index_probability_patient)
+        self.index_probability_employee = test_probability(
+            index_probability_employee)
+        self.index_probability_patient = test_probability(
+            index_probability_patient)
 
         # symptom probability
         self.symptom_probability = test_probability(symptom_probability)
         # modifier for infectiosness for asymptomatic cases
         self.subclinical_modifier = test_positive(subclinical_modifier)
 
-        ## agents and their interactions
-        self.G = test_graph(G) # interaction graph of patients
+        # agents and their interactions
+        self.G = test_graph(G)  # interaction graph of patients
         IDs = list(G.nodes)
         self.num_employees = test_positive_int(num_employees)
         self.num_agents = len(IDs) + self.num_employees
@@ -224,12 +292,20 @@ class SIR(Model):
             e = Employee(i, self, verbosity)
             self.schedule.add(e)
 
-        # infect the first employee to introduce the disease. 
-        if self.index_case_mode == 'single':
-            employees = [a for a in self.schedule.agents if a.type == 'employee']
+        # infect the first employee to introduce the disease.
+        if self.index_case_mode == 'single_employee':
+            employees = [
+                a for a in self.schedule.agents if a.type == 'employee']
             employees[0].exposed = True
             if self.verbosity > 0:
                 print('employee exposed: {}'.format(employees[0].ID))
+
+        # infect the first inhabitant to introduce the disease.
+        if self.index_case_mode == 'single_patient':
+            patients = [a for a in self.schedule.agents if a.type == 'patient']
+            patients[0].exposed = True
+            if self.verbosity > 0:
+                print('patients exposed: {}'.format(patients[0].ID))
 
         # flag that indicates whether a screen took place this turn in a given
         # agent group
@@ -242,19 +318,31 @@ class SIR(Model):
         self.scheduled_follow_up_screen = False
 
         # counter for days since the last test screen
-        self.days_since_last_patient_screen = 0
-        if self.index_case_mode == 'continuous':
-            self.days_since_last_employee_screen = 0
-        # NOTE: if we initialize this variable with 0 as well, we introduce a
+        # NOTE: if we initialize these variables with 0 in the case of a single
+        # index case for either employees or inhabitants, we introduce a
         # bias since in 'single index case mode' the first index case will always
-        # become exposed in step 0 and we want to realize random states of the
-        # preventive scenning procedure with respect to the incidence of the
-        # index case
-        elif screening_interval_employees != None:
+        # become exposed in step 0. To realize random states of the preventive
+        # scenning procedure with respect to the incidence of the index case, we
+        # have to randomly pick the "days_since_last_X_screen" as well
+        self.days_since_last_patient_screen = 0
+        if self.index_case_mode in ['continuous_employee',
+        				'continuous_inhabitant', 'continuous_both']:
+            self.days_since_last_employee_screen = 0
+            self.days_since_last_patient_screen = 0
+
+        elif self.index_case_mode == 'single_employee' and \
+        	screening_interval_employees != None:
+            self.days_since_last_patient_screen = 0
             self.days_since_last_employee_screen = \
                 self.random.choice(range(0, screening_interval_employees + 1))
+
+        elif self.index_case_mode == 'single_patient' and \
+        	screening_interval_patients != None:
+        	self.days_since_last_employee_screen = 0
+        	self.random.choice(range(0, screening_interval_patients + 1))
+
         else:
-            self.days_since_last_employee_screen = 0
+            print('unknown index case mode')
 
         # testing strategy
         self.Testing = Testing(self, follow_up_testing_interval, screening_interval_patients,
@@ -331,7 +419,7 @@ class SIR(Model):
             else:
                 self.new_positive_tests = False
 
-            ## screening:
+            # screening:
             # a screen should take place if
             # (a) there are newly positive cases and the last screen was more than 
             # Testing.interval steps ago or

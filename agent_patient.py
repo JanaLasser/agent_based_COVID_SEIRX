@@ -44,6 +44,16 @@ class Patient(Agent):
         infect them. Infections are staged here and only applied in the 
         "advance"-step to simulate "simultaneous" interaction
         '''
+        # check for external infection in continuous index case modes
+        if self.model.index_case_mode in ['continuous_patient', 'continuous_both']:
+            if (self.infected == False) and (self.exposed == False) and\
+               (self.recovered == False):
+                index_transmission = self.random.random()
+                if index_transmission <= self.model.index_probability_patient:
+                    self.contact_to_infected = True
+                    if self.verbose > 0:
+                        print('patient {} is index case'.format(self.unique_id))
+
         if self.infected:
             if not self.quarantined:
                 # infectiousness is constant and high during the first 2 days (pre-symptomatic)

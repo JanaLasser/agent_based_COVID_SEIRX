@@ -45,8 +45,8 @@ class Employee(Agent):
         infect them. Infections are staged here and only applied in the 
         "advance"-step to simulate "simultaneous" interaction
         '''
-        # check for external infection in continuous index case mode
-        if self.model.index_case_mode == 'continuous':
+        # check for external infection in continuous index case modes
+        if self.model.index_case_mode in ['continuous_employee', 'continuous_both']:
 	        if (self.infected == False) and (self.exposed == False) and\
 	           (self.recovered == False):
 	            index_transmission = self.random.random()
