@@ -118,37 +118,37 @@ def get_quarantine_state(agent):
 # parameter sanity check functions
 
 
-def test_positive(var):
+def check_positive(var):
 	assert var >= 0, 'negative number'
 	return var
 
 
-def test_bool(var):
+def check_bool(var):
 	assert type(var) == bool, 'not a bool'
 	return var
 
 
-def test_positive_int(var):
+def check_positive_int(var):
 	assert type(var) == int, 'not an integer'
 	assert var >= 0, 'negative number'
 	return var
 
 
-def test_area_dict(var):
+def check_area_dict(var):
 	assert type(var) == dict, 'not a dictionary'
 	assert set(var.keys()) == {'room', 'table', 'quarters'}, \
 		'does not contain the correct area types (has to be room, table, quarters)'
 	return var
 
 
-def test_probability(var):
+def check_probability(var):
 	assert type(var) == float, 'not a float'
 	assert var >= 0, 'probability negative'
 	assert var <= 1, 'probability larger than 1'
 	return var
 
 
-def test_graph(var):
+def check_graph(var):
 	assert type(var) == nx.Graph, 'not a networkx graph'
 	assert len(var.nodes) > 0, 'graph has no nodes'
 	assert len(var.edges) > 0, 'graph has no edges'
@@ -159,7 +159,7 @@ def test_graph(var):
 	return var
 
 
-def test_index_case_mode(var):
+def check_index_case_mode(var):
 	assert var in ['single_employee', 'single_patient', 'continuous_employee',
 	'continuous_patient', 'continuous_both'], 'unknown index case mode'
 	return var
@@ -224,64 +224,65 @@ class SIR(Model):
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room': 7, 'table': 3, 'quarters': 1},
+        test_type='PCR_throat_swab',
         time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3,
         index_case_mode='continuous', index_probability_employee=0.01,
         index_probability_patient=0.01, seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
-        self.verbosity = test_positive_int(verbosity)
+        self.verbosity = check_positive_int(verbosity)
         # flag to turn off the testing & tracing strategy
-        self.testing = test_bool(testing)
+        self.testing = check_bool(testing)
         self.running = True  # needed for the batch runner implemented by mesa
 
         # one of two ways to introduce index cases into the system
-        self.index_case_mode = test_index_case_mode(index_case_mode)
+        self.index_case_mode = check_index_case_mode(index_case_mode)
         self.Nstep = 0  # internal step counter used to launch screening tests
 
         # durations
         #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
         # number of days agents stay infectuous
-        self.infection_duration = test_positive_int(infection_duration)
+        self.infection_duration = check_positive_int(infection_duration)
         # days after transmission until agent becomes infectuous
-        self.exposure_duration = test_positive_int(exposure_duration)
+        self.exposure_duration = check_positive_int(exposure_duration)
         # days after becoming infectuous until becoming testable
-        self.time_until_testable = test_positive_int(time_until_testable)
+        self.time_until_testable = check_positive_int(time_until_testable)
         # days after becoming infectuous until showing symptoms
-        self.time_until_symptoms = test_positive_int(time_until_symptoms)
+        self.time_until_symptoms = check_positive_int(time_until_symptoms)
         # days after becoming infectuous while still testable
-        self.time_testable = test_positive_int(time_testable)
+        self.time_testable = check_positive_int(time_testable)
         # duration of quarantine
-        self.quarantine_duration = test_positive_int(quarantine_duration)
+        self.quarantine_duration = check_positive_int(quarantine_duration)
         # time until a result returns from a test
-        self.time_until_test_result = test_positive_int(time_until_test_result)
+        self.time_until_test_result = check_positive_int(time_until_test_result)
 
         # infection risk
         self.transmission_risk_patient_patient = 0.008  # per infected per day
         self.transmission_risk_employee_patient = 0.008  # per infected per day
         self.transmission_risk_employee_employee = 0.008  # per infected per day1
         self.transmission_risk_patient_employee = 0.008  # per infected per day
-        self.infection_risk_area_weights = test_area_dict(
+        self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
         # index case probability for every employee in every step
-        self.index_probability_employee = test_probability(
+        self.index_probability_employee = check_probability(
             index_probability_employee)
-        self.index_probability_patient = test_probability(
+        self.index_probability_patient = check_probability(
             index_probability_patient)
 
         # symptom probability
-        self.symptom_probability = test_probability(symptom_probability)
+        self.symptom_probability = check_probability(symptom_probability)
         # modifier for infectiosness for asymptomatic cases
-        self.subclinical_modifier = test_positive(subclinical_modifier)
+        self.subclinical_modifier = check_positive(subclinical_modifier)
 
         # agents and their interactions
-        self.G = test_graph(G)  # interaction graph of patients
+        self.G = check_graph(G)  # interaction graph of patients
         for e in G.edges(data=True):
             G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
 
         IDs = list(G.nodes)
-        self.num_employees = test_positive_int(num_employees)
+        self.num_employees = check_positive_int(num_employees)
         self.num_agents = len(IDs) + self.num_employees
         self.num_patients = len(IDs)
 
@@ -348,8 +349,9 @@ class SIR(Model):
             print('unknown index case mode')
 
         # testing strategy
-        self.Testing = Testing(self, follow_up_testing_interval, screening_interval_patients,
-                     screening_interval_employees, verbosity)
+        self.Testing = Testing(self, test_type, check_positive_int(time_until_test_result),
+             follow_up_testing_interval, screening_interval_patients,
+             screening_interval_employees, verbosity)
         
         # data collectors to save population counts and patient / employee
         # states every time step

@@ -110,7 +110,7 @@ class Patient(Agent):
     '''
     def advance(self):
         # determine if there is a test result and act accordingly
-        if self.tested and self.days_since_tested >= self.model.time_until_test_result:
+        if self.tested and self.days_since_tested >= self.model.Testing.time_until_test_result:
             if self.sample == 'positive':
                 self.model.newly_positive_agents.append(self)
                 self.known_positive = True
@@ -123,7 +123,7 @@ class Patient(Agent):
                 self.tested = False
                 self.sample = None
 
-        elif self.tested and self.days_since_tested < self.model.time_until_test_result:
+        elif self.tested and self.days_since_tested < self.model.Testing.time_until_test_result:
             self.days_since_tested += 1
         else:
             pass
