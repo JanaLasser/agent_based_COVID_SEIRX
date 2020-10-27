@@ -115,21 +115,58 @@ class Employee(Agent):
         '''
 
     def advance(self):
-        # determine if there is a test result and act accordingly
-        if self.tested and self.days_since_tested >= self.model.time_until_test_result:
+        # determine if there is a test result and act accordingly. Test
+        # results depend on whether the agent has submitted a sample that
+        # is testable (i.e. contains a detectable amount of virus) and on
+        # the sensitivity/specificity of the chosen test
+        if self.tested and self.days_since_tested >= self.model.Testing.time_until_test_result:
             if self.sample == 'positive':
-                self.model.newly_positive_agents.append(self)
-                self.known_positive = True
-                self.days_since_tested = 0
-                self.tested = False
-                self.sample = None
-            elif self.sample == 'negative':
-                self.quarantine = False
+
+                # true positive
+                if self.model.Testing.sensitivity >= self.model.random.random(): 
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a positive test (true positive)'\
+                            .format(self.type, self.ID))
+                    self.model.newly_positive_agents.append(self)
+                    self.quarantine = True
+                    self.known_positive = True
+
+                # false negative
+                else:
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a negative test (false negative)'\
+                            .format(self.type, self.ID))
+                    self.known_positive = False
+
                 self.days_since_tested = 0
                 self.tested = False
                 self.sample = None
 
-        elif self.tested and self.days_since_tested < self.model.time_until_test_result:
+            elif self.sample == 'negative':
+
+                # false positive
+                if self.model.Testing.specificity <= self.model.random.random():
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a positive test (false positive)'\
+                            .format(self.type, self.ID))
+
+                    self.model.newly_positive_agents.append(self)
+                    self.quarantine = True
+                    self.known_positive = True
+
+                # true negative
+                else:
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a negative test (true negative)'\
+                            .format(self.type, self.ID))
+                    self.quarantine = False
+                    self.known_positive = False
+
+                self.days_since_tested = 0
+                self.tested = False
+                self.sample = None
+
+        elif self.tested and self.days_since_tested < self.model.Testing.time_until_test_result:
             self.days_since_tested += 1
         else:
             pass

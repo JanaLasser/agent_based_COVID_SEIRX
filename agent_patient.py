@@ -53,7 +53,7 @@ class Patient(Agent):
                 if index_transmission <= self.model.index_probability_patient:
                     self.contact_to_infected = True
                     if self.verbose > 0:
-                        print('patient {} is index case'.format(self.unique_id))
+                        print('{} {} is index case'.format(self.type, self.unique_id))
 
         if self.infected:
             if not self.quarantined:
@@ -109,16 +109,53 @@ class Patient(Agent):
     states accordingly
     '''
     def advance(self):
-        # determine if there is a test result and act accordingly
+ # determine if there is a test result and act accordingly. Test
+        # results depend on whether the agent has submitted a sample that
+        # is testable (i.e. contains a detectable amount of virus) and on
+        # the sensitivity/specificity of the chosen test
         if self.tested and self.days_since_tested >= self.model.Testing.time_until_test_result:
             if self.sample == 'positive':
-                self.model.newly_positive_agents.append(self)
-                self.known_positive = True
+
+                # true positive
+                if self.model.Testing.sensitivity >= self.model.random.random(): 
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a positive test (true positive)'\
+                            .format(self.type, self.ID))
+                    self.model.newly_positive_agents.append(self)
+                    self.quarantine = True
+                    self.known_positive = True
+
+                # false negative
+                else:
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a negative test (false negative)'\
+                            .format(self.type, self.ID))
+                    self.known_positive = False
+
                 self.days_since_tested = 0
                 self.tested = False
                 self.sample = None
+
             elif self.sample == 'negative':
-                self.quarantine = False
+
+                # false positive
+                if self.model.Testing.specificity <= self.model.random.random():
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a positive test (false positive)'\
+                            .format(self.type, self.ID))
+
+                    self.model.newly_positive_agents.append(self)
+                    self.quarantine = True
+                    self.known_positive = True
+
+                # true negative
+                else:
+                    if self.model.verbosity > 0:
+                        print('{} {} returned a negative test (true negative)'\
+                            .format(self.type, self.ID))
+                    self.quarantine = False
+                    self.known_positive = False
+
                 self.days_since_tested = 0
                 self.tested = False
                 self.sample = None
@@ -127,6 +164,7 @@ class Patient(Agent):
             self.days_since_tested += 1
         else:
             pass
+
 
         if self.infected:
             # determine if patient shows symptoms
@@ -138,7 +176,7 @@ class Patient(Agent):
                 self.infected = False
                 self.symptoms = False
                 self.recovered = True
-                if self.verbose > 0: print('patient recovered: {}'.format(self.unique_id))
+                if self.verbose > 0: print('{} recovered: {}'.format(self.type, self.unique_id))
             else:
                 self.days_infected += 1
 
@@ -148,9 +186,9 @@ class Patient(Agent):
             if self.testable == False:
                 if self.verbose > 0:
                     if self.symptomatic_course:
-                        print('patient {} testable (symptoms)'.format(self.unique_id))
+                        print('{} {} testable (symptoms)'.format(self.type, self.unique_id))
                     else:
-                        print('patient {} testable (no symptoms)'.format(self.unique_id))
+                        print('{} {} testable (no symptoms)'.format(self.type, self.unique_id))
                 self.testable = True
         else:
             self.testable = False
@@ -160,7 +198,7 @@ class Patient(Agent):
         if self.exposed:
             #if self.verbose > 0: print('exposed: {}'.format(self.unique_id))
             if self.days_exposed >= self.model.exposure_duration:
-                if self.verbose > 0: print('patient infectious: {}'.format(self.unique_id))
+                if self.verbose > 0: print('{} infectious: {}'.format(self.type, self.unique_id))
                 self.exposed = False
                 self.infected = True
                 # determine if infected patient will have symptomatic infection
@@ -172,14 +210,14 @@ class Patient(Agent):
         # determine if patient is released from quarantine
         if self.quarantined:
             if self.days_quarantined >= self.model.quarantine_duration:
-                if self.verbose > 0: print('patient released from quarantine {}'.format(self.unique_id))
+                if self.verbose > 0: print('{} released from quarantine {}'.format(self.type, self.unique_id))
                 self.quarantined = False
             else:
                 self.days_quarantined += 1
 
         # determine if a transmission to the infected occurred
         if self.contact_to_infected == True:
-            if self.verbose > 0: print('patient exposed: {}'.format(self.unique_id))
+            if self.verbose > 0: print('{} exposed: {}'.format(self.type, self.unique_id))
             self.exposed = True
             self.contact_to_infected = False
 
