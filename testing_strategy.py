@@ -45,14 +45,14 @@ tests = {'antigen_NADAL':
 
 class Testing():
 	def __init__(self, model, test_type, time_until_test_result, follow_up_testing_interval,
-		screening_interval_patients, screening_interval_employees, verbosity):
+		screening_interval_patients, screening_interval_employees, K1_areas, verbosity):
 
 		self.follow_up_testing_interval = follow_up_testing_interval
 		self.screening_interval_patients = screening_interval_patients
 		self.screening_interval_employees = screening_interval_employees
 		self.model = model
 		self.verbosity = verbosity
-		self.K1_areas = ['room', 'table']
+		self.K1_areas = K1_areas
 		self.time_until_test_result = time_until_test_result
 		self.test_type = check_test_type(test_type)
 		self.sensitivity = tests[self.test_type]['sensitivity']
