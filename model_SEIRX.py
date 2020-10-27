@@ -178,48 +178,72 @@ class SEIRX(Model):
 
     G: networkx undirected graph, interaction graph between inhabitants.
     Note: the number of nodes in G also sets the number of inhabitants
+
     num_employees: integer, number of employees
+
     verbosity: integer in [0, 1, 2], controls text output to std out to track
     simulation progress and transmission dynamics
+
     testing: bool, toggles testing/tracing activities of the facility
+
     infection_duration: positive integer, sets the time an infected agent stays
     infectious
+
     exposure_duration: positive integer, sets the time from transmission to
     becoming infectious
+
 	time_until_testable: positive integer, sets the time between becoming
 	infectious and being testable, i.e. returning a positive result upon testing
+
     time_until_symptoms: positive integer, sets the time between becoming
     infectious and (potentially) developing symptoms
+
     time_testable: positive integer, sets the time after becoming infectious
     during which an agent is testable
+
     quarantine_duration: positive integer, sets the time a positively tested
     agent is quarantined
+
     symptom_probability: float in the range [0, 1], sets the probability for a
     symptomatic disease course
+
     subclinical_modifier: float, modifies the infectiousness of asymptomatic
     cases
+
     infection_risk_area_weights: dictionary of the form {'room':int, 'table':int,
     'quarters':int} that sets transmission risk multipliers for different living
     areas of inhabitants
+
+    K1_areas: list of strings. Definition of areas for which agents are 
+    considered "K1 contact persons" if they had contact to a positively tested
+    person in a given area. Possible areas are "quarters", "room", "table"
+
     time_until_test_result: positive integer, sets the time until a test result
     arrives after an agent has been tested
+
     follow_up_testing_interval: positive integer, sets the time a follow-up
     screen is run after an initial screen triggered by a positive test result
+
     screening_interval_patients: positive integer, sets the time for regular
     preventive screens of the patient population
+
     screening_interval_employees: positive integer, sets the time for regular
     preventive screens of the employee population
+
     index_case_mode: string, can be 'continuous' or 'single'. If 'continuous',
     new index cases can be introduced by employees in every simulation time step.
     If 'single', one employee is an index case (exposed) in the first time step
     of the simulation but no further index cases are introduced throughout the
     course of the simulation
+
     index_probability_employee: float, sets the probability an employee will
     become an index case in one simulation time step if index_case_mode is one
     of 'continuous_employee' or 'continuous_both'
+
     index_probability_patient: float, sets the probability an employee will
     become an index case in one simulation time step if index_case_mode is one
     of 'continuous_inhabitant' or 'continuous_both'
+
     seed: positive integer, fixes the seed of the simulation to enable
     repeatable simulation runs
     '''
@@ -228,7 +252,7 @@ class SEIRX(Model):
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room': 7, 'table': 3, 'quarters': 1},
+    	infection_risk_area_weights={'room': 2, 'table': 1.5, 'quarters': 1},
         K1_areas=['room', 'table'], test_type='PCR_throat_swab',
         time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3,
@@ -246,7 +270,7 @@ class SEIRX(Model):
         self.Nstep = 0  # internal step counter used to launch screening tests
 
         # durations
-        #  NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
+        # NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
         # number of days agents stay infectuous
         self.infection_duration = check_positive_int(infection_duration)
         # days after transmission until agent becomes infectuous
@@ -263,10 +287,10 @@ class SEIRX(Model):
         self.time_until_test_result = check_positive_int(time_until_test_result)
 
         # infection risk
-        self.transmission_risk_patient_patient = 0.008  # per infected per day
-        self.transmission_risk_employee_patient = 0.008  # per infected per day
-        self.transmission_risk_employee_employee = 0.008  # per infected per day1
-        self.transmission_risk_patient_employee = 0.008  # per infected per day
+        self.transmission_risk_patient_patient = 0.045  # per infected per day
+        self.transmission_risk_employee_patient = 0.045  # per infected per day
+        self.transmission_risk_employee_employee = 0.045  # per infected per day1
+        self.transmission_risk_patient_employee = 0.045  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
