@@ -140,6 +140,11 @@ def check_area_dict(var):
 		'does not contain the correct area types (has to be room, table, quarters)'
 	return var
 
+def check_K1_areas(var):
+    for area in var:
+        assert area in ['quarters', 'table', 'room']
+    return var
+
 
 def check_probability(var):
 	assert type(var) == float, 'not a float'
@@ -149,14 +154,14 @@ def check_probability(var):
 
 
 def check_graph(var):
-	assert type(var) == nx.Graph, 'not a networkx graph'
-	assert len(var.nodes) > 0, 'graph has no nodes'
-	assert len(var.edges) > 0, 'graph has no edges'
-	nested_list = [list(e[2].values()) for e in var.edges(data=True)]
-	areas = set([item for sublist in nested_list for item in sublist])
-	for a in areas:
-		assert a in {'room', 'table', 'quarters'}, 'area not recognised'
-	return var
+    assert type(var) == nx.Graph, 'not a networkx graph'
+    assert len(var.nodes) > 0, 'graph has no nodes'
+    assert len(var.edges) > 0, 'graph has no edges'
+    areas = [e[2]['area'] for e in var.edges(data=True)]
+    areas = set(areas)
+    for a in areas:
+        assert a in {'room', 'table', 'quarters'}, 'area not recognised'
+    return var
 
 
 def check_index_case_mode(var):
@@ -165,7 +170,7 @@ def check_index_case_mode(var):
 	return var
 
 
-class SIR(Model):
+class SEIRX(Model):
     '''
     A model with a number of patients/inhabitatns and employees that reproduces
     the SEIRX dynamics of pandemic spread in a long time care facility. Note:
@@ -224,10 +229,10 @@ class SIR(Model):
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room': 7, 'table': 3, 'quarters': 1},
-        test_type='PCR_throat_swab',
+        K1_areas=['room', 'table'], test_type='PCR_throat_swab',
         time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3,
-        index_case_mode='continuous', index_probability_employee=0.01,
+        index_case_mode='continuous_employee', index_probability_employee=0.01,
         index_probability_patient=0.01, seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
@@ -349,9 +354,13 @@ class SIR(Model):
             print('unknown index case mode')
 
         # testing strategy
-        self.Testing = Testing(self, test_type, check_positive_int(time_until_test_result),
-             follow_up_testing_interval, screening_interval_patients,
-             screening_interval_employees, verbosity)
+        self.Testing = Testing(self, test_type,
+             check_positive_int(time_until_test_result),
+             check_positive_int(follow_up_testing_interval),
+             check_positive_int(screening_interval_patients),
+             check_positive_int(screening_interval_employees),
+             check_K1_areas(K1_areas), 
+             verbosity)
         
         # data collectors to save population counts and patient / employee
         # states every time step
@@ -410,6 +419,7 @@ class SIR(Model):
                         a.quarantined = True
                         if self.verbosity > 0:
                             print('qurantined {} {}'.format(a.type, a.ID))
+
                     if a.type == 'patient':
                         # find all agents that share edges with the given agent
                         # that are classified as K1 contact areas in the testing
@@ -420,7 +430,8 @@ class SIR(Model):
                             (a.type == 'patient' and a.ID in K1_contacts)]
                         for K1_contact in K1_contacts:
                             if self.verbosity > 0:
-                                print('quarantine {} {}'.format(K1_contact.type, K1_contact.ID))
+                                print('quarantined {} {} (K1 contact of {} {})'\
+                                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
                             K1_contact.quarantined = True
 
                 # indicate that a screen should happen
