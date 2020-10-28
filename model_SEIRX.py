@@ -136,13 +136,13 @@ def check_positive_int(var):
 
 def check_area_dict(var):
 	assert type(var) == dict, 'not a dictionary'
-	assert set(var.keys()) == {'room', 'table', 'quarters'}, \
+	assert set(var.keys()).issubset({'facility', 'room', 'table', 'quarters'}), \
 		'does not contain the correct area types (has to be room, table, quarters)'
 	return var
 
 def check_K1_areas(var):
     for area in var:
-        assert area in ['quarters', 'table', 'room']
+        assert area in ['facility', 'quarters', 'table', 'room']
     return var
 
 
@@ -160,7 +160,7 @@ def check_graph(var):
     areas = [e[2]['area'] for e in var.edges(data=True)]
     areas = set(areas)
     for a in areas:
-        assert a in {'room', 'table', 'quarters'}, 'area not recognised'
+        assert a in {'facility', 'room', 'table', 'quarters'}, 'area not recognised'
     return var
 
 
@@ -252,7 +252,7 @@ class SEIRX(Model):
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room': 2, 'table': 1.5, 'quarters': 1},
+    	infection_risk_area_weights={'room': 2, 'table': 1.5, 'quarters': 1, 'facility': 1},
         K1_areas=['room', 'table'], test_type='PCR_throat_swab',
         time_until_test_result=2, follow_up_testing_interval=4,
         screening_interval_patients=3, screening_interval_employees=3,
@@ -305,8 +305,10 @@ class SEIRX(Model):
         # modifier for infectiosness for asymptomatic cases
         self.subclinical_modifier = check_positive(subclinical_modifier)
 
-        # agents and their interactions
-        self.G = check_graph(G)  # interaction graph of patients
+        ## agents and their interactions
+        # interaction graph of patients
+        self.G = check_graph(G)  
+        # add weights as edge attributes so they can be visualised easily
         for e in G.edges(data=True):
             G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
 
