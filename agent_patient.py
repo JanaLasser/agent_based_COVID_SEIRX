@@ -6,7 +6,7 @@ from agent_SEIRX import agent_SEIRX
 
 class Patient(agent_SEIRX):
     '''
-    An employee with an infection status
+    An inhabitant with an infection status
     '''
 
     def __init__(self, unique_id, quarter, model, verbosity):

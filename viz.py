@@ -10,8 +10,35 @@ colors = {'susceptible':'g',
 	      'quarantined':'blue',
 	      'testable':'k'}
 
+def get_pos(G, model):
+	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
+	num_patients = len([a for a in model.schedule.agents if \
+		(a.type == 'patient' and a.quarter == 'Q1')])
+
+	fixed = ['p{}'.format(i * num_patients + 1) for i in range(len(quarters))]
+
+	if len(quarters) == 4:
+		coords = [[-3, -3], [-3, 3], [3, 3], [3, -3]]
+
+	elif len(quarters) == 3:
+		coords = [[0, -3], [-3, 3], [3, 3]]
+
+	elif len(quarters) == 2:
+		coords = [[-3, 0], [3, 0]]
+	else:
+		coords = [[0, 0]]
+	
+	fixed_pos = {f:c for f, c in zip(fixed, coords)}
+
+	pos = nx.drawing.layout.spring_layout(G, k=1.5, dim=2, weight='weight',
+		fixed=fixed, pos=fixed_pos, scale=1, iterations=100)
+
+	return pos
 
 def draw_states(model, step, pos, ax):
+	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
+	quarters.sort()
+
 	## draw patients
 	patients = [a.unique_id for a in model.schedule.agents if a.type == 'patient']
 
@@ -42,6 +69,7 @@ def draw_states(model, step, pos, ax):
 		else:
 			ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=50, zorder=2)
 
+
 	## draw employees
 	employees = [a.unique_id for a in model.schedule.agents if a.type == 'employee']
 	employee_states = model.datacollector.get_agent_vars_dataframe()
@@ -53,23 +81,46 @@ def draw_states(model, step, pos, ax):
 	quarantine_states = employee_states.loc[step].sort_index()['quarantine_state']
 
 	N_employee = model.employees_per_quarter
-	ncol = 10
-	x_start = np.asarray([a[0] for a in pos.values()]).max()
-	x_step = 0.2
-	y_start = np.asarray([a[1] for a in pos.values()]).max()
-	y_stop = np.asarray([a[1] for a in pos.values()]).min()
-	y_step = (y_start - y_stop)/ncol
 
-	for i, e in enumerate(employees):
-		xpos = x_start + (int(i/ncol) + 1) * x_step
-		ypos = y_start - i%ncol * y_step
-		if quarantine_states[e]:
-			ax.scatter(xpos, ypos, color=color_list[e], edgecolors='k', linewidths=2)
-		else:
-			ax.scatter(xpos, ypos, color=color_list[e])
+	x_min = np.asarray([a[0] for a in pos.values()]).min()
+	x_max = np.asarray([a[0] for a in pos.values()]).max()
+	y_min = np.asarray([a[1] for a in pos.values()]).min()
+	y_max = np.asarray([a[1] for a in pos.values()]).max()
 
-	ax.text(x_start, y_stop - 0.2, 'employees')
-	ax.text(-0.2, y_stop - 0.2, 'patients')
+	x_step = x_max / 10
+	x_start = x_max + 2* x_step
+	y_step = (y_max - y_min) / N_employee
+
+	if len(quarters) == 4:
+	    text_pos = [[x_min, y_min],[x_min, y_max],[x_max, y_max],[x_max, y_min]]
+
+	elif len(quarters) == 3:
+	    text_pos = [[0, y_min],[x_min, y_max],[x_max, y_max]]
+
+	elif len(quarters) == 2:
+	    text_pos = [[x_min, 0],[x_max, 0]]
+	else:
+	    text_pos = [[0, y_max]]
+
+	for quarter, tpos in zip(quarters, text_pos):
+		ax.text(tpos[0], tpos[1], quarter)
+
+	for j, quarter in enumerate(quarters):
+	    xpos = x_start + j * x_step
+	    employees = [a.unique_id for a in model.schedule.agents if \
+	        (a.type == 'employee' and a.quarter == quarter)]
+
+	    ax.text(xpos - x_step / 3, y_min - y_step / 8, quarter)
+
+	    for i, e in enumerate(employees):
+	        ypos = y_max - i % N_employee * y_step
+	        if quarantine_states[e]:
+	            ax.scatter(xpos, ypos, color=color_list[e], edgecolors='k', linewidths=2)
+	        else:
+	            ax.scatter(xpos, ypos, color=color_list[e])
+
+	ax.text(x_start - x_step / 4, y_max + y_step, 'employees')
+	ax.text(-0.2, y_max + y_step, 'patients')
 
 
 	ax.set_frame_on(False)
@@ -90,7 +141,7 @@ def draw_states(model, step, pos, ax):
 	#Create legend from custom artist/label lists
 	ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
 	          ['susceptible', 'exposed', 'infected', 'recovered', 'quarantined'],
-	           fontsize=8, bbox_to_anchor=[1, 1, 0.25, 0])
+	           fontsize=10, bbox_to_anchor=[1, 1, 0.25, 0])
 
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
