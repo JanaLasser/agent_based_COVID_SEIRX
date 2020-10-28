@@ -139,9 +139,10 @@ def draw_states(model, step, pos, ax):
 	X_handle = plt.Line2D((0,1),(0,0), color='k',marker='o', 
 		linestyle='', markersize=8, mfc='none', mew=2)
 	#Create legend from custom artist/label lists
-	ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
+	legend = ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
 	          ['susceptible', 'exposed', 'infected', 'recovered', 'quarantined'],
 	           fontsize=10, bbox_to_anchor=[1, 1, 0.25, 0])
+	return legend
 
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
@@ -149,6 +150,8 @@ def draw_infection_timeline(model, agent_type, ax):
 		N = model.num_patients
 	elif agent_type == 'employee':
 		N = model.employees_per_quarter
+		N_quarters = len(list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes])))
+		N *= N_quarters
 	else:
 		print('unknown agent type!')
 
@@ -191,7 +194,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.legend([handle for i,handle in enumerate(handles)] + \
 			[patient_screen_handle, employee_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['patient screen', 'employee_screen'], ncol=2, loc=9, fontsize=8)
+	          ['patient screen', 'employee screen'], ncol=2, loc=9, fontsize=8)
 
 	ax.set_xlabel('steps')
 	ax.set_ylabel('probability density')
