@@ -1,6 +1,6 @@
 def check_test_type(var):
 	assert type(var) == str, 'not a string'
-	assert 'unknown test type'
+	assert var in tests.keys(), 'unknown test type'
 	return var
 
 tests = {'antigen_NADAL':
