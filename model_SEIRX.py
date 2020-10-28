@@ -454,8 +454,8 @@ class SEIRX(Model):
             if len(self.newly_positive_agents) > 0:
                 if self.verbosity > 0: print('new positive test(s) from {}'\
                     .format([a.ID for a in self.newly_positive_agents]))
+                
                 # send all K1 contacts of positive agents into quarantine
-                # NOTE: so far this is only implemented for patients
                 for a in self.newly_positive_agents:
                     if a.quarantined == False:
                         a.quarantined = True
