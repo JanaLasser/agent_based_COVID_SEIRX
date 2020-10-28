@@ -28,8 +28,7 @@ def draw_states(model, step, pos, ax):
 	nodes.sort()
 	
 	for u, v in list(G.edges):
-		weight = G[u][v]['weight'] / \
-				(max(list(model.infection_risk_area_weights.values())) * 2)
+		weight = G[u][v]['weight']**4 / 20
 		try:
 			ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
 			color='k', linewidth=weight, zorder=1)
@@ -41,7 +40,6 @@ def draw_states(model, step, pos, ax):
 			ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=50, zorder=2,\
 	    	edgecolors='k', linewidths=2)
 		else:
-			#print('not quarantined')
 			ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=50, zorder=2)
 
 	## draw employees
