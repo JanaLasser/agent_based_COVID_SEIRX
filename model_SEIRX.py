@@ -179,7 +179,8 @@ class SEIRX(Model):
     G: networkx undirected graph, interaction graph between inhabitants.
     Note: the number of nodes in G also sets the number of inhabitants
 
-    num_employees: integer, number of employees
+    employees_per_quarter: integer, number of employees per living quarter of
+    the facility
 
     verbosity: integer in [0, 1, 2], controls text output to std out to track
     simulation progress and transmission dynamics
@@ -248,7 +249,7 @@ class SEIRX(Model):
     repeatable simulation runs
     '''
 
-    def __init__(self, G, num_employees, verbosity=0, testing=True,
+    def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
     	infection_duration=10, exposure_duration=5, time_until_testable=2,
     	time_until_symptoms=2, time_testable=10, quarantine_duration=14,
     	symptom_probability=0.6, subclinical_modifier=1,
@@ -312,20 +313,27 @@ class SEIRX(Model):
         for e in G.edges(data=True):
             G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
 
-        IDs = list(G.nodes)
-        self.num_employees = check_positive_int(num_employees)
-        self.num_agents = len(IDs) + self.num_employees
+        # add patient agents to the scheduler
+        IDs = list(self.G.nodes)
+        quarters = [self.G.nodes[ID]['quarter'] for ID in IDs]
+        self.schedule = SimultaneousActivation(self)
+        for ID, quarter in zip(IDs, quarters):
+            p = Patient(ID, quarter, self, verbosity)
+            self.schedule.add(p)
         self.num_patients = len(IDs)
 
-        # add patient and employee agents to the scheduler
-        self.schedule = SimultaneousActivation(self)
-        for ID in IDs:
-            p = Patient(ID, self, verbosity)
-            self.schedule.add(p)
+        # add employee agents to the scheduler
+        self.employees_per_quarter = check_positive_int(employees_per_quarter)
+        quarters = set([n[1]['quarter'] for n in self.G.nodes(data=True)])
+        i = 1
+        for quarter in quarters:
+            for j in range(self.employees_per_quarter):
+                e = Employee('e{}'.format(i), quarter, self, verbosity)
+                self.schedule.add(e)
+                i += 1
 
-        for i in range(1, num_employees + 1):
-            e = Employee('e{}'.format(i), self, verbosity)
-            self.schedule.add(e)
+        self.num_agents = len(IDs) + self.employees_per_quarter * len(quarters)
+
 
         # infect the first employee to introduce the disease.
         if self.index_case_mode == 'single_employee':

@@ -54,7 +54,7 @@ def draw_states(model, step, pos, ax):
 
 	quarantine_states = employee_states.loc[step].sort_index()['quarantine_state']
 
-	N_employee = model.num_employees
+	N_employee = model.employees_per_quarter
 	ncol = 10
 	x_start = np.asarray([a[0] for a in pos.values()]).max()
 	x_step = 0.2
@@ -99,7 +99,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	if agent_type == 'patient':
 		N = model.num_patients
 	elif agent_type == 'employee':
-		N = model.num_employees
+		N = model.employees_per_quarter
 	else:
 		print('unknown agent type!')
 
