@@ -98,12 +98,15 @@ class agent_SEIRX(Agent):
 
             # true positive
             if self.model.Testing.sensitivity >= self.model.random.random(): 
-                if self.model.verbosity > 0:
-                    print('{} {} returned a positive test (true positive)'\
-                        .format(self.type, self.ID))
                 self.model.newly_positive_agents.append(self)
                 self.quarantine = True
                 self.known_positive = True
+
+                if self.model.verbosity > 0:
+                    print('{} {} returned a positive test (true positive)'\
+                        .format(self.type, self.ID))
+                    print('quarantined {} {}'\
+                        .format(self.type, self.ID))
 
             # false negative
             else:
@@ -120,13 +123,15 @@ class agent_SEIRX(Agent):
 
             # false positive
             if self.model.Testing.specificity <= self.model.random.random():
-                if self.model.verbosity > 0:
-                    print('{} {} returned a positive test (false positive)'\
-                        .format(self.type, self.ID))
-
                 self.model.newly_positive_agents.append(self)
                 self.quarantine = True
                 self.known_positive = True
+
+                if self.model.verbosity > 0:
+                    print('{} {} returned a positive test (false positive)'\
+                        .format(self.type, self.ID))
+                    print('quarantined {} {}'\
+                        .format(self.type, self.ID))
 
             # true negative
             else:

@@ -129,9 +129,11 @@ def check_bool(var):
 
 
 def check_positive_int(var):
-	assert type(var) == int, 'not an integer'
-	assert var >= 0, 'negative number'
-	return var
+    if var == None:
+        return var
+    assert type(var) == int, 'not an integer'
+    assert var >= 0, 'negative number'
+    return var
 
 
 def check_area_dict(var):
@@ -142,7 +144,7 @@ def check_area_dict(var):
 
 def check_K1_areas(var):
     for area in var:
-        assert area in ['facility', 'quarters', 'table', 'room']
+        assert area in ['facility', 'quarters', 'table', 'room'], 'are not recognised'
     return var
 
 
@@ -428,17 +430,23 @@ class SEIRX(Model):
                 self.screened_employees = True
             else:
                 print('unknown agent group!')
-            
-            if self.verbosity > 1:
-                print([a.ID for a in untested_agents])
+
             for a in untested_agents:
                 a.tested = True
                 if a.testable == True:
-                    if self.verbosity > 0: print('{} {} sent positive sample'\
+                    if self.verbosity > 1: print('{} {} sent positive sample'\
                         .format(a.type, a.ID))
                     a.sample = 'positive'
                 else:
+                    if self.verbosity > 1: print('{} {} sent negative sample'\
+                        .format(a.type, a.ID))
                     a.sample = 'negative'
+
+                if a.days_since_tested >= self.Testing.time_until_test_result:
+                    a.act_on_test_result()
+        else:
+            if self.verbosity > 0:
+                print('no agents tested because all agents have pending test results')
         
     def step(self):
         if self.testing:
@@ -447,7 +455,7 @@ class SEIRX(Model):
                 if self.verbosity > 0: print('new positive test(s) from {}'\
                     .format([a.ID for a in self.newly_positive_agents]))
                 # send all K1 contacts of positive agents into quarantine
-                # patients. NOTE: so far this is only implemented for patients
+                # NOTE: so far this is only implemented for patients
                 for a in self.newly_positive_agents:
                     if a.quarantined == False:
                         a.quarantined = True
@@ -462,6 +470,15 @@ class SEIRX(Model):
                             e[2]['area'] in self.Testing.K1_areas]
                         K1_contacts = [a for a in self.schedule.agents if \
                             (a.type == 'patient' and a.ID in K1_contacts)]
+                        for K1_contact in K1_contacts:
+                            if self.verbosity > 0:
+                                print('quarantined {} {} (K1 contact of {} {})'\
+                                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
+                            K1_contact.quarantined = True
+
+                    if a.type == 'employee' and 'quarters' in self.Testing.K1_areas:
+                        quarter = a.quarter
+                        K1_contacts = [e for e in self.schedule.agents if e.quarter == quarter]
                         for K1_contact in K1_contacts:
                             if self.verbosity > 0:
                                 print('quarantined {} {} (K1 contact of {} {})'\
