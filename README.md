@@ -3,7 +3,7 @@
 
 A simple simulation to explore the spread of COVID-19 in nursing homes via agent-based modeling (ABM) of inhabitants and employees of nursing homes. The model follows an SEIRX approach, building on the agent based simulation framework [mesa](https://mesa.readthedocs.io/en/master/) in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X). The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and implements an empirically measured contact network of nursing home inhabitants.
 
-![Illustrative figure](https://raw.githubusercontent.com/JanaLasser/SEIRX_nursing_homes/blob/dev/fig.pdf)
+![Illustrative figure](fig.pdf)
 
 **This software is under development and intended to respond rapidly to the current situation. Please use ist with caution and bear in mind that there might be bugs**
 
