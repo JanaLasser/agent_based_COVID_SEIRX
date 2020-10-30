@@ -96,6 +96,10 @@ def count_T_employee(model):
     return T
 
 
+def check_number_of_tests(model):
+    return model.number_of_tests
+
+
 def check_patient_screen(model):
     return model.screened_patients
 
@@ -362,6 +366,9 @@ class SEIRX(Model):
         self.new_positive_tests = False
         self.scheduled_follow_up_screen = False
 
+        # counters
+        self.number_of_tests = 0
+
         # counter for days since the last test screen
         # NOTE: if we initialize these variables with 0 in the case of a single
         # index case for either employees or inhabitants, we introduce a
@@ -414,7 +421,9 @@ class SEIRX(Model):
                                'X_employee':count_X_employee,
                                'T_employee':count_T_employee,
                                'screen_patients':check_patient_screen,
-                               'screen_employees':check_employee_screen},
+                               'screen_employees':check_employee_screen,
+                               'number_of_tests':check_number_of_tests},
+                               
             agent_reporters = {'infection_state':get_infection_state,
                                'quarantine_state':get_quarantine_state})
 
@@ -433,6 +442,7 @@ class SEIRX(Model):
 
             for a in untested_agents:
                 a.tested = True
+                self.number_of_tests += 1
                 if a.testable == True:
                     if self.verbosity > 1: print('{} {} sent positive sample'\
                         .format(a.type, a.ID))
