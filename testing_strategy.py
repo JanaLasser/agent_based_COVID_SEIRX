@@ -1,63 +1,72 @@
-def check_test_type(var):
+def check_test_type(var, tests):
 	assert type(var) == str, 'not a string'
 	assert var in tests.keys(), 'unknown test type'
 	return var
 
-tests = {'antigen_NADAL':
-         {
-             'sensitivity':0.9756,
-             'specificity':0.999
-         },
-         'antigen_ROCHE':
-         {
-             'sensitivity':0.9652,
-             'specificity':0.9968
-         },
-         'antigen_ABBOT':
-         {
-             'sensitivity':0.971,
-             'specificity':0.985
-         },
-         # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7350782/
-        'PCR_throat_swab':
-         {
-             'sensitivity':0.733, 
-             'specificity':1
-         },
-        'PCR_sputum':
-         {
-             'sensitivity':0.972, 
-             'specificity':1
-         },
-        'PCR_salvia':
-         {
-             'sensitivity':0.623, 
-             'specificity':1
-         },
-         # https://abbott.mediaroom.com/2020-10-07-Abbott-Releases-ID-NOW-TM-COVID-19-Interim-Clinical-Study-Results-from-1-003-People-to-Provide-the-Facts-on-Clinical-Performance-and-to-Support-Public-Health#:~:text=ID%20NOW%20demonstrated%2079.8%25%20positive,lab%2Dbased%20molecular%20PCR%20tests.
-        'LAMP_ABBOT':
-         {
-             'sensitivity':0.798,
-             'specificity':0.943
-         }
-        }
 
 
 class Testing():
-	def __init__(self, model, test_type, time_until_test_result, follow_up_testing_interval,
-		screening_interval_patients, screening_interval_employees, K1_areas, verbosity):
+	def __init__(self, model, test_type, follow_up_testing_interval,
+		screening_interval_patients, screening_interval_employees,
+		liberating_testing, K1_areas, verbosity):
 
 		self.follow_up_testing_interval = follow_up_testing_interval
 		self.screening_interval_patients = screening_interval_patients
 		self.screening_interval_employees = screening_interval_employees
+		self.liberating_testing = liberating_testing
 		self.model = model
 		self.verbosity = verbosity
 		self.K1_areas = K1_areas
-		self.time_until_test_result = time_until_test_result
-		self.test_type = check_test_type(test_type)
-		self.sensitivity = tests[self.test_type]['sensitivity']
-		self.specificity = tests[self.test_type]['specificity']
 
+		self.tests = {
+		'same_day_antigen':
+	     {
+	         'sensitivity':0.9756,
+	         'specificity':0.999,
+	         'time_until_testable':1,
+	         'time_testable':5,
+	         'time_until_test_result':0
+	     },
+	     'same_day_PCR':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':0
+	     },
+	     'one_day_PCR':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':1
+	     },
+	      'two_day_PCR':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':2
+	     },
+	    'same_day_LAMP':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':0
+	     }
+	    }
+
+		self.test_type = check_test_type(test_type, self.tests)
+		self.sensitivity = self.tests[self.test_type]['sensitivity']
+		self.specificity = self.tests[self.test_type]['specificity']
+		self.time_until_testable = self.tests[self.test_type]['time_until_testable']
+		self.time_testable = self.tests[self.test_type]['time_testable']
+		self.time_until_test_result = self.tests[self.test_type]['time_until_test_result']
 
 
 

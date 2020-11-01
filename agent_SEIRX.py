@@ -20,8 +20,8 @@ class agent_SEIRX(Agent):
         self.symptomatic_course = False
         self.symptoms = False
         self.recovered = False
-        self.testable = False
         self.tested = False
+        self.pending_test_result = False
         self.known_positive = False
         self.quarantined = False
 
@@ -47,26 +47,27 @@ class agent_SEIRX(Agent):
             if index_transmission <= self.index_probability:
                 self.contact_to_infected = True
                 if self.verbose > 0:
-                    print('{} {} is index case'.format(self.type, self.unique_id))
+                    print('{} {} is index case'.format(
+                        self.type, self.unique_id))
 
     def get_employee_patient_contacts(self):
         # only contacts to patients in the same quarter are possible
-        contacts = [a for a in self.model.schedule.agents if \
+        contacts = [a for a in self.model.schedule.agents if
             (a.type == 'patient' and a.quarter == self.quarter)]
         return contacts
 
     def get_employee_employee_contacts(self):
         # only contacts to employees in the same quarter
-        contacts = [a for a in self.model.schedule.agents if \
+        contacts = [a for a in self.model.schedule.agents if
             (a.type == 'employee' and a.quarter == self.quarter)]
 
         # TODO: implement random cross-quarter interaction of employees
-        #if self.model.employee_cross_quarter_interaction:
+        # if self.model.employee_cross_quarter_interaction:
         return contacts
 
     def get_patient_employee_contacts(self):
         # only contacts to employees in the same quarter are possible
-        contacts = [a for a in self.model.schedule.agents if \
+        contacts = [a for a in self.model.schedule.agents if
             (a.type == 'employee' and a.quarter == self.quarter)]
         return contacts
 
@@ -82,31 +83,50 @@ class agent_SEIRX(Agent):
         for c in contacts:
             if (c.exposed == False) and (c.infected == False) and \
                (c.recovered == False) and (c.contact_to_infected == False):
+
                 # draw random number for transmission
                 transmission = self.random.random() * modifier
 
                 if transmission > 1 - transmission_risk:
                     c.contact_to_infected = True
                     self.transmissions += 1
-                    self.transmission_targets.update({self.model.Nstep:c.ID})
+
+                    # track the state of the agent pertaining to testing at the
+                    # moment of transmission to count how many transmissions
+                    # occur in which states
+                    if self.tested and self.pending_test_result:
+                        transmission_type = 'pending_test'
+                    elif self.tested and not self.pending_test_result:
+                        transmission_type = 'undetected'
+                    else:
+                        transmission_type = 'untested'
+
+                    self.transmission_targets.update(
+                        {self.model.Nstep: {c.ID: transmission_type}})
+
                     if self.verbose > 0:
-                        print('transmission: {} {} -> {} {}'\
-                        .format(self.type, self.unique_id, c.type, c.unique_id))
+                        print('transmission: {} {} -> {} {} ({})'
+                        .format(self.type, self.unique_id, c.type, c.unique_id,
+                                transmission_type))
 
     def act_on_test_result(self):
+        self.pending_test_result = False
+
         if self.sample == 'positive':
 
             # true positive
-            if self.model.Testing.sensitivity >= self.model.random.random(): 
+            if self.model.Testing.sensitivity >= self.model.random.random():
                 self.model.newly_positive_agents.append(self)
-                self.quarantine = True
                 self.known_positive = True
 
                 if self.model.verbosity > 0:
-                    print('{} {} returned a positive test (true positive)'\
+                    print('{} {} returned a positive test (true positive)'
                         .format(self.type, self.ID))
-                    print('quarantined {} {}'\
-                        .format(self.type, self.ID))
+
+                if self.quarantined == False:
+                    self.quarantined = True
+                    if self.model.verbosity > 0:
+                        print('quarantined {} {}'.format(self.type, self.ID))
 
             # false negative
             else:
@@ -114,6 +134,12 @@ class agent_SEIRX(Agent):
                     print('{} {} returned a negative test (false negative)'\
                         .format(self.type, self.ID))
                 self.known_positive = False
+
+                if self.model.Testing.liberating_testing:
+                    self.quarantined = False
+                    if self.model.verbosity > 0:
+                        print('{} {} left quarantine prematurely'\
+                        .format(self.type, self.ID))
 
             self.days_since_tested = 0
             self.tested = False
@@ -124,25 +150,31 @@ class agent_SEIRX(Agent):
             # false positive
             if self.model.Testing.specificity <= self.model.random.random():
                 self.model.newly_positive_agents.append(self)
-                self.quarantine = True
                 self.known_positive = True
 
                 if self.model.verbosity > 0:
                     print('{} {} returned a positive test (false positive)'\
                         .format(self.type, self.ID))
-                    print('quarantined {} {}'\
-                        .format(self.type, self.ID))
+
+                if self.quarantined == False:
+                    self.quarantined = True
+                    if self.model.verbosity > 0:
+                        print('quarantined {} {}'.format(self.type, self.ID))
 
             # true negative
             else:
                 if self.model.verbosity > 0:
                     print('{} {} returned a negative test (true negative)'\
                         .format(self.type, self.ID))
-                self.quarantine = False
                 self.known_positive = False
 
+                if self.model.Testing.liberating_testing:
+                    self.quarantined = False
+                    if self.model.verbosity > 0:
+                        print('{} {} left quarantine prematurely'\
+                        .format(self.type, self.ID))
+
             self.days_since_tested = 0
-            self.tested = False
             self.sample = None
 
     def recover(self):
@@ -152,28 +184,30 @@ class agent_SEIRX(Agent):
         if self.verbose > 0:
             print('{} recovered: {}'.format(self.type, self.unique_id))
 
-    def make_testable(self):
-        if self.testable == False:
-            if self.verbose > 0:
-                if self.symptomatic_course:
-                    print('{} {} testable (symptoms)'.format(
-                        self.type, self.unique_id))
-                else:
-                    print('{} {} testable (no symptoms)'.format(
-                        self.type, self.unique_id))
-            self.testable = True
-
     def check_exposure_duration(self):
         if self.days_exposed >= self.model.exposure_duration:
-            if self.verbose > 0:
-                print('{} infectious: {}'.format(self.type, self.unique_id))
             self.exposed = False
             self.infected = True
-            # determine if infected agent shows symptoms
+            if self.verbose > 0:
+                print('{} infectious: {}'.format(self.type, self.unique_id))
+
+            # determine if infected agent ẃill show symptoms
             if self.random.random() <= self.model.symptom_probability:
                 self.symptomatic_course = True
+
         else:
             self.days_exposed += 1
+
+    def check_symptoms(self):
+        # determine if agent shows symptoms
+        if (self.symptomatic_course and \
+            self.days_infected >= self.model.time_until_symptoms and \
+            self.days_infected < self.model.infection_duration and \
+            not self.symptoms):
+
+            self.symptoms = True
+            if self.model.verbosity > 0:
+                print('{} {} shows symptoms'.format(self.type, self.ID))
 
     def check_quarantine_duration(self):
         if self.days_quarantined >= self.model.quarantine_duration:
@@ -207,32 +241,18 @@ class agent_SEIRX(Agent):
             else:
                 self.days_since_tested += 1
 
-        if self.infected:
-            # determine if agent shows symptoms
-            if (self.symptomatic_course and \
-                self.days_infected >= self.model.time_until_symptoms and \
-                self.days_infected < self.model.infection_duration):
+        # determine if agent has transitioned from exposed to infected
+        if self.exposed:
+            self.check_exposure_duration()
 
-                self.symptoms = True
+        if self.infected:
+            self.check_symptoms()
 
             # determine if agent has recovered
             if self.days_infected >= self.model.infection_duration:
                 self.recover()
             else:
                 self.days_infected += 1
-
-        # determine if agent is testable
-        if (self.infected == True) and \
-           (self.days_infected >= self.model.time_until_symptoms and \
-           (self.days_infected) <= self.model.time_testable):
-
-            self.make_testable()
-        else:
-            self.testable = False
-
-        # determine if agent has transitioned from exposed to infected
-        if self.exposed:
-            self.check_exposure_duration()
 
         # determine if agent is released from quarantine
         if self.quarantined:
@@ -241,3 +261,6 @@ class agent_SEIRX(Agent):
         # determine if a transmission to the agent occurred
         if self.contact_to_infected == True:
             self.become_exposed()
+
+        # set tested flag to false at the end of the agent step
+        self.tested = False
