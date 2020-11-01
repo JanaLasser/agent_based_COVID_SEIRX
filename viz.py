@@ -35,7 +35,7 @@ def get_pos(G, model):
 
 	return pos
 
-def draw_states(model, step, pos, ax):
+def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
 	quarters.sort()
 
@@ -53,21 +53,37 @@ def draw_states(model, step, pos, ax):
 	G = model.G
 	nodes = list(G.nodes)
 	nodes.sort()
+
+	x_max = np.asarray([a[0] for a in pos.values()]).max()
+	x_min = np.asarray([a[0] for a in pos.values()]).min()
+	x_extent = x_max + np.abs(x_min)
+
+	y_min = np.asarray([a[1] for a in pos.values()]).min()
+	y_max = np.asarray([a[1] for a in pos.values()]).max()
+	y_step = (y_max + np.abs(y_min)) / 10
+
+	pat_ax.set_ylim(y_min - y_step/2, y_max + y_step) 
+	pat_ax.text(x_max - x_extent / 2 - 0.1, y_max + y_step / 2, 'inhabitants', fontsize=14)
 	
 	for u, v in list(G.edges):
-		weight = G[u][v]['weight']**4 / 20
+		weight = G[u][v]['weight']**6 / 20
 		try:
-			ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
+			pat_ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
 			color='k', linewidth=weight, zorder=1)
 		except KeyError:
 			print('warning: edge ({}, {}) not found in position map'.format(u, v))
 
+	patient_handles = {}
 	for n in nodes:
 		if quarantine_states[n]:
-			ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=50, zorder=2,\
-	    	edgecolors='k', linewidths=2)
+			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2,
+			edgecolors='k', linewidth=8)
+			patient_handles.update({n:handle})
 		else:
-			ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=50, zorder=2)
+			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2)
+			patient_handles.update({n:handle})
+
+
 
 
 	## draw employees
@@ -77,72 +93,56 @@ def draw_states(model, step, pos, ax):
 
 	employee_states['color'] = employee_states['infection_state'].replace(colors)
 	color_list = employee_states.loc[step].sort_index()['color']
-
 	quarantine_states = employee_states.loc[step].sort_index()['quarantine_state']
-
 	N_employee = model.employees_per_quarter
 
-	x_min = np.asarray([a[0] for a in pos.values()]).min()
-	x_max = np.asarray([a[0] for a in pos.values()]).max()
-	y_min = np.asarray([a[1] for a in pos.values()]).min()
-	y_max = np.asarray([a[1] for a in pos.values()]).max()
+	employee_handles = {}
 
-	x_step = x_max / 10
-	x_start = x_max + 2* x_step
-	y_step = (y_max - y_min) / N_employee
-
-	if len(quarters) == 4:
-	    text_pos = [[x_min, y_min],[x_min, y_max],[x_max, y_max],[x_max, y_min]]
-
-	elif len(quarters) == 3:
-	    text_pos = [[0, y_min],[x_min, y_max],[x_max, y_max]]
-
-	elif len(quarters) == 2:
-	    text_pos = [[x_min, 0],[x_max, 0]]
-	else:
-	    text_pos = [[0, y_max]]
-
-	for quarter, tpos in zip(quarters, text_pos):
-		ax.text(tpos[0], tpos[1], quarter)
+	emp_ax.set_xlim(-0.5, len(quarters) - 1 + 0.5)
+	emp_ax.set_ylim(-1, N_employee)
+	emp_ax.text(0 - 0.25,  N_employee - 0.45, 'employees', fontsize=14)
 
 	for j, quarter in enumerate(quarters):
-	    xpos = x_start + j * x_step
 	    employees = [a.unique_id for a in model.schedule.agents if \
 	        (a.type == 'employee' and a.quarter == quarter)]
 
-	    ax.text(xpos - x_step / 3, y_min - y_step / 8, quarter)
+	    emp_ax.text(j - 0.065, -0.8, quarter, fontsize=14)
 
 	    for i, e in enumerate(employees):
-	        ypos = y_max - i % N_employee * y_step
+	        ypos = i
 	        if quarantine_states[e]:
-	            ax.scatter(xpos, ypos, color=color_list[e], edgecolors='k', linewidths=2)
+	            handle = emp_ax.scatter(j, i, color=color_list[e], \
+	            	s=100, edgecolors='k', linewidth=8)
+	            employee_handles.update({e:handle})
 	        else:
-	            ax.scatter(xpos, ypos, color=color_list[e])
-
-	ax.text(x_start - x_step / 4, y_max + y_step, 'employees')
-	ax.text(-0.2, y_max + y_step, 'patients')
+	            handle = emp_ax.scatter(j, i, color=color_list[e], s=150)
+	            employee_handles.update({e:handle})
 
 
-	ax.set_frame_on(False)
-	ax.set_xticks([])
-	ax.set_yticks([])
+	for ax in [pat_ax, emp_ax, leg_ax]:
+		ax.set_xticks([])
+		ax.set_yticks([])
+		ax.set_frame_on(False)
 
-	handles, labels = ax.get_legend_handles_labels()
+	handles, labels = pat_ax.get_legend_handles_labels()
 	S_handle = plt.Line2D((0,1),(0,0), color=colors['susceptible'],
-		 marker='o', linestyle='', markersize=8)
+		 marker='o', linestyle='', markersize=15)
 	E_handle = plt.Line2D((0,1),(0,0), color=colors['exposed'],
-		 marker='o', linestyle='', markersize=8)
+		 marker='o', linestyle='', markersize=15)
 	I_handle = plt.Line2D((0,1),(0,0), color=colors['infected'],
-		 marker='o', linestyle='', markersize=8)
+		 marker='o', linestyle='', markersize=15)
 	R_handle = plt.Line2D((0,1),(0,0), color=colors['recovered'],
-		 marker='o', linestyle='', markersize=8)
+		 marker='o', linestyle='', markersize=15)
 	X_handle = plt.Line2D((0,1),(0,0), color='k',marker='o', 
-		linestyle='', markersize=8, mfc='none', mew=2)
+		linestyle='', markersize=15, mfc='none', mew=3)
 	#Create legend from custom artist/label lists
-	legend = ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
+	legend = leg_ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
 	          ['susceptible', 'exposed', 'infected', 'recovered', 'quarantined'],
-	           fontsize=10, bbox_to_anchor=[1, 1, 0.25, 0])
-	return legend
+	           fontsize=14, loc=2)
+
+	step_text_handle = leg_ax.text(0.32, 0.7, 'day {}'.format(step), fontsize=14)
+
+	return legend, employee_handles, patient_handles, step_text_handle
 
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
@@ -171,8 +171,6 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='R', color=colors['recovered'])
 	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N, \
 		 label='X', color=colors['quarantined'])
-	ax.plot(pop_numbers['T_{}'.format(agent_type)]/N, '--',\
-		 label='testable', color=colors['testable'])
 
 	# draw screen lines
 	for i, screen in enumerate(pop_numbers['screen_patients']):
@@ -194,7 +192,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.legend([handle for i,handle in enumerate(handles)] + \
 			[patient_screen_handle, employee_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['patient screen', 'employee screen'], ncol=2, loc=9, fontsize=8)
+	          ['patient screen', 'employee screen'], ncol=2, loc=2, fontsize=12)
 
 	ax.set_xlabel('steps')
 	ax.set_ylabel('probability density')
