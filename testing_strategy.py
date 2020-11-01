@@ -23,14 +23,30 @@ class Testing():
 	     {
 	         'sensitivity':0.9756,
 	         'specificity':0.999,
-	         'time_until_testable':1,
-	         'time_testable':5,
+	         'time_until_testable':2,
+	         'time_testable':6,
 	         'time_until_test_result':0
+	     },
+		'one_day_antigen':
+	     {
+	         'sensitivity':0.9756,
+	         'specificity':0.999,
+	         'time_until_testable':2,
+	         'time_testable':6,
+	         'time_until_test_result':1
+	     },
+		'two_day_antigen':
+	     {
+	         'sensitivity':0.9756,
+	         'specificity':0.999,
+	         'time_until_testable':2,
+	         'time_testable':6,
+	         'time_until_test_result':2
 	     },
 	     'same_day_PCR':
 	     {
 	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':0
@@ -38,7 +54,7 @@ class Testing():
 	     'one_day_PCR':
 	     {
 	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':1
@@ -46,7 +62,7 @@ class Testing():
 	      'two_day_PCR':
 	     {
 	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':2
@@ -59,6 +75,22 @@ class Testing():
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':0
 	     }
+	    'one_day_LAMP':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':1
+	     }
+	    'two_day_LAMP':
+	     {
+	         'sensitivity':0.9652,
+	         'specificity':0.9968,
+	         'time_until_testable':0,
+	         'time_testable':model.infection_duration,
+	         'time_until_test_result':2
+	     }
 	    }
 
 		self.test_type = check_test_type(test_type, self.tests)
@@ -69,8 +101,5 @@ class Testing():
 		self.time_until_test_result = self.tests[self.test_type]['time_until_test_result']
 
 
-
-# antigentests
-# https://antigentest.bfarm.de/ords/antigen/r/antigentests-auf-sars-cov-2/liste-der-antigentests?session=23281379113534&tz=1:00
 
 
