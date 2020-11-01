@@ -84,7 +84,7 @@ def count_X_employee(model):
     return X
 
 
-def check_number_of_tests(model):
+def get_number_of_tests(model):
     return model.number_of_tests
 
 
@@ -106,6 +106,14 @@ def get_infection_state(agent):
 def get_quarantine_state(agent):
     if agent.quarantined == True: return True
     else: return False
+
+
+def get_undetected_infections(model):
+    return model.undetected_infections
+
+
+def get_pending_test_infections(model):
+    return model.pending_test_infections
 
 # parameter sanity check functions
 
@@ -245,7 +253,8 @@ class SEIRX(Model):
         follow_up_testing_interval=None, screening_interval_patients=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_patient=0.01):
+        index_probability_employee=0.01, index_probability_patient=0.01, 
+        seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -344,6 +353,8 @@ class SEIRX(Model):
 
         # counters
         self.number_of_tests = 0
+        self.undetected_infections = 0
+        self.pending_test_infections = 0
 
         # counter for days since the last test screen
         # NOTE: if we initialize these variables with 0 in the case of a single
@@ -393,7 +404,9 @@ class SEIRX(Model):
                                'X_employee':count_X_employee,
                                'screen_patients':check_patient_screen,
                                'screen_employees':check_employee_screen,
-                               'number_of_tests':check_number_of_tests},
+                               'number_of_tests':get_number_of_tests,
+                               'undetected_infections':get_undetected_infections,
+                               'pending_test_infections':get_pending_test_infections},
 
             agent_reporters = {'infection_state':get_infection_state,
                                'quarantine_state':get_quarantine_state})
@@ -415,12 +428,21 @@ class SEIRX(Model):
                 a.tested = True
                 a.pending_test_result = True
                 self.number_of_tests += 1
-                if a.days_infected > self.Testing.time_until_testable:
-                    if self.verbosity > 1: print('{} {} sent positive sample'\
-                        .format(a.type, a.ID))
-                    a.sample = 'positive'
+                if a.infected:
+                    # tests that happen in the period of time in which the
+                    # infection is detectable by a given test
+                    if a.days_infected >= self.Testing.time_until_testable and \
+                       a.days_infected <= self.Testing.time_testable:
+                        if self.verbosity > 0: print('{} {} sent positive sample'\
+                            .format(a.type, a.ID))
+                        a.sample = 'positive'
+                    else:
+                        if self.verbosity > 0: print('{} {} sent negative sample (even though infectious)'\
+                            .format(a.type, a.ID))
+                        a.sample = 'negative'
+                        self.undetected_infections += 1
                 else:
-                    if self.verbosity > 1: print('{} {} sent negative sample'\
+                    if self.verbosity > 0: print('{} {} sent negative sample'\
                         .format(a.type, a.ID))
                     a.sample = 'negative'
 

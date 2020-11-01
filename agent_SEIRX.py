@@ -94,15 +94,12 @@ class agent_SEIRX(Agent):
                     # track the state of the agent pertaining to testing at the
                     # moment of transmission to count how many transmissions
                     # occur in which states
-                    if self.tested and self.pending_test_result:
-                        transmission_type = 'pending_test'
-                    elif self.tested and not self.pending_test_result:
-                        transmission_type = 'undetected'
-                    else:
-                        transmission_type = 'untested'
+                    if self.tested and self.pending_test_result and \
+                        self.sample == 'positive':
+                        self.model.pending_test_infections += 1
 
                     self.transmission_targets.update(
-                        {self.model.Nstep: {c.ID: transmission_type}})
+                        {self.model.Nstep:c.ID})
 
                     if self.verbose > 0:
                         print('transmission: {} {} -> {} {} ({})'
