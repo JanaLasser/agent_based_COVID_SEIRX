@@ -278,10 +278,10 @@ class SEIRX(Model):
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
         # infection risk
-        self.transmission_risk_patient_patient = 0.045  # per infected per day
-        self.transmission_risk_employee_patient = 0.045  # per infected per day
-        self.transmission_risk_employee_employee = 0.045  # per infected per day1
-        self.transmission_risk_patient_employee = 0.045  # per infected per day
+        self.transmission_risk_patient_patient = 0.025  # per infected per day
+        self.transmission_risk_employee_patient = 0.025  # per infected per day
+        self.transmission_risk_employee_employee = 0.025  # per infected per day1
+        self.transmission_risk_patient_employee = 0.025  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
@@ -460,14 +460,16 @@ class SEIRX(Model):
             # quarantine and test them
             newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
                 if (a.symptoms == True and a.tested == False and a.quarantined == False)])
+
             for a in newly_symptomatic_agents:
                 # all symptomatic agents are quarantined by default
                 if self.verbosity > 0:
                     print('quarantined: {} {}'.format(a.type, a.ID))
                 a.quarantined = True
                 a.tested = True
+                a.pending_test_result = True
 
-                if a.days_infected > self.Testing.time_until_testable:
+                if a.days_infected >= self.Testing.time_until_testable:
                     a.sample = 'positive'
                     if self.verbosity > 0: 
                         print('tested {} {} (positive sample)'.format(a.type, a.ID))
@@ -526,8 +528,7 @@ class SEIRX(Model):
 
             # screening:
             # a screen should take place if
-            # (a) there are newly positive cases and the last screen was more than 
-            # Testing.follow_up_testing_interval steps ago or
+            # (a) there are new positive test results
             # (b) as a follow-up screen for a screen that was initiated because
             # of new positive cases
             # (c) if there is a preventive screening policy and it is time for
@@ -536,31 +537,48 @@ class SEIRX(Model):
             # (a)
             if self.new_positive_tests == True:
 
-                if self.days_since_last_patient_screen >= self.Testing.follow_up_testing_interval:
-                    if self.verbosity > 0: 
-                        print('initiating patient screen because of positive test(s)')
-                    self.screen_agents('patient')
-                    self.screened_patients = True
-                    self.days_since_last_patient_screen = 0
-                    self.scheduled_follow_up_screen_patient = True
-                else:
-                    if self.verbosity > 0: 
-                        print('not initiating patient screen because of positive test(s) (last screen too close)')
-                    self.screened_patients = False
-                    self.days_since_last_patient_screen += 1
+                #if self.Testing.follow_up_testing_interval != None:
+                #    if self.days_since_last_patient_screen >= self.Testing.follow_up_testing_interval:
+                #        if self.verbosity > 0: 
+                #            print('initiating patient screen because of positive test(s)')
+                #        self.screen_agents('patient')
+                #        self.screened_patients = True
+                #        self.days_since_last_patient_screen = 0
+                #        self.scheduled_follow_up_screen_patient = True
+                #    else:
+                #        if self.verbosity > 0: 
+                #            print('not initiating patient screen because of positive test(s) (last screen too close)')
+                #        self.screened_patients = False
+                #        self.days_since_last_patient_screen += 1
 
-                if self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
-                    if self.verbosity > 0: 
-                        print('initiating employee screen because of positive test(s)')
-                    self.screen_agents('employee')
-                    self.screened_employees = True
-                    self.days_since_last_employee_screen = 0
-                    self.scheduled_follow_up_screen_employee = True
-                else:
-                    if self.verbosity > 0: 
-                        print('not initiating employee screen because of positive test(s) (last screen too close)')
-                    self.screened_employees = False
-                    self.days_since_last_employee_screen += 1
+                if self.verbosity > 0: 
+                    print('initiating patient screen because of positive test(s)')
+                self.screen_agents('patient')
+                self.screened_patients = True
+                self.days_since_last_patient_screen = 0
+                self.scheduled_follow_up_screen_patient = True
+
+
+                #if self.Testing.follow_up_testing_interval != None:
+                #    if self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
+                #        if self.verbosity > 0: 
+                #            print('initiating employee screen because of positive test(s)')
+                #        self.screen_agents('employee')
+                #        self.screened_employees = True
+                #        self.days_since_last_employee_screen = 0
+                #        self.scheduled_follow_up_screen_employee = True
+                #    else:
+                #        if self.verbosity > 0: 
+                #            print('not initiating employee screen because of positive test(s) (last screen too close)')
+                #        self.screened_employees = False
+                #        self.days_since_last_employee_screen += 1
+
+                if self.verbosity > 0: 
+                    print('initiating employee screen because of positive test(s)')
+                self.screen_agents('employee')
+                self.screened_employees = True
+                self.days_since_last_employee_screen = 0
+                self.scheduled_follow_up_screen_employee = True
                 
             # (b)
             elif self.scheduled_follow_up_screen_patient or self.scheduled_follow_up_screen_employee:

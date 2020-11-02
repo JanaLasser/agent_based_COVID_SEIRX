@@ -98,13 +98,11 @@ class agent_SEIRX(Agent):
                         self.sample == 'positive':
                         self.model.pending_test_infections += 1
 
-                    self.transmission_targets.update(
-                        {self.model.Nstep:c.ID})
+                    self.transmission_targets.update({c.ID:self.model.Nstep})
 
                     if self.verbose > 0:
-                        print('transmission: {} {} -> {} {} ({})'
-                        .format(self.type, self.unique_id, c.type, c.unique_id,
-                                transmission_type))
+                        print('transmission: {} {} -> {} {}'
+                        .format(self.type, self.unique_id, c.type, c.unique_id))
 
     def act_on_test_result(self):
         self.pending_test_result = False
@@ -232,7 +230,8 @@ class agent_SEIRX(Agent):
         # results depend on whether the agent has submitted a sample that
         # is testable (i.e. contains a detectable amount of virus) and on
         # the sensitivity/specificity of the chosen test
-        if self.tested:
+        if self.pending_test_result:
+
             if self.days_since_tested >= self.model.Testing.time_until_test_result:
                 self.act_on_test_result()
             else:

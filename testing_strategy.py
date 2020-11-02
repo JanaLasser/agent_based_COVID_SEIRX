@@ -74,7 +74,7 @@ class Testing():
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':0
-	     }
+	     },
 	    'one_day_LAMP':
 	     {
 	         'sensitivity':0.9652,
@@ -82,7 +82,7 @@ class Testing():
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':1
-	     }
+	     },
 	    'two_day_LAMP':
 	     {
 	         'sensitivity':0.9652,
