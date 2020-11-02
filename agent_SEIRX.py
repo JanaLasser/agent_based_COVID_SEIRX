@@ -105,6 +105,13 @@ class agent_SEIRX(Agent):
                         .format(self.type, self.unique_id, c.type, c.unique_id))
 
     def act_on_test_result(self):
+        '''
+        Function that gets called by the infection dynamics model class if a
+        test result for an agent is returned. The function sets agent states
+        according to the result of the test (positive or negative) and resets
+        the days_since_tested counter and the sample as well as the 
+        pending_test_result flag
+        '''
         self.pending_test_result = False
 
         if self.sample == 'positive':
@@ -137,7 +144,7 @@ class agent_SEIRX(Agent):
                         .format(self.type, self.ID))
 
             self.days_since_tested = 0
-            self.tested = False
+            self.pending_test_result = False
             self.sample = None
 
         elif self.sample == 'negative':
@@ -170,6 +177,7 @@ class agent_SEIRX(Agent):
                         .format(self.type, self.ID))
 
             self.days_since_tested = 0
+            self.pending_test_result = False
             self.sample = None
 
     def recover(self):
@@ -226,16 +234,11 @@ class agent_SEIRX(Agent):
         states accordingly
         '''
 
-        # determine if there is a test result and act accordingly. Test
-        # results depend on whether the agent has submitted a sample that
-        # is testable (i.e. contains a detectable amount of virus) and on
-        # the sensitivity/specificity of the chosen test
+        # if there is a pending test result, increase the days the agent has
+        # waited for the result by 1 (NOTE: results are collected by the 
+        # infection dynamics model class according to days passed since the test)
         if self.pending_test_result:
-
-            if self.days_since_tested >= self.model.Testing.time_until_test_result:
-                self.act_on_test_result()
-            else:
-                self.days_since_tested += 1
+            self.days_since_tested += 1
 
         # determine if agent has transitioned from exposed to infected
         if self.exposed:
@@ -258,5 +261,5 @@ class agent_SEIRX(Agent):
         if self.contact_to_infected == True:
             self.become_exposed()
 
-        # set tested flag to false at the end of the agent step
+        # reset tested flag at the end of the agent step
         self.tested = False

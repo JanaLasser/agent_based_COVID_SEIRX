@@ -411,7 +411,36 @@ class SEIRX(Model):
             agent_reporters = {'infection_state':get_infection_state,
                                'quarantine_state':get_quarantine_state})
 
+
+    def test_agent(self, a):
+        a.tested = True
+        a.pending_test_result = True
+        self.number_of_tests += 1
+
+        if a.infected:
+            # tests that happen in the period of time in which the
+            # infection is detectable by a given test
+            if a.days_infected >= self.Testing.time_until_testable and \
+               a.days_infected <= self.Testing.time_testable:
+                if self.verbosity > 0: print('{} {} sent positive sample'\
+                    .format(a.type, a.ID))
+                a.sample = 'positive'
+            else:
+                if self.verbosity > 0: print('{} {} sent negative sample (even though infectious)'\
+                    .format(a.type, a.ID))
+                a.sample = 'negative'
+                self.undetected_infections += 1
+        else:
+            if self.verbosity > 0: print('{} {} sent negative sample'\
+                .format(a.type, a.ID))
+            a.sample = 'negative'
+
+        if a.days_since_tested >= self.Testing.time_until_test_result:
+            a.act_on_test_result()
+
     def screen_agents(self, agent_group):
+        # only test agents that have not been tested already in this simulation
+        # step and that are not already known positive cases
         untested_agents = [a for a in self.schedule.agents if \
             (a.tested == False and a.known_positive == False \
                 and a.type == agent_group)]
@@ -425,39 +454,60 @@ class SEIRX(Model):
                 print('unknown agent group!')
 
             for a in untested_agents:
-                a.tested = True
-                a.pending_test_result = True
-                self.number_of_tests += 1
-                if a.infected:
-                    # tests that happen in the period of time in which the
-                    # infection is detectable by a given test
-                    if a.days_infected >= self.Testing.time_until_testable and \
-                       a.days_infected <= self.Testing.time_testable:
-                        if self.verbosity > 0: print('{} {} sent positive sample'\
-                            .format(a.type, a.ID))
-                        a.sample = 'positive'
-                    else:
-                        if self.verbosity > 0: print('{} {} sent negative sample (even though infectious)'\
-                            .format(a.type, a.ID))
-                        a.sample = 'negative'
-                        self.undetected_infections += 1
-                else:
-                    if self.verbosity > 0: print('{} {} sent negative sample'\
-                        .format(a.type, a.ID))
-                    a.sample = 'negative'
+                self.test_agent(a)                
 
-                if a.days_since_tested >= self.Testing.time_until_test_result:
-                    a.act_on_test_result()
             if self.verbosity > 0:
                 print()
         else:
             if self.verbosity > 0:
                 print('no agents tested because all agents have already been tested')
+
+
+    def collect_test_results(self):
+        agents_with_test_results = [a for a in self.schedule.agents if \
+            (a.pending_test_result and \
+             a.days_since_tested >= self.Testing.time_until_test_result)]
+
+        return agents_with_test_results
+
+
+    def trace_contacts(self, a):
+        if a.quarantined == False:
+            a.quarantined = True
+            if self.verbosity > 0:
+                print('qurantined {} {}'.format(a.type, a.ID))
+
+        if a.type == 'patient':
+            # find all patients that share edges with the given patient
+            # that are classified as K1 contact areas in the testing
+            # strategy
+            K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
+                e[2]['area'] in self.Testing.K1_areas]
+            K1_contacts = [a for a in self.schedule.agents if \
+                (a.type == 'patient' and a.ID in K1_contacts)]
+            for K1_contact in K1_contacts:
+                if self.verbosity > 0:
+                    print('quarantined {} {} (K1 contact of {} {})'\
+                        .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
+                K1_contact.quarantined = True
+
+        if a.type == 'employee' and 'quarters' in self.Testing.K1_areas:
+            # find all employees that work in the same quarters as 
+            # the infected employee and send them to quarantine
+            quarter = a.quarter
+            K1_contacts = [e for e in self.schedule.agents if e.quarter == quarter]
+            for K1_contact in K1_contacts:
+                if self.verbosity > 0:
+                    print('quarantined {} {} (K1 contact of {} {})'\
+                        .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
+                K1_contact.quarantined = True
+
         
     def step(self):
+        if self.verbosity > 0: print('* testing and tracing *')
         if self.testing:
-            # find symptomatic agents that have not been tested yet and are not in
-            # quarantine and test them
+            # find symptomatic agents that have not been tested yet and are not 
+            # in quarantine and test them
             newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
                 if (a.symptoms == True and a.tested == False and a.quarantined == False)])
 
@@ -466,63 +516,27 @@ class SEIRX(Model):
                 if self.verbosity > 0:
                     print('quarantined: {} {}'.format(a.type, a.ID))
                 a.quarantined = True
-                a.tested = True
-                a.pending_test_result = True
+                self.test_agent(a)
 
-                if a.days_infected >= self.Testing.time_until_testable:
-                    a.sample = 'positive'
-                    if self.verbosity > 0: 
-                        print('tested {} {} (positive sample)'.format(a.type, a.ID))
+            # collect and act on new test results
+            agents_with_test_results = self.collect_test_results()
+            for a in agents_with_test_results:
+                a.act_on_test_result()
 
-                # NOTE: this should never happen
-                else:
-                    a.sample = 'negative'
-                    if self.verbosity > 0: 
-                        print('tested {} {} (negative sample)'.format(a.type, a.ID))
-
-                if a.days_since_tested >= self.Testing.time_until_test_result:
-                    a.act_on_test_result()
-
-            # act on new test results
+            # trace and quarantine contacts of newly positive agents
             if len(self.newly_positive_agents) > 0:
                 if self.verbosity > 0: print('new positive test(s) from {}'\
                     .format([a.ID for a in self.newly_positive_agents]))
                 
                 # send all K1 contacts of positive agents into quarantine
                 for a in self.newly_positive_agents:
-                    if a.quarantined == False:
-                        a.quarantined = True
-                        if self.verbosity > 0:
-                            print('qurantined {} {}'.format(a.type, a.ID))
+                    self.trace_contacts(a)
 
-                    if a.type == 'patient':
-                        # find all patients that share edges with the given patient
-                        # that are classified as K1 contact areas in the testing
-                        # strategy
-                        K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
-                            e[2]['area'] in self.Testing.K1_areas]
-                        K1_contacts = [a for a in self.schedule.agents if \
-                            (a.type == 'patient' and a.ID in K1_contacts)]
-                        for K1_contact in K1_contacts:
-                            if self.verbosity > 0:
-                                print('quarantined {} {} (K1 contact of {} {})'\
-                                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
-                            K1_contact.quarantined = True
-
-                    if a.type == 'employee' and 'quarters' in self.Testing.K1_areas:
-                        # find all employees that work in the same quarters as 
-                        # the infected employee and send them to quarantine
-                        quarter = a.quarter
-                        K1_contacts = [e for e in self.schedule.agents if e.quarter == quarter]
-                        for K1_contact in K1_contacts:
-                            if self.verbosity > 0:
-                                print('quarantined {} {} (K1 contact of {} {})'\
-                                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
-                            K1_contact.quarantined = True
-
-                # indicate that a screen should happen
+                # indicate that a screen should happen because there are new
+                # positive test results
                 self.new_positive_tests = True
                 self.newly_positive_agents = []
+
             else:
                 self.new_positive_tests = False
 
@@ -640,6 +654,7 @@ class SEIRX(Model):
                 self.days_since_last_employee_screen += 1
 
 
+        if self.verbosity > 0: print('* agent interaction *')
         self.schedule.step()
         self.datacollector.collect(self)
         self.Nstep += 1
