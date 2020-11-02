@@ -20,18 +20,18 @@ def count_E_patient(model):
 
 def count_I_patient(model):
     I = np.asarray(
-        [a.infected for a in model.schedule.agents if a.type == 'patient']).sum()
+        [a.infectious for a in model.schedule.agents if a.type == 'patient']).sum()
     return I
 
 
 def count_I_symptomatic_patient(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if
+    I = np.asarray([a.infectious for a in model.schedule.agents if
         (a.type == 'patient'and a.symptomatic_course)]).sum()
     return I
 
 
 def count_I_asymptomatic_patient(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if
+    I = np.asarray([a.infectious for a in model.schedule.agents if
         (a.type == 'patient'and a.symptomatic_course == False)]).sum()
     return I
 
@@ -56,18 +56,18 @@ def count_E_employee(model):
 
 def count_I_employee(model):
     I = np.asarray(
-        [a.infected for a in model.schedule.agents if a.type == 'employee']).sum()
+        [a.infectious for a in model.schedule.agents if a.type == 'employee']).sum()
     return I
 
 
 def count_I_symptomatic_employee(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if
+    I = np.asarray([a.infectious for a in model.schedule.agents if
         (a.type == 'employee'and a.symptomatic_course)]).sum()
     return I
 
 
 def count_I_asymptomatic_employee(model):
-    I = np.asarray([a.infected for a in model.schedule.agents if
+    I = np.asarray([a.infectious for a in model.schedule.agents if
         (a.type == 'employee'and a.symptomatic_course == False)]).sum()
     return I
 
@@ -98,7 +98,7 @@ def check_employee_screen(model):
 
 def get_infection_state(agent):
     if agent.exposed == True: return 'exposed'
-    elif agent.infected == True: return 'infected'
+    elif agent.infectious == True: return 'infectious'
     elif agent.recovered == True: return 'recovered'
     else: return 'susceptible'
 
@@ -110,6 +110,10 @@ def get_quarantine_state(agent):
 
 def get_undetected_infections(model):
     return model.undetected_infections
+
+
+def get_predetected_infections(model):
+    return model.predetected_infections
 
 
 def get_pending_test_infections(model):
@@ -189,14 +193,15 @@ class SEIRX(Model):
 
     testing: bool, toggles testing/tracing activities of the facility
 
-    infection_duration: positive integer, sets the time an infected agent stays
-    infectious
+    infection_duration: positive integer, sets the duration of the infection
+    NOTE: includes the time an agent is exposed but not yet infectious at the
+    beginning of an infection
 
     exposure_duration: positive integer, sets the time from transmission to
     becoming infectious
 
-    time_until_symptoms: positive integer, sets the time between becoming
-    infectious and (potentially) developing symptoms
+    time_until_symptoms: positive integer, sets the time from transmission to
+    becoming infectious and (potentially) developing symptoms
 
     quarantine_duration: positive integer, sets the time a positively tested
     agent is quarantined
@@ -246,7 +251,7 @@ class SEIRX(Model):
     '''
 
     def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
-    	infection_duration=10, exposure_duration=5, time_until_symptoms=2,
+    	infection_duration=15, exposure_duration=5, time_until_symptoms=7,
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room': 2, 'table': 1.5, 'quarters': 1, 'facility': 1},
         K1_areas=['room', 'table'], test_type='same_day_PCR',
@@ -354,6 +359,7 @@ class SEIRX(Model):
         # counters
         self.number_of_tests = 0
         self.undetected_infections = 0
+        self.predetected_infections = 0
         self.pending_test_infections = 0
 
         # counter for days since the last test screen
@@ -406,6 +412,7 @@ class SEIRX(Model):
                                'screen_employees':check_employee_screen,
                                'number_of_tests':get_number_of_tests,
                                'undetected_infections':get_undetected_infections,
+                               'predetected_infections':get_predetected_infections,
                                'pending_test_infections':get_pending_test_infections},
 
             agent_reporters = {'infection_state':get_infection_state,
@@ -417,11 +424,24 @@ class SEIRX(Model):
         a.pending_test_result = True
         self.number_of_tests += 1
 
-        if a.infected:
-            # tests that happen in the period of time in which the
-            # infection is detectable by a given test
-            if a.days_infected >= self.Testing.time_until_testable and \
-               a.days_infected <= self.Testing.time_testable:
+        if a.exposed:
+            # tests that happen in the period of time in which the agent is
+            # exposed but not yet infectious
+            if a.days_since_exposure >= self.Testing.time_until_testable:
+                if self.verbosity > 0: print('{} {} sent positive sample (even though not infectious yet)'\
+                    .format(a.type, a.ID))
+                a.sample = 'positive'
+                self.predetected_infections += 1
+            else:
+                if self.verbosity > 0: print('{} {} sent negative sample'\
+                    .format(a.type, a.ID))
+                a.sample = 'negative'
+
+        elif a.infectious:
+            # tests that happen in the period of time in which the agent is
+            # infectious and the infection is detectable by a given test
+            if a.days_since_exposure >= self.Testing.time_until_testable and \
+               a.days_since_exposure <= self.Testing.time_testable:
                 if self.verbosity > 0: print('{} {} sent positive sample'\
                     .format(a.type, a.ID))
                 a.sample = 'positive'
@@ -430,11 +450,13 @@ class SEIRX(Model):
                     .format(a.type, a.ID))
                 a.sample = 'negative'
                 self.undetected_infections += 1
+
         else:
             if self.verbosity > 0: print('{} {} sent negative sample'\
                 .format(a.type, a.ID))
             a.sample = 'negative'
 
+        # for same-day testing, immediately act on the results of the test
         if a.days_since_tested >= self.Testing.time_until_test_result:
             a.act_on_test_result()
 

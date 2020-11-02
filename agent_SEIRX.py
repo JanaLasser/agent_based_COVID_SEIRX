@@ -16,7 +16,7 @@ class agent_SEIRX(Agent):
 
         # infection states
         self.exposed = False
-        self.infected = False
+        self.infectious = False
         self.symptomatic_course = False
         self.symptoms = False
         self.recovered = False
@@ -32,8 +32,7 @@ class agent_SEIRX(Agent):
         self.contact_to_infected = False
 
         # counters
-        self.days_exposed = 0
-        self.days_infected = 0
+        self.days_since_exposure = 0
         self.days_quarantined = 0
         self.days_since_tested = 0
         self.transmissions = 0
@@ -41,7 +40,7 @@ class agent_SEIRX(Agent):
 
     # generic helper functions
     def introduce_external_infection(self):
-        if (self.infected == False) and (self.exposed == False) and\
+        if (self.infectious == False) and (self.exposed == False) and\
            (self.recovered == False):
             index_transmission = self.random.random()
             if index_transmission <= self.index_probability:
@@ -81,7 +80,7 @@ class agent_SEIRX(Agent):
 
     def transmit_infection(self, contacts, transmission_risk, modifier):
         for c in contacts:
-            if (c.exposed == False) and (c.infected == False) and \
+            if (c.exposed == False) and (c.infectious == False) and \
                (c.recovered == False) and (c.contact_to_infected == False):
 
                 # draw random number for transmission
@@ -108,7 +107,9 @@ class agent_SEIRX(Agent):
         '''
         Function that gets called by the infection dynamics model class if a
         test result for an agent is returned. The function sets agent states
-        according to the result of the test (positive or negative) and resets
+        according to the result of the test (positive or negative). Adds agents
+        with positive tests to the newly_positive_agents list that will be
+        used to trace and quarantine close (K1) contacts of these agents. Resets
         the days_since_tested counter and the sample as well as the 
         pending_test_result flag
         '''
@@ -181,16 +182,16 @@ class agent_SEIRX(Agent):
             self.sample = None
 
     def recover(self):
-        self.infected = False
+        self.infectious = False
         self.symptoms = False
         self.recovered = True
         if self.verbose > 0:
             print('{} recovered: {}'.format(self.type, self.unique_id))
 
     def check_exposure_duration(self):
-        if self.days_exposed >= self.model.exposure_duration:
+        if self.days_since_exposure >= self.model.exposure_duration:
             self.exposed = False
-            self.infected = True
+            self.infectious = True
             if self.verbose > 0:
                 print('{} infectious: {}'.format(self.type, self.unique_id))
 
@@ -198,14 +199,11 @@ class agent_SEIRX(Agent):
             if self.random.random() <= self.model.symptom_probability:
                 self.symptomatic_course = True
 
-        else:
-            self.days_exposed += 1
-
     def check_symptoms(self):
         # determine if agent shows symptoms
         if (self.symptomatic_course and \
-            self.days_infected >= self.model.time_until_symptoms and \
-            self.days_infected < self.model.infection_duration and \
+            self.days_since_exposure >= self.model.time_until_symptoms and \
+            self.days_since_exposure <= self.model.infection_duration and \
             not self.symptoms):
 
             self.symptoms = True
@@ -218,8 +216,6 @@ class agent_SEIRX(Agent):
                 print('{} released from quarantine: {}'.format(
                     self.type, self.unique_id))
             self.quarantined = False
-        else:
-            self.days_quarantined += 1
 
     def become_exposed(self):
         if self.verbose > 0:
@@ -242,20 +238,21 @@ class agent_SEIRX(Agent):
 
         # determine if agent has transitioned from exposed to infected
         if self.exposed:
+            self.days_since_exposure += 1
             self.check_exposure_duration()
 
-        if self.infected:
+        if self.infectious:
+            self.days_since_exposure += 1
             self.check_symptoms()
 
-            # determine if agent has recovered
-            if self.days_infected >= self.model.infection_duration:
-                self.recover()
-            else:
-                self.days_infected += 1
+        # determine if agent has recovered
+        if self.days_since_exposure >= self.model.infection_duration:
+            self.recover()
 
         # determine if agent is released from quarantine
         if self.quarantined:
             self.check_quarantine_duration()
+            self.days_quarantined += 1
 
         # determine if a transmission to the agent occurred
         if self.contact_to_infected == True:
@@ -263,3 +260,4 @@ class agent_SEIRX(Agent):
 
         # reset tested flag at the end of the agent step
         self.tested = False
+        

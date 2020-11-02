@@ -30,13 +30,13 @@ class Patient(agent_SEIRX):
         # simulate contacts to other employees and patients if the agent is
         # infected and not in quarantine. Randomly transmit the infection 
         # according to the transmission risk
-        if self.infected:
+        if self.infectious:
             if not self.quarantined:
                 # infectiousness is constant and high during the first 2 days 
                 # (pre-symptomatic) and then decreases monotonically for 8 days 
                 # until agents are not infectious anymore 10 days after the 
                 # onset of infectiousness
-                modifier = 1 - max(0, self.days_infected - 2) / 8
+                modifier = 1 - max(0, self.days_since_exposure - self.model.exposure_duration - 1) / 10
 
                 # if infectiousness is modified for asymptomatic cases, multiply
                 # the asymptomatic modifier with the days-infected modifier 
