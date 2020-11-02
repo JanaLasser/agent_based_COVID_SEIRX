@@ -21,31 +21,31 @@ class Testing():
 		self.tests = {
 		'same_day_antigen':
 	     {
-	         'sensitivity':0.9756,
-	         'specificity':0.999,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':2,
 	         'time_testable':6,
 	         'time_until_test_result':0
 	     },
 		'one_day_antigen':
 	     {
-	         'sensitivity':0.9756,
-	         'specificity':0.999,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':2,
 	         'time_testable':6,
 	         'time_until_test_result':1
 	     },
 		'two_day_antigen':
 	     {
-	         'sensitivity':0.9756,
-	         'specificity':0.999,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':2,
 	         'time_testable':6,
 	         'time_until_test_result':2
 	     },
 	     'same_day_PCR':
 	     {
-	         'sensitivity':0.9652,
+	         'sensitivity':1,
 	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
@@ -53,7 +53,7 @@ class Testing():
 	     },
 	     'one_day_PCR':
 	     {
-	         'sensitivity':0.9652,
+	         'sensitivity':1,
 	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
@@ -61,7 +61,7 @@ class Testing():
 	     },
 	      'two_day_PCR':
 	     {
-	         'sensitivity':0.9652,
+	         'sensitivity':1,
 	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
@@ -69,24 +69,24 @@ class Testing():
 	     },
 	    'same_day_LAMP':
 	     {
-	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':0
 	     },
 	    'one_day_LAMP':
 	     {
-	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':1
 	     },
 	    'two_day_LAMP':
 	     {
-	         'sensitivity':0.9652,
-	         'specificity':0.9968,
+	         'sensitivity':1,
+	         'specificity':1,
 	         'time_until_testable':0,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':2
