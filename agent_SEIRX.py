@@ -1,7 +1,5 @@
 from mesa import Agent
 
-# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
-
 
 class agent_SEIRX(Agent):
     '''

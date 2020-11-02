@@ -8,8 +8,6 @@ from agent_resident import resident
 from agent_employee import Employee
 from testing_strategy import Testing
 
-# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
-
 
 ## data collection functions ##
 def count_E_resident(model):
@@ -527,7 +525,7 @@ class SEIRX(Model):
     def step(self):
         if self.testing:
             if self.verbosity > 0: print('* testing and tracing *')
-            
+
             # find symptomatic agents that have not been tested yet and are not 
             # in quarantine and test them
             newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
