@@ -185,6 +185,7 @@ class agent_SEIRX(Agent):
         self.infectious = False
         self.symptoms = False
         self.recovered = True
+        self.days_since_exposure = 0
         if self.verbose > 0:
             print('{} recovered: {}'.format(self.type, self.unique_id))
 
@@ -216,6 +217,7 @@ class agent_SEIRX(Agent):
                 print('{} released from quarantine: {}'.format(
                     self.type, self.unique_id))
             self.quarantined = False
+            self.days_quarantined = 0
 
     def become_exposed(self):
         if self.verbose > 0:
