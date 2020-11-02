@@ -4,47 +4,47 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
-from agent_patient import Patient
+from agent_resident import resident
 from agent_employee import Employee
 from testing_strategy import Testing
 
-# NOTE: "patients" and "inhabitants" are used interchangeably in the documentation
+# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
 
 
 ## data collection functions ##
-def count_E_patient(model):
+def count_E_resident(model):
     E = np.asarray(
-        [a.exposed for a in model.schedule.agents if a.type == 'patient']).sum()
+        [a.exposed for a in model.schedule.agents if a.type == 'resident']).sum()
     return E
 
 
-def count_I_patient(model):
+def count_I_resident(model):
     I = np.asarray(
-        [a.infectious for a in model.schedule.agents if a.type == 'patient']).sum()
+        [a.infectious for a in model.schedule.agents if a.type == 'resident']).sum()
     return I
 
 
-def count_I_symptomatic_patient(model):
+def count_I_symptomatic_resident(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'patient'and a.symptomatic_course)]).sum()
+        (a.type == 'resident'and a.symptomatic_course)]).sum()
     return I
 
 
-def count_I_asymptomatic_patient(model):
+def count_I_asymptomatic_resident(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'patient'and a.symptomatic_course == False)]).sum()
+        (a.type == 'resident'and a.symptomatic_course == False)]).sum()
     return I
 
 
-def count_R_patient(model):
+def count_R_resident(model):
     R = np.asarray(
-        [a.recovered for a in model.schedule.agents if a.type == 'patient']).sum()
+        [a.recovered for a in model.schedule.agents if a.type == 'resident']).sum()
     return R
 
 
-def count_X_patient(model):
+def count_X_resident(model):
     X = np.asarray(
-        [a.quarantined for a in model.schedule.agents if a.type == 'patient']).sum()
+        [a.quarantined for a in model.schedule.agents if a.type == 'resident']).sum()
     return X
 
 
@@ -88,8 +88,8 @@ def get_number_of_tests(model):
     return model.number_of_tests
 
 
-def check_patient_screen(model):
-    return model.screened_patients
+def check_resident_screen(model):
+    return model.screened_residents
 
 
 def check_employee_screen(model):
@@ -171,14 +171,14 @@ def check_graph(var):
 
 
 def check_index_case_mode(var):
-	assert var in ['single_employee', 'single_patient', 'continuous_employee',
-	'continuous_patient', 'continuous_both'], 'unknown index case mode'
+	assert var in ['single_employee', 'single_resident', 'continuous_employee',
+	'continuous_resident', 'continuous_both'], 'unknown index case mode'
 	return var
 
 
 class SEIRX(Model):
     '''
-    A model with a number of patients/inhabitatns and employees that reproduces
+    A model with a number of residents/inhabitatns and employees that reproduces
     the SEIRX dynamics of pandemic spread in a long time care facility. Note:
     all times are set to correspond to days
 
@@ -226,8 +226,8 @@ class SEIRX(Model):
     follow_up_testing_interval: positive integer, sets the time a follow-up
     screen is run after an initial screen triggered by a positive test result
 
-    screening_interval_patients: positive integer, sets the time for regular
-    preventive screens of the patient population
+    screening_interval_residents: positive integer, sets the time for regular
+    preventive screens of the resident population
 
     screening_interval_employees: positive integer, sets the time for regular
     preventive screens of the employee population
@@ -242,7 +242,7 @@ class SEIRX(Model):
     become an index case in one simulation time step if index_case_mode is one
     of 'continuous_employee' or 'continuous_both'
 
-    index_probability_patient: float, sets the probability an employee will
+    index_probability_resident: float, sets the probability an employee will
     become an index case in one simulation time step if index_case_mode is one
     of 'continuous_inhabitant' or 'continuous_both'
 
@@ -255,10 +255,10 @@ class SEIRX(Model):
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room': 2, 'table': 1.5, 'quarters': 1, 'facility': 1},
         K1_areas=['room', 'table'], test_type='same_day_PCR',
-        follow_up_testing_interval=None, screening_interval_patients=None, 
+        follow_up_testing_interval=None, screening_interval_residents=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_patient=0.01):
+        index_probability_employee=0.01, index_probability_resident=0.01):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -282,18 +282,18 @@ class SEIRX(Model):
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
         # infection risk
-        self.transmission_risk_patient_patient = 0.055  # per infected per day
-        self.transmission_risk_employee_patient = 0.055  # per infected per day
+        self.transmission_risk_resident_resident = 0.055  # per infected per day
+        self.transmission_risk_employee_resident = 0.055  # per infected per day
         self.transmission_risk_employee_employee = 0.055  # per infected per day1
-        self.transmission_risk_patient_employee = 0.055  # per infected per day
+        self.transmission_risk_resident_employee = 0.055  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
         # index case probability for every employee in every step
         self.index_probability_employee = check_probability(
             index_probability_employee)
-        self.index_probability_patient = check_probability(
-            index_probability_patient)
+        self.index_probability_resident = check_probability(
+            index_probability_resident)
 
         # symptom probability
         self.symptom_probability = check_probability(symptom_probability)
@@ -301,20 +301,20 @@ class SEIRX(Model):
         self.subclinical_modifier = check_positive(subclinical_modifier)
 
         ## agents and their interactions
-        # interaction graph of patients
+        # interaction graph of residents
         self.G = check_graph(G)  
         # add weights as edge attributes so they can be visualised easily
         for e in G.edges(data=True):
             G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
 
-        # add patient agents to the scheduler
+        # add resident agents to the scheduler
         IDs = list(self.G.nodes)
         quarters = [self.G.nodes[ID]['quarter'] for ID in IDs]
         self.schedule = SimultaneousActivation(self)
         for ID, quarter in zip(IDs, quarters):
-            p = Patient(ID, quarter, self, verbosity)
+            p = resident(ID, quarter, self, verbosity)
             self.schedule.add(p)
-        self.num_patients = len(IDs)
+        self.num_residents = len(IDs)
 
         # add employee agents to the scheduler
         self.employees_per_quarter = check_positive_int(employees_per_quarter)
@@ -338,21 +338,21 @@ class SEIRX(Model):
                 print('employee exposed: {}'.format(employees[0].ID))
 
         # infect the first inhabitant to introduce the disease.
-        if self.index_case_mode == 'single_patient':
-            patients = [a for a in self.schedule.agents if a.type == 'patient']
-            patients[0].exposed = True
+        if self.index_case_mode == 'single_resident':
+            residents = [a for a in self.schedule.agents if a.type == 'resident']
+            residents[0].exposed = True
             if self.verbosity > 0:
-                print('patient exposed: {}'.format(patients[0].ID))
+                print('resident exposed: {}'.format(residents[0].ID))
 
         # flag that indicates whether a screen took place this turn in a given
         # agent group
-        self.screened_patients = False
+        self.screened_residents = False
         self.screened_employees = False
 
         # list of agents that were tested positive this turn
         self.newly_positive_agents = []
         self.new_positive_tests = False
-        self.scheduled_follow_up_screen_patient = False
+        self.scheduled_follow_up_screen_resident = False
         self.scheduled_follow_up_screen_employee = False
 
         # counters
@@ -371,43 +371,43 @@ class SEIRX(Model):
 
         if self.index_case_mode == 'single_employee' and \
         	screening_interval_employees != None:
-            self.days_since_last_patient_screen = 0
+            self.days_since_last_resident_screen = 0
             self.days_since_last_employee_screen = \
                 self.random.choice(range(0, screening_interval_employees + 1))
 
-        elif self.index_case_mode == 'single_patient' and \
-        	screening_interval_patients != None:
+        elif self.index_case_mode == 'single_resident' and \
+        	screening_interval_residents != None:
         	self.days_since_last_employee_screen = 0
-        	self.days_since_last_patient_screen = \
-                self.random.choice(range(0, screening_interval_patients + 1))
+        	self.days_since_last_resident_screen = \
+                self.random.choice(range(0, screening_interval_residents + 1))
 
         else:
             self.days_since_last_employee_screen = 0
-            self.days_since_last_patient_screen = 0
+            self.days_since_last_resident_screen = 0
 
         # testing strategy
         self.Testing = Testing(self, test_type,
              check_positive_int(follow_up_testing_interval),
-             check_positive_int(screening_interval_patients),
+             check_positive_int(screening_interval_residents),
              check_positive_int(screening_interval_employees),
              check_bool(liberating_testing),
              check_K1_areas(K1_areas),
              verbosity)
         
-        # data collectors to save population counts and patient / employee
+        # data collectors to save population counts and resident / employee
         # states every time step
         self.datacollector = DataCollector(
-            model_reporters = {'E_patient':count_E_patient,
-                               'I_patient':count_I_patient,
-                               'I_symptomatic_patient':count_I_symptomatic_patient,
-                               'R_patient':count_R_patient,
-                               'X_patient':count_X_patient,
+            model_reporters = {'E_resident':count_E_resident,
+                               'I_resident':count_I_resident,
+                               'I_symptomatic_resident':count_I_symptomatic_resident,
+                               'R_resident':count_R_resident,
+                               'X_resident':count_X_resident,
                                'E_employee':count_E_employee,
                                'I_employee':count_I_employee,
                                'I_symptomatic_employee':count_I_symptomatic_employee,
                                'R_employee':count_R_employee,
                                'X_employee':count_X_employee,
-                               'screen_patients':check_patient_screen,
+                               'screen_residents':check_resident_screen,
                                'screen_employees':check_employee_screen,
                                'number_of_tests':get_number_of_tests,
                                'undetected_infections':get_undetected_infections,
@@ -467,8 +467,8 @@ class SEIRX(Model):
                 and a.type == agent_group)]
 
         if len(untested_agents) > 0:
-            if agent_group == 'patient': 
-                self.screened_patients = True
+            if agent_group == 'resident': 
+                self.screened_residents = True
             elif agent_group == 'employee': 
                 self.screened_employees = True
             else:
@@ -498,14 +498,14 @@ class SEIRX(Model):
             if self.verbosity > 0:
                 print('qurantined {} {}'.format(a.type, a.ID))
 
-        if a.type == 'patient':
-            # find all patients that share edges with the given patient
+        if a.type == 'resident':
+            # find all residents that share edges with the given resident
             # that are classified as K1 contact areas in the testing
             # strategy
             K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
                 e[2]['area'] in self.Testing.K1_areas]
             K1_contacts = [a for a in self.schedule.agents if \
-                (a.type == 'patient' and a.ID in K1_contacts)]
+                (a.type == 'resident' and a.ID in K1_contacts)]
             for K1_contact in K1_contacts:
                 if self.verbosity > 0:
                     print('quarantined {} {} (K1 contact of {} {})'\
@@ -525,8 +525,9 @@ class SEIRX(Model):
 
         
     def step(self):
-        if self.verbosity > 0: print('* testing and tracing *')
         if self.testing:
+            if self.verbosity > 0: print('* testing and tracing *')
+            
             # find symptomatic agents that have not been tested yet and are not 
             # in quarantine and test them
             newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
@@ -573,25 +574,25 @@ class SEIRX(Model):
             if self.new_positive_tests == True:
 
                 #if self.Testing.follow_up_testing_interval != None:
-                #    if self.days_since_last_patient_screen >= self.Testing.follow_up_testing_interval:
+                #    if self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
                 #        if self.verbosity > 0: 
-                #            print('initiating patient screen because of positive test(s)')
-                #        self.screen_agents('patient')
-                #        self.screened_patients = True
-                #        self.days_since_last_patient_screen = 0
-                #        self.scheduled_follow_up_screen_patient = True
+                #            print('initiating resident screen because of positive test(s)')
+                #        self.screen_agents('resident')
+                #        self.screened_residents = True
+                #        self.days_since_last_resident_screen = 0
+                #        self.scheduled_follow_up_screen_resident = True
                 #    else:
                 #        if self.verbosity > 0: 
-                #            print('not initiating patient screen because of positive test(s) (last screen too close)')
-                #        self.screened_patients = False
-                #        self.days_since_last_patient_screen += 1
+                #            print('not initiating resident screen because of positive test(s) (last screen too close)')
+                #        self.screened_residents = False
+                #        self.days_since_last_resident_screen += 1
 
                 if self.verbosity > 0: 
-                    print('initiating patient screen because of positive test(s)')
-                self.screen_agents('patient')
-                self.screened_patients = True
-                self.days_since_last_patient_screen = 0
-                self.scheduled_follow_up_screen_patient = True
+                    print('initiating resident screen because of positive test(s)')
+                self.screen_agents('resident')
+                self.screened_residents = True
+                self.days_since_last_resident_screen = 0
+                self.scheduled_follow_up_screen_resident = True
 
 
                 #if self.Testing.follow_up_testing_interval != None:
@@ -616,19 +617,19 @@ class SEIRX(Model):
                 self.scheduled_follow_up_screen_employee = True
                 
             # (b)
-            elif self.scheduled_follow_up_screen_patient or self.scheduled_follow_up_screen_employee:
+            elif self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee:
 
-                if self.scheduled_follow_up_screen_patient and \
-                   self.days_since_last_patient_screen >= self.Testing.follow_up_testing_interval:
-                    if self.verbosity > 0: print('initiating patient follow-up screen')
-                    self.screen_agents('patient')
-                    self.screened_patients = True
-                    self.days_since_last_patient_screen = 0
+                if self.scheduled_follow_up_screen_resident and \
+                   self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
+                    if self.verbosity > 0: print('initiating resident follow-up screen')
+                    self.screen_agents('resident')
+                    self.screened_residents = True
+                    self.days_since_last_resident_screen = 0
                 else:
                     if self.verbosity > 0: 
-                        print('not initiating patient follow-up screen (last screen too close)')
-                    self.screened_patients = False
-                    self.days_since_last_patient_screen += 1
+                        print('not initiating resident follow-up screen (last screen too close)')
+                    self.screened_residents = False
+                    self.days_since_last_resident_screen += 1
 
                 if self.scheduled_follow_up_screen_employee and \
                    self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
@@ -644,19 +645,19 @@ class SEIRX(Model):
                     self.days_since_last_employee_screen += 1
 
             # (c) 
-            elif (self.Testing.screening_interval_patients != None or\
+            elif (self.Testing.screening_interval_residents != None or\
                   self.Testing.screening_interval_employees != None):
 
-                # preventive patient screens
-                if self.Testing.screening_interval_patients != None and\
-                   self.days_since_last_patient_screen >= self.Testing.screening_interval_patients:
-                    if self.verbosity > 0: print('initiating preventive patient screen')
-                    self.screen_agents('patient')
-                    self.screened_patients = True
-                    self.days_since_last_patient_screen = 0
+                # preventive resident screens
+                if self.Testing.screening_interval_residents != None and\
+                   self.days_since_last_resident_screen >= self.Testing.screening_interval_residents:
+                    if self.verbosity > 0: print('initiating preventive resident screen')
+                    self.screen_agents('resident')
+                    self.screened_residents = True
+                    self.days_since_last_resident_screen = 0
                 else:
-                    self.screened_patients = False
-                    self.days_since_last_patient_screen += 1
+                    self.screened_residents = False
+                    self.days_since_last_resident_screen += 1
 
                 # preventive employee screens
                 if self.Testing.screening_interval_employees != None and\
@@ -669,9 +670,9 @@ class SEIRX(Model):
                     self.screened_employees = False
                     self.days_since_last_employee_screen += 1
             else:
-                self.screened_patients = False
+                self.screened_residents = False
                 self.screened_employees = False
-                self.days_since_last_patient_screen += 1
+                self.days_since_last_resident_screen += 1
                 self.days_since_last_employee_screen += 1
 
 

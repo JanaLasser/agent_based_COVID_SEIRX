@@ -1,7 +1,7 @@
 from agent_SEIRX import agent_SEIRX
 
 
-# NOTE: "patients" and "inhabitants" are used interchangeably in the documentation
+# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
 
 
 class Employee(agent_SEIRX):
@@ -18,7 +18,7 @@ class Employee(agent_SEIRX):
     def step(self):
         '''
         Infection step: if an employee is infected and not in quarantine, it 
-        iterates through all other patients and employees tries to 
+        iterates through all other residents and employees tries to 
         infect them. Infections are staged here and only applied in the 
         "advance"-step to simulate "simultaneous" interaction
         '''
@@ -27,7 +27,7 @@ class Employee(agent_SEIRX):
                                           'continuous_both']:
 	        self.introduce_external_infection()
 
-        # simulate contacts to other employees and patients if the agent is
+        # simulate contacts to other employees and residents if the agent is
         # infected and not in quarantine. Randomly transmit the infection 
         # according to the transmission risk
         if self.infectious:
@@ -43,15 +43,15 @@ class Employee(agent_SEIRX):
                 if self.symptomatic_course == False:
                     modifier *= self.model.subclinical_modifier
 
-                # get employee and patient contacts according to contact rules
+                # get employee and resident contacts according to contact rules
                 # and the interaction network
-                patients = self.get_employee_patient_contacts()
+                residents = self.get_employee_resident_contacts()
                 employees = self.get_employee_employee_contacts()
 
-                # code transmission to patients and transmission to employees
+                # code transmission to residents and transmission to employees
                 # separately to allow for differences in transmission risk
-                self.transmit_infection(patients, 
-                    self.model.transmission_risk_employee_patient, modifier)
+                self.transmit_infection(residents, 
+                    self.model.transmission_risk_employee_resident, modifier)
                 self.transmit_infection(employees, 
                     self.model.transmission_risk_employee_employee, modifier)
 

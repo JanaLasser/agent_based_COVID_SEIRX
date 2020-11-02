@@ -1,6 +1,6 @@
 from mesa import Agent
 
-# NOTE: "patients" and "inhabitants" are used interchangeably in the documentation
+# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
 
 
 class agent_SEIRX(Agent):
@@ -49,10 +49,10 @@ class agent_SEIRX(Agent):
                     print('{} {} is index case'.format(
                         self.type, self.unique_id))
 
-    def get_employee_patient_contacts(self):
-        # only contacts to patients in the same quarter are possible
+    def get_employee_resident_contacts(self):
+        # only contacts to residents in the same quarter are possible
         contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'patient' and a.quarter == self.quarter)]
+            (a.type == 'resident' and a.quarter == self.quarter)]
         return contacts
 
     def get_employee_employee_contacts(self):
@@ -64,14 +64,14 @@ class agent_SEIRX(Agent):
         # if self.model.employee_cross_quarter_interaction:
         return contacts
 
-    def get_patient_employee_contacts(self):
+    def get_resident_employee_contacts(self):
         # only contacts to employees in the same quarter are possible
         contacts = [a for a in self.model.schedule.agents if
             (a.type == 'employee' and a.quarter == self.quarter)]
         return contacts
 
-    def get_patient_patient_contacts(self):
-        # patient <-> patient contacts are determined by the contact network
+    def get_resident_resident_contacts(self):
+        # resident <-> resident contacts are determined by the contact network
         # get a list of neighbor IDs from the interaction network
         contacts = [tup[1] for tup in list(self.model.G.edges(self.ID))]
         # get the neighboring agents from the scheduler using their IDs

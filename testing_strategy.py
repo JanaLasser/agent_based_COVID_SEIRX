@@ -7,11 +7,11 @@ def check_test_type(var, tests):
 
 class Testing():
 	def __init__(self, model, test_type, follow_up_testing_interval,
-		screening_interval_patients, screening_interval_employees,
+		screening_interval_residents, screening_interval_employees,
 		liberating_testing, K1_areas, verbosity):
 
 		self.follow_up_testing_interval = follow_up_testing_interval
-		self.screening_interval_patients = screening_interval_patients
+		self.screening_interval_residents = screening_interval_residents
 		self.screening_interval_employees = screening_interval_employees
 		self.liberating_testing = liberating_testing
 		self.model = model

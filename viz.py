@@ -12,10 +12,10 @@ colors = {'susceptible':'g',
 
 def get_pos(G, model):
 	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
-	num_patients = len([a for a in model.schedule.agents if \
-		(a.type == 'patient' and a.quarter == 'Q1')])
+	num_residents = len([a for a in model.schedule.agents if \
+		(a.type == 'resident' and a.quarter == 'Q1')])
 
-	fixed = ['p{}'.format(i * num_patients + 1) for i in range(len(quarters))]
+	fixed = ['p{}'.format(i * num_residents + 1) for i in range(len(quarters))]
 
 	if len(quarters) == 4:
 		coords = [[-3, -3], [-3, 3], [3, 3], [3, -3]]
@@ -39,16 +39,16 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
 	quarters.sort()
 
-	## draw patients
-	patients = [a.unique_id for a in model.schedule.agents if a.type == 'patient']
+	## draw residents
+	residents = [a.unique_id for a in model.schedule.agents if a.type == 'resident']
 
-	patient_states = model.datacollector.get_agent_vars_dataframe()
-	patient_states = patient_states.iloc[patient_states.index.isin(patients, level=1)] 
+	resident_states = model.datacollector.get_agent_vars_dataframe()
+	resident_states = resident_states.iloc[resident_states.index.isin(residents, level=1)] 
 
-	patient_states['color'] = patient_states['infection_state'].replace(colors)
-	color_list = patient_states.loc[step].sort_index()['color']
+	resident_states['color'] = resident_states['infection_state'].replace(colors)
+	color_list = resident_states.loc[step].sort_index()['color']
 
-	quarantine_states = patient_states.loc[step].sort_index()['quarantine_state']
+	quarantine_states = resident_states.loc[step].sort_index()['quarantine_state']
 
 	G = model.G
 	nodes = list(G.nodes)
@@ -73,15 +73,15 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 		except KeyError:
 			print('warning: edge ({}, {}) not found in position map'.format(u, v))
 
-	patient_handles = {}
+	resident_handles = {}
 	for n in nodes:
 		if quarantine_states[n]:
 			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2,
 			edgecolors='k', linewidth=8)
-			patient_handles.update({n:handle})
+			resident_handles.update({n:handle})
 		else:
 			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2)
-			patient_handles.update({n:handle})
+			resident_handles.update({n:handle})
 
 
 
@@ -142,12 +142,12 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 
 	step_text_handle = leg_ax.text(0.32, 0.7, 'day {}'.format(step), fontsize=14)
 
-	return legend, employee_handles, patient_handles, step_text_handle
+	return legend, employee_handles, resident_handles, step_text_handle
 
 def draw_infection_timeline(model, agent_type, ax):
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
-	if agent_type == 'patient':
-		N = model.num_patients
+	if agent_type == 'resident':
+		N = model.num_residents
 	elif agent_type == 'employee':
 		N = model.employees_per_quarter
 		N_quarters = len(list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes])))
@@ -173,7 +173,7 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='X', color=colors['quarantined'])
 
 	# draw screen lines
-	for i, screen in enumerate(pop_numbers['screen_patients']):
+	for i, screen in enumerate(pop_numbers['screen_residents']):
 		if screen:
 			ax.plot([i, i], [0, 1], '--', color='green', alpha=0.3)
 	for i, screen in enumerate(pop_numbers['screen_employees']):
@@ -183,16 +183,16 @@ def draw_infection_timeline(model, agent_type, ax):
 
 	# legend with custom artist for the screening lines
 	handles, labels = ax.get_legend_handles_labels()
-	patient_screen_handle = plt.Line2D((0,1),(0,0), color='green',
+	resident_screen_handle = plt.Line2D((0,1),(0,0), color='green',
 		 linestyle='--', alpha=0.3)
 	employee_screen_handle = plt.Line2D((0,1),(0,0), color='red',
 		 linestyle='--', alpha=0.3)
 
 	#Create legend from custom artist/label lists
 	ax.legend([handle for i,handle in enumerate(handles)] + \
-			[patient_screen_handle, employee_screen_handle],
+			[resident_screen_handle, employee_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['patient screen', 'employee screen'], ncol=2, loc=2, fontsize=12)
+	          ['resident screen', 'employee screen'], ncol=2, loc=2, fontsize=12)
 
 	ax.set_xlabel('steps')
 	ax.set_ylabel('probability density')
