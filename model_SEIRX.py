@@ -258,8 +258,7 @@ class SEIRX(Model):
         follow_up_testing_interval=None, screening_interval_patients=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_patient=0.01, 
-        seed=0):
+        index_probability_employee=0.01, index_probability_patient=0.01):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -283,10 +282,10 @@ class SEIRX(Model):
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
         # infection risk
-        self.transmission_risk_patient_patient = 0.025  # per infected per day
-        self.transmission_risk_employee_patient = 0.025  # per infected per day
-        self.transmission_risk_employee_employee = 0.025  # per infected per day1
-        self.transmission_risk_patient_employee = 0.025  # per infected per day
+        self.transmission_risk_patient_patient = 0.055  # per infected per day
+        self.transmission_risk_employee_patient = 0.055  # per infected per day
+        self.transmission_risk_employee_employee = 0.055  # per infected per day1
+        self.transmission_risk_patient_employee = 0.055  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
