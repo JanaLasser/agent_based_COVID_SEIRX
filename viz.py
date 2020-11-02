@@ -5,7 +5,7 @@ import numpy as np
 
 colors = {'susceptible':'g',
 		  'exposed':'orange', 
-		  'infected':'red',
+		  'infectious':'red',
 	      'recovered':'gray',
 	      'quarantined':'blue',
 	      'testable':'k'}
@@ -129,7 +129,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 		 marker='o', linestyle='', markersize=15)
 	E_handle = plt.Line2D((0,1),(0,0), color=colors['exposed'],
 		 marker='o', linestyle='', markersize=15)
-	I_handle = plt.Line2D((0,1),(0,0), color=colors['infected'],
+	I_handle = plt.Line2D((0,1),(0,0), color=colors['infectious'],
 		 marker='o', linestyle='', markersize=15)
 	R_handle = plt.Line2D((0,1),(0,0), color=colors['recovered'],
 		 marker='o', linestyle='', markersize=15)
@@ -164,9 +164,9 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.plot(pop_numbers['E_{}'.format(agent_type)]/N,\
 		 label='E', color=colors['exposed'])
 	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N, \
-		 label='I', color=colors['infected'])
+		 label='I', color=colors['infectious'])
 	ax.plot(pop_numbers['I_symptomatic_{}'.format(agent_type)]/N, \
-		 label='I symptomatic', color=colors['infected'], alpha=0.3)
+		 label='I symptomatic', color=colors['infectious'], alpha=0.3)
 	ax.plot(pop_numbers['R_{}'.format(agent_type)]/N, \
 		 label='R', color=colors['recovered'])
 	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N, \
