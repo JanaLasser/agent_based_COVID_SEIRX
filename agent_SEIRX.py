@@ -47,6 +47,7 @@ class agent_SEIRX(Agent):
                     print('{} {} is index case'.format(
                         self.type, self.unique_id))
 
+
     def get_employee_resident_contacts(self):
         # only contacts to residents in the same quarter are possible
         contacts = [a for a in self.model.schedule.agents if
