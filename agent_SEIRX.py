@@ -81,6 +81,10 @@ class agent_SEIRX(Agent):
             if (c.exposed == False) and (c.infectious == False) and \
                (c.recovered == False) and (c.contact_to_infected == False):
 
+                if self.type == 'resident' and c.type == 'resident':
+                    modifier *= self.model.G.get_edge_data('p1','p2')['weight']
+
+
                 # draw random number for transmission
                 transmission = self.random.random() * modifier
 
