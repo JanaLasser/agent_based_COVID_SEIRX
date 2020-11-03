@@ -94,13 +94,13 @@ class Testing():
 	     }
 	    }
 
-		self.diagnostic_test_type = check_test_type(test_type, self.tests)
+		self.diagnostic_test_type = check_test_type(diagnostic_test_type, self.tests)
 		self.preventive_screening_test_type = check_test_type(preventive_screening_test_type, self.tests)
-		self.sensitivity = self.tests[self.test_type]['sensitivity']
-		self.specificity = self.tests[self.test_type]['specificity']
-		self.time_until_testable = self.tests[self.test_type]['time_until_testable']
-		self.time_testable = self.tests[self.test_type]['time_testable']
-		self.time_until_test_result = self.tests[self.test_type]['time_until_test_result']
+		#self.sensitivity = self.tests[self.test_type]['sensitivity']
+		#self.specificity = self.tests[self.test_type]['specificity']
+		#self.time_until_testable = self.tests[self.test_type]['time_until_testable']
+		#self.time_testable = self.tests[self.test_type]['time_testable']
+		#self.time_until_test_result = self.tests[self.test_type]['time_until_test_result']
 
 
 

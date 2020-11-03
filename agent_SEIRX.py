@@ -116,12 +116,15 @@ class agent_SEIRX(Agent):
         the days_since_tested counter and the sample as well as the 
         pending_test_result flag
         '''
-        self.pending_test_result = False
+
+        # the type of the test used in the test for which the result is pending
+        # is stored in the pending_test_result variable
+        test_type = self.pending_test_result
 
         if self.sample == 'positive':
 
             # true positive
-            if self.model.Testing.sensitivity >= self.model.random.random():
+            if self.model.Testing.tests[test_type]['sensitivity'] >= self.model.random.random():
                 self.model.newly_positive_agents.append(self)
                 self.known_positive = True
 
@@ -154,7 +157,7 @@ class agent_SEIRX(Agent):
         elif self.sample == 'negative':
 
             # false positive
-            if self.model.Testing.specificity <= self.model.random.random():
+            if self.model.Testing.tests[test_type]['specificity'] <= self.model.random.random():
                 self.model.newly_positive_agents.append(self)
                 self.known_positive = True
 
@@ -180,6 +183,7 @@ class agent_SEIRX(Agent):
                         print('{} {} left quarantine prematurely'\
                         .format(self.type, self.ID))
 
+            self.pending_test_result = False
             self.days_since_tested = 0
             self.pending_test_result = False
             self.sample = None

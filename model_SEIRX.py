@@ -252,7 +252,8 @@ class SEIRX(Model):
     	infection_duration=15, exposure_duration=5, time_until_symptoms=7,
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room':4,'table':2,'quarters':1,'facility':0.1},
-        K1_areas=['room', 'table'], test_type='same_day_PCR',
+        K1_areas=['room', 'table'], diagnostic_test_type='one_day_PCR',
+        preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, screening_interval_residents=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
@@ -384,7 +385,8 @@ class SEIRX(Model):
             self.days_since_last_resident_screen = 0
 
         # testing strategy
-        self.Testing = Testing(self, test_type,
+        self.Testing = Testing(self, diagnostic_test_type,
+             preventive_screening_test_type,
              check_positive_int(follow_up_testing_interval),
              check_positive_int(screening_interval_residents),
              check_positive_int(screening_interval_employees),
@@ -416,15 +418,16 @@ class SEIRX(Model):
                                'quarantine_state':get_quarantine_state})
 
 
-    def test_agent(self, a):
+    def test_agent(self, a, test_type):
         a.tested = True
-        a.pending_test_result = True
+        a.pending_test_result = test_type
         self.number_of_tests += 1
+
 
         if a.exposed:
             # tests that happen in the period of time in which the agent is
             # exposed but not yet infectious
-            if a.days_since_exposure >= self.Testing.time_until_testable:
+            if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable']:
                 if self.verbosity > 0: print('{} {} sent positive sample (even though not infectious yet)'\
                     .format(a.type, a.ID))
                 a.sample = 'positive'
@@ -437,8 +440,8 @@ class SEIRX(Model):
         elif a.infectious:
             # tests that happen in the period of time in which the agent is
             # infectious and the infection is detectable by a given test
-            if a.days_since_exposure >= self.Testing.time_until_testable and \
-               a.days_since_exposure <= self.Testing.time_testable:
+            if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable'] and \
+               a.days_since_exposure <= self.Testing.tests[test_type]['time_testable']:
                 if self.verbosity > 0: print('{} {} sent positive sample'\
                     .format(a.type, a.ID))
                 a.sample = 'positive'
@@ -454,10 +457,12 @@ class SEIRX(Model):
             a.sample = 'negative'
 
         # for same-day testing, immediately act on the results of the test
-        if a.days_since_tested >= self.Testing.time_until_test_result:
+        if a.days_since_tested >= self.Testing.tests[test_type]['time_until_test_result']:
             a.act_on_test_result()
 
-    def screen_agents(self, agent_group):
+
+
+    def screen_agents(self, agent_group, test_type):
         # only test agents that have not been tested already in this simulation
         # step and that are not already known positive cases
         untested_agents = [a for a in self.schedule.agents if \
@@ -473,7 +478,7 @@ class SEIRX(Model):
                 print('unknown agent group!')
 
             for a in untested_agents:
-                self.test_agent(a)                
+                self.test_agent(a, test_type)                
 
             if self.verbosity > 0:
                 print()
@@ -482,10 +487,14 @@ class SEIRX(Model):
                 print('no agents tested because all agents have already been tested')
 
 
+    # NOTE: this implementation will get unstable if the diagnostic test used
+    # by the facility and the screening test both have a turnover time > 0 days
+    # Therefore I advise strongly to use a turnover time of > 0 days for 
+    # diagnostic tests and a turnover time of 0 days for preventive screening
     def collect_test_results(self):
         agents_with_test_results = [a for a in self.schedule.agents if \
             (a.pending_test_result and \
-             a.days_since_tested >= self.Testing.time_until_test_result)]
+             a.days_since_tested >= self.Testing.tests[a.pending_test_result]['time_until_test_result'])]
 
         return agents_with_test_results
 
@@ -536,7 +545,7 @@ class SEIRX(Model):
                 if self.verbosity > 0:
                     print('quarantined: {} {}'.format(a.type, a.ID))
                 a.quarantined = True
-                self.test_agent(a)
+                self.test_agent(a, self.Testing.diagnostic_test_type)
 
             # collect and act on new test results
             agents_with_test_results = self.collect_test_results()
@@ -587,7 +596,7 @@ class SEIRX(Model):
 
                 if self.verbosity > 0: 
                     print('initiating resident screen because of positive test(s)')
-                self.screen_agents('resident')
+                self.screen_agents('resident', self.Testing.diagnostic_test_type)
                 self.screened_residents = True
                 self.days_since_last_resident_screen = 0
                 self.scheduled_follow_up_screen_resident = True
@@ -609,7 +618,7 @@ class SEIRX(Model):
 
                 if self.verbosity > 0: 
                     print('initiating employee screen because of positive test(s)')
-                self.screen_agents('employee')
+                self.screen_agents('employee', self.Testing.diagnostic_test_type)
                 self.screened_employees = True
                 self.days_since_last_employee_screen = 0
                 self.scheduled_follow_up_screen_employee = True
@@ -620,7 +629,7 @@ class SEIRX(Model):
                 if self.scheduled_follow_up_screen_resident and \
                    self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
                     if self.verbosity > 0: print('initiating resident follow-up screen')
-                    self.screen_agents('resident')
+                    self.screen_agents('resident', self.Testing.diagnostic_test_type)
                     self.screened_residents = True
                     self.days_since_last_resident_screen = 0
                 else:
@@ -632,7 +641,7 @@ class SEIRX(Model):
                 if self.scheduled_follow_up_screen_employee and \
                    self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
                     if self.verbosity > 0: print('initiating employee follow-up screen')
-                    self.screen_agents('employee')
+                    self.screen_agents('employee', self.Testing.diagnostic_test_type)
                     self.screened_employees = True
                     self.days_since_last_employee_screen = 0
                     self.scheduled_follow_up_screen = False 
@@ -650,7 +659,7 @@ class SEIRX(Model):
                 if self.Testing.screening_interval_residents != None and\
                    self.days_since_last_resident_screen >= self.Testing.screening_interval_residents:
                     if self.verbosity > 0: print('initiating preventive resident screen')
-                    self.screen_agents('resident')
+                    self.screen_agents('resident', self.Testing.preventive_screening_test_type)
                     self.screened_residents = True
                     self.days_since_last_resident_screen = 0
                 else:
@@ -661,7 +670,7 @@ class SEIRX(Model):
                 if self.Testing.screening_interval_employees != None and\
                    self.days_since_last_employee_screen >= self.Testing.screening_interval_employees:
                    if self.verbosity > 0: print('initiating preventive employee screen')
-                   self.screen_agents('employee')
+                   self.screen_agents('employee', self.Testing.preventive_screening_test_type)
                    self.screened_employees = True
                    self.days_since_last_employee_screen = 0 
                 else:
