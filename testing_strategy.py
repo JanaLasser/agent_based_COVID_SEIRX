@@ -47,7 +47,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':3,
+	         'time_until_testable':4,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':0
 	     },
@@ -55,7 +55,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':3,
+	         'time_until_testable':4,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':1
 	     },
@@ -63,7 +63,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':3,
+	         'time_until_testable':4,
 	         'time_testable':model.infection_duration,
 	         'time_until_test_result':2
 	     },
