@@ -6,7 +6,8 @@ def check_test_type(var, tests):
 
 
 class Testing():
-	def __init__(self, model, test_type, follow_up_testing_interval,
+	def __init__(self, model, diagnostic_test_type, 
+		preventive_screening_test_type, follow_up_testing_interval,
 		screening_interval_residents, screening_interval_employees,
 		liberating_testing, K1_areas, verbosity):
 
@@ -93,7 +94,8 @@ class Testing():
 	     }
 	    }
 
-		self.test_type = check_test_type(test_type, self.tests)
+		self.diagnostic_test_type = check_test_type(test_type, self.tests)
+		self.preventive_screening_test_type = check_test_type(preventive_screening_test_type, self.tests)
 		self.sensitivity = self.tests[self.test_type]['sensitivity']
 		self.specificity = self.tests[self.test_type]['specificity']
 		self.time_until_testable = self.tests[self.test_type]['time_until_testable']
