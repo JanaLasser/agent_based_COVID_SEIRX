@@ -19,7 +19,7 @@ class agent_SEIRX(Agent):
         self.symptoms = False
         self.recovered = False
         self.tested = False
-        self.pending_test_result = False
+        self.pending_test = False
         self.known_positive = False
         self.quarantined = False
 
@@ -96,7 +96,7 @@ class agent_SEIRX(Agent):
                     # track the state of the agent pertaining to testing at the
                     # moment of transmission to count how many transmissions
                     # occur in which states
-                    if self.tested and self.pending_test_result and \
+                    if self.tested and self.pending_test and \
                         self.sample == 'positive':
                         self.model.pending_test_infections += 1
 
@@ -114,12 +114,12 @@ class agent_SEIRX(Agent):
         with positive tests to the newly_positive_agents list that will be
         used to trace and quarantine close (K1) contacts of these agents. Resets
         the days_since_tested counter and the sample as well as the 
-        pending_test_result flag
+        pending_test flag
         '''
 
         # the type of the test used in the test for which the result is pending
-        # is stored in the pending_test_result variable
-        test_type = self.pending_test_result
+        # is stored in the pending_test variable
+        test_type = self.pending_test
 
         if self.sample == 'positive':
 
@@ -151,7 +151,7 @@ class agent_SEIRX(Agent):
                         .format(self.type, self.ID))
 
             self.days_since_tested = 0
-            self.pending_test_result = False
+            self.pending_test = False
             self.sample = None
 
         elif self.sample == 'negative':
@@ -183,9 +183,8 @@ class agent_SEIRX(Agent):
                         print('{} {} left quarantine prematurely'\
                         .format(self.type, self.ID))
 
-            self.pending_test_result = False
             self.days_since_tested = 0
-            self.pending_test_result = False
+            self.pending_test = False
             self.sample = None
 
     def recover(self):
@@ -242,7 +241,7 @@ class agent_SEIRX(Agent):
         # if there is a pending test result, increase the days the agent has
         # waited for the result by 1 (NOTE: results are collected by the 
         # infection dynamics model class according to days passed since the test)
-        if self.pending_test_result:
+        if self.pending_test:
             self.days_since_tested += 1
 
         # determine if agent has transitioned from exposed to infected

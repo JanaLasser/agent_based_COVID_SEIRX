@@ -420,7 +420,7 @@ class SEIRX(Model):
 
     def test_agent(self, a, test_type):
         a.tested = True
-        a.pending_test_result = test_type
+        a.pending_test = test_type
         self.number_of_tests += 1
 
 
@@ -487,14 +487,12 @@ class SEIRX(Model):
                 print('no agents tested because all agents have already been tested')
 
 
-    # NOTE: this implementation will get unstable if the diagnostic test used
-    # by the facility and the screening test both have a turnover time > 0 days
-    # Therefore I advise strongly to use a turnover time of > 0 days for 
-    # diagnostic tests and a turnover time of 0 days for preventive screening
+    # the type of the test used in the pending test result is stored in the 
+    # variable pending_test
     def collect_test_results(self):
         agents_with_test_results = [a for a in self.schedule.agents if \
-            (a.pending_test_result and \
-             a.days_since_tested >= self.Testing.tests[a.pending_test_result]['time_until_test_result'])]
+            (a.pending_test and \
+             a.days_since_tested >= self.Testing.tests[a.pending_test]['time_until_test_result'])]
 
         return agents_with_test_results
 
