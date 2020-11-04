@@ -253,7 +253,7 @@ class SEIRX(Model):
     '''
 
     def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
-    	infection_duration=10, exposure_duration=4, time_until_symptoms=6,
+    	infection_duration=11, exposure_duration=4, time_until_symptoms=6,
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
     	infection_risk_area_weights={'room':4,'table':2,'quarters':1,'facility':0.1},
         K1_areas=['room', 'table'], diagnostic_test_type='one_day_PCR',
