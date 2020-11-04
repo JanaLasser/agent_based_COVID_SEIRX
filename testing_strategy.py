@@ -1,6 +1,7 @@
 def check_test_type(var, tests):
-	assert type(var) == str, 'not a string'
-	assert var in tests.keys(), 'unknown test type'
+	if var != None:
+		assert type(var) == str, 'not a string'
+		assert var in tests.keys(), 'unknown test type'
 	return var
 
 

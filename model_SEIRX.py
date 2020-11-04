@@ -631,32 +631,33 @@ class SEIRX(Model):
                 self.scheduled_follow_up_screen_employee = True
                 
             # (b)
-            elif self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee:
+            elif self.Testing.follow_up_testing_interval != None:
+                if self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee:
 
-                if self.scheduled_follow_up_screen_resident and \
-                   self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
-                    if self.verbosity > 0: print('initiating resident follow-up screen')
-                    self.screen_agents('resident', self.Testing.diagnostic_test_type)
-                    self.screened_residents = True
-                    self.days_since_last_resident_screen = 0
-                else:
-                    if self.verbosity > 0: 
-                        print('not initiating resident follow-up screen (last screen too close)')
-                    self.screened_residents = False
-                    self.days_since_last_resident_screen += 1
+                    if self.scheduled_follow_up_screen_resident and \
+                       self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
+                        if self.verbosity > 0: print('initiating resident follow-up screen')
+                        self.screen_agents('resident', self.Testing.diagnostic_test_type)
+                        self.screened_residents = True
+                        self.days_since_last_resident_screen = 0
+                    else:
+                        if self.verbosity > 0: 
+                            print('not initiating resident follow-up screen (last screen too close)')
+                        self.screened_residents = False
+                        self.days_since_last_resident_screen += 1
 
-                if self.scheduled_follow_up_screen_employee and \
-                   self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
-                    if self.verbosity > 0: print('initiating employee follow-up screen')
-                    self.screen_agents('employee', self.Testing.diagnostic_test_type)
-                    self.screened_employees = True
-                    self.days_since_last_employee_screen = 0
-                    self.scheduled_follow_up_screen = False 
-                else:
-                    if self.verbosity > 0: 
-                        print('not initiating employee follow-up screen (last screen too close)')
-                    self.screened_employees = False
-                    self.days_since_last_employee_screen += 1
+                    if self.scheduled_follow_up_screen_employee and \
+                       self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
+                        if self.verbosity > 0: print('initiating employee follow-up screen')
+                        self.screen_agents('employee', self.Testing.diagnostic_test_type)
+                        self.screened_employees = True
+                        self.days_since_last_employee_screen = 0
+                        self.scheduled_follow_up_screen = False 
+                    else:
+                        if self.verbosity > 0: 
+                            print('not initiating employee follow-up screen (last screen too close)')
+                        self.screened_employees = False
+                        self.days_since_last_employee_screen += 1
 
             # (c) 
             elif (self.Testing.screening_interval_residents != None or\
