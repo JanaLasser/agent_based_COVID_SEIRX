@@ -692,6 +692,6 @@ class SEIRX(Model):
 
 
         if self.verbosity > 0: print('* agent interaction *')
-        self.schedule.step()
         self.datacollector.collect(self)
+        self.schedule.step()
         self.Nstep += 1
