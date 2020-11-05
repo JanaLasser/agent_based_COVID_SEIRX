@@ -87,9 +87,9 @@ class agent_SEIRX(Agent):
 
 
                 # draw random number for transmission
-                transmission = self.random.random() * modifier
+                transmission = self.random.random()
 
-                if transmission > 1 - transmission_risk:
+                if transmission > 1 - transmission_risk * modifier:
                     c.contact_to_infected = True
                     self.transmissions += 1
 
@@ -187,6 +187,41 @@ class agent_SEIRX(Agent):
             self.pending_test = False
             self.sample = None
 
+    def become_exposed(self):
+        if self.verbose > 0:
+            print('{} exposed: {}'.format(self.type, self.unique_id))
+        self.exposed = True
+        self.contact_to_infected = False
+
+
+    def become_infected(self):
+        self.exposed = False
+        self.infectious = True
+
+        # determine if infected agent will show symptoms
+        # NOTE: it is important to determine whether the course of the
+        # infection is symptomatic already at this point, to allow
+        # for a modification of transmissibility by symptomticity.
+        # I.e. agents that will become symptomatic down the road might
+        # already be more infectious before they show any symptoms than
+        # agents that stay asymptomatic
+        if self.random.random() <= self.model.symptom_probability:
+            self.symptomatic_course = True
+            if self.verbose > 0:
+                print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
+        else:
+            if self.verbose > 0:
+                print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
+
+
+    def show_symptoms(self):
+        # determine if agent shows symptoms
+        if self.symptomatic_course:
+            self.symptoms = True
+            if self.model.verbosity > 0:
+                print('{} {} shows symptoms'.format(self.type, self.ID))
+
+
     def recover(self):
         self.infectious = False
         self.symptoms = False
@@ -195,41 +230,13 @@ class agent_SEIRX(Agent):
         if self.verbose > 0:
             print('{} recovered: {}'.format(self.type, self.unique_id))
 
-    def check_exposure_duration(self):
-        if self.days_since_exposure >= self.model.exposure_duration:
-            self.exposed = False
-            self.infectious = True
-            if self.verbose > 0:
-                print('{} infectious: {}'.format(self.type, self.unique_id))
 
-            # determine if infected agent ẃill show symptoms
-            if self.random.random() <= self.model.symptom_probability:
-                self.symptomatic_course = True
-
-    def check_symptoms(self):
-        # determine if agent shows symptoms
-        if (self.symptomatic_course and \
-            self.days_since_exposure >= self.model.time_until_symptoms and \
-            self.days_since_exposure <= self.model.infection_duration and \
-            not self.symptoms):
-
-            self.symptoms = True
-            if self.model.verbosity > 0:
-                print('{} {} shows symptoms'.format(self.type, self.ID))
-
-    def check_quarantine_duration(self):
-        if self.days_quarantined >= self.model.quarantine_duration:
-            if self.verbose > 0:
-                print('{} released from quarantine: {}'.format(
-                    self.type, self.unique_id))
-            self.quarantined = False
-            self.days_quarantined = 0
-
-    def become_exposed(self):
+    def leave_quarantine(self):
         if self.verbose > 0:
-            print('{} exposed: {}'.format(self.type, self.unique_id))
-        self.exposed = True
-        self.contact_to_infected = False
+            print('{} released from quarantine: {}'.format(
+                self.type, self.unique_id))
+        self.quarantined = False
+        self.days_quarantined = 0
 
 
     def advance(self):
@@ -238,33 +245,35 @@ class agent_SEIRX(Agent):
         states accordingly
         '''
 
+        # determine if a transmission to the agent occurred
+        if self.contact_to_infected == True:
+            self.become_exposed()
+
+        # determine if agent has transitioned from exposed to infected
+        if self.days_since_exposure == self.model.exposure_duration:
+            self.become_infected()
+
+        if self.days_since_exposure == self.model.time_until_symptoms:
+            self.show_symptoms()
+
+        if self.days_since_exposure == self.model.infection_duration:
+            self.recover()
+
+        # determine if agent is released from quarantine
+        if self.days_quarantined == self.model.quarantine_duration:
+            self.leave_quarantine()
+
         # if there is a pending test result, increase the days the agent has
         # waited for the result by 1 (NOTE: results are collected by the 
         # infection dynamics model class according to days passed since the test)
         if self.pending_test:
             self.days_since_tested += 1
 
-        # determine if agent has transitioned from exposed to infected
-        if self.exposed:
-            self.days_since_exposure += 1
-            self.check_exposure_duration()
-
-        if self.infectious:
-            self.days_since_exposure += 1
-            self.check_symptoms()
-
-        # determine if agent has recovered
-        if self.days_since_exposure >= self.model.infection_duration:
-            self.recover()
-
-        # determine if agent is released from quarantine
         if self.quarantined:
-            self.check_quarantine_duration()
             self.days_quarantined += 1
 
-        # determine if a transmission to the agent occurred
-        if self.contact_to_infected == True:
-            self.become_exposed()
+        if self.exposed or self.infectious:
+            self.days_since_exposure += 1
 
         # reset tested flag at the end of the agent step
         self.tested = False
