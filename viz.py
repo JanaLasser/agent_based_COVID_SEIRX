@@ -66,7 +66,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	pat_ax.text(x_max - x_extent / 2 - 0.1, y_max + y_step / 2, 'inhabitants', fontsize=14)
 	
 	for u, v in list(G.edges):
-		weight = G[u][v]['weight']**6 / 20
+		weight = G[u][v]['weight']**2 / 5
 		try:
 			pat_ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
 			color='k', linewidth=weight, zorder=1)
@@ -195,7 +195,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	          ['resident screen', 'employee screen'], ncol=2, loc=2, fontsize=12)
 
 	ax.set_xlabel('steps')
-	ax.set_ylabel('probability density')
+	ax.set_ylabel('%')
 	ax.set_ylim(-0.05, 1.05)
 	ax.xaxis.set_major_locator(MultipleLocator(20))
 	ax.xaxis.set_minor_locator(MultipleLocator(5))
