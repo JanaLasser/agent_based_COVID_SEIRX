@@ -255,13 +255,14 @@ class SEIRX(Model):
     def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
     	infection_duration=11, exposure_duration=4, time_until_symptoms=6,
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room':4,'table':2,'quarters':1,'facility':0.1},
+    	infection_risk_area_weights={'room':4,'table':2,'quarters':0.95,'facility':0.1},
         K1_areas=['room', 'table'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, screening_interval_residents=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_resident=0.01):
+        index_probability_employee=0.01, index_probability_resident=0.01,
+        seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -285,10 +286,10 @@ class SEIRX(Model):
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
         # infection risk
-        self.transmission_risk_resident_resident = 0.01  # per infected per day
-        self.transmission_risk_employee_resident = 0.01  # per infected per day
-        self.transmission_risk_employee_employee = 0.01  # per infected per day
-        self.transmission_risk_resident_employee = 0.01  # per infected per day
+        self.transmission_risk_resident_resident = 0.015  # per infected per day
+        self.transmission_risk_employee_resident = 0.015  # per infected per day
+        self.transmission_risk_employee_employee = 0.015  # per infected per day
+        self.transmission_risk_resident_employee = 0.015  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
