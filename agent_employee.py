@@ -34,7 +34,8 @@ class Employee(agent_SEIRX):
                 # (pre-symptomatic) and then decreases monotonically for 8 days 
                 # until agents are not infectious anymore 10 days after the 
                 # onset of infectiousness
-                modifier = 1 - max(0, self.days_since_exposure - self.model.exposure_duration - 1) / 10
+                modifier = 1 - max(0, self.days_since_exposure - self.model.exposure_duration - 1) / \
+                    (self.model.infection_duration - self.model.exposure_duration - 1)
 
                 # if infectiousness is modified for asymptomatic cases, multiply
                 # the asymptomatic modifier with the days-infected modifier 
