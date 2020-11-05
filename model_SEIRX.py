@@ -255,7 +255,7 @@ class SEIRX(Model):
     def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
     	infection_duration=11, exposure_duration=4, time_until_symptoms=6,
         quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room':4,'table':2,'quarters':0.95,'facility':0.1},
+    	infection_risk_area_weights={'room':4,'table':2,'quarters':1,'facility':0.1},
         K1_areas=['room', 'table'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, screening_interval_residents=None, 
@@ -632,8 +632,8 @@ class SEIRX(Model):
                 self.scheduled_follow_up_screen_employee = True
                 
             # (b)
-            elif self.Testing.follow_up_testing_interval != None:
-                if self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee:
+            elif self.Testing.follow_up_testing_interval != None and \
+                (self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee):
 
                     if self.scheduled_follow_up_screen_resident and \
                        self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
