@@ -286,10 +286,10 @@ class SEIRX(Model):
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
         # infection risk
-        self.transmission_risk_resident_resident = 0.05  # per infected per day
-        self.transmission_risk_employee_resident = 0.05  # per infected per day
-        self.transmission_risk_employee_employee = 0.05  # per infected per day1
-        self.transmission_risk_resident_employee = 0.05  # per infected per day
+        self.transmission_risk_resident_resident = 0.01  # per infected per day
+        self.transmission_risk_employee_resident = 0.01  # per infected per day
+        self.transmission_risk_employee_employee = 0.01  # per infected per day
+        self.transmission_risk_resident_employee = 0.01  # per infected per day
         self.infection_risk_area_weights = check_area_dict(
             infection_risk_area_weights)
 
