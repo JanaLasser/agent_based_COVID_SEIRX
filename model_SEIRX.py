@@ -261,7 +261,8 @@ class SEIRX(Model):
         follow_up_testing_interval=None, screening_interval_residents=None, 
         screening_interval_employees=None, liberating_testing = False,
         index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_resident=0.01):
+        index_probability_employee=0.01, index_probability_resident=0.01,
+        seed=0):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
