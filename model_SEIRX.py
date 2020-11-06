@@ -438,7 +438,8 @@ class SEIRX(Model):
             # tests that happen in the period of time in which the agent is
             # exposed but not yet infectious
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable']:
-                if self.verbosity > 0: print('{} {} sent positive sample (even though not infectious yet)'\
+                if self.verbosity > 0: 
+                    print('{} {} sent positive sample (even though not infectious yet)'\
                     .format(a.type, a.ID))
                 a.sample = 'positive'
                 self.predetected_infections += 1
@@ -452,11 +453,15 @@ class SEIRX(Model):
             # infectious and the infection is detectable by a given test
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable'] and \
                a.days_since_exposure <= self.Testing.tests[test_type]['time_testable']:
-                if self.verbosity > 0: print('{} {} sent positive sample'\
-                    .format(a.type, a.ID))
+                if self.verbosity > 0: 
+                    print('{} {} sent positive sample'.format(a.type, a.ID))
                 a.sample = 'positive'
+
+            # track the undetected infections to assess how important they are
+            # for infection spread
             else:
-                if self.verbosity > 0: print('{} {} sent negative sample (even though infectious)'\
+                if self.verbosity > 0: 
+                    print('{} {} sent negative sample (even though infectious)'\
                     .format(a.type, a.ID))
                 a.sample = 'negative'
                 self.undetected_infections += 1
