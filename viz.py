@@ -63,7 +63,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	y_step = (y_max + np.abs(y_min)) / 10
 
 	pat_ax.set_ylim(y_min - y_step/2, y_max + y_step) 
-	pat_ax.text(x_max - x_extent / 2 - 0.1, y_max + y_step / 2, 'inhabitants', fontsize=14)
+	pat_ax.text(x_max - x_extent / 2 - 0.1, y_max + y_step / 2, 'residents', fontsize=14)
 	
 	for u, v in list(G.edges):
 		weight = G[u][v]['weight']**2 / 5
@@ -77,7 +77,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	for n in nodes:
 		if quarantine_states[n]:
 			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2,
-			edgecolors='k', linewidth=8)
+			edgecolors='k', linewidth=3)
 			resident_handles.update({n:handle})
 		else:
 			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2)
@@ -106,13 +106,13 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	    employees = [a.unique_id for a in model.schedule.agents if \
 	        (a.type == 'employee' and a.quarter == quarter)]
 
-	    emp_ax.text(j - 0.065, -0.8, quarter, fontsize=14)
+	    #emp_ax.text(j - 0.065, -0.8, quarter, fontsize=14)
 
 	    for i, e in enumerate(employees):
 	        ypos = i
 	        if quarantine_states[e]:
 	            handle = emp_ax.scatter(j, i, color=color_list[e], \
-	            	s=100, edgecolors='k', linewidth=8)
+	            	s=100, edgecolors='k', linewidth=3)
 	            employee_handles.update({e:handle})
 	        else:
 	            handle = emp_ax.scatter(j, i, color=color_list[e], s=150)
@@ -145,6 +145,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	return legend, employee_handles, resident_handles, step_text_handle
 
 def draw_infection_timeline(model, agent_type, ax):
+	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
 	if agent_type == 'resident':
 		N = model.num_residents
@@ -159,44 +160,57 @@ def draw_infection_timeline(model, agent_type, ax):
 											   - pop_numbers['I_{}'.format(agent_type)]\
 											   - pop_numbers['R_{}'.format(agent_type)]
 
-	ax.plot(pop_numbers['S_{}'.format(agent_type)]/N,\
-		 label='S', color=colors['susceptible'])
-	ax.plot(pop_numbers['E_{}'.format(agent_type)]/N,\
-		 label='E', color=colors['exposed'])
-	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N, \
-		 label='I', color=colors['infectious'])
-	ax.plot(pop_numbers['I_symptomatic_{}'.format(agent_type)]/N, \
-		 label='I symptomatic', color=colors['infectious'], alpha=0.3)
-	ax.plot(pop_numbers['R_{}'.format(agent_type)]/N, \
-		 label='R', color=colors['recovered'])
-	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N, \
-		 label='X', color=colors['quarantined'])
+	ax.plot(pop_numbers['S_{}'.format(agent_type)]/N * 100,\
+		 label='S', color=colors['susceptible'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['E_{}'.format(agent_type)]/N* 100,\
+		 label='E', color=colors['exposed'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N* 100, \
+		 label='$I_2$', color=colors['infectious'],
+		  linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N* 100, \
+		 label='$I_2$', color=colors['infectious'], alpha=0.3,
+		  linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['R_{}'.format(agent_type)]/N* 100, \
+		 label='R', color=colors['recovered'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['X_{}'.format(agent_type)]/N* 100, \
+		 label='X', color=colors['quarantined'], linewidth=linewidth, zorder=1)
 
 	# draw screen lines
 	for i, screen in enumerate(pop_numbers['screen_residents']):
 		if screen:
-			ax.plot([i, i], [0, 1], '--', color='green', alpha=0.3)
+			ax.plot([i, i], [0, 100], color='FireBrick', alpha=0.3,
+			 linewidth=7, zorder=2)
 	for i, screen in enumerate(pop_numbers['screen_employees']):
 		if screen:
-			ax.plot([i, i], [0, 1], '--', color='red', alpha=0.3)
+			ax.plot([i, i], [0, 100], color='DarkBlue', alpha=0.3, linewidth=2,
+				zorder=2)
 
 
 	# legend with custom artist for the screening lines
 	handles, labels = ax.get_legend_handles_labels()
-	resident_screen_handle = plt.Line2D((0,1),(0,0), color='green',
-		 linestyle='--', alpha=0.3)
-	employee_screen_handle = plt.Line2D((0,1),(0,0), color='red',
-		 linestyle='--', alpha=0.3)
+	resident_screen_handle = plt.Line2D((0,1),(0,0), color='FireBrick'
+		, alpha=0.3, linewidth=7)
+	employee_screen_handle = plt.Line2D((0,1),(0,0), color='DarkBlue',
+		 linewidth=2, alpha=0.3)
 
 	#Create legend from custom artist/label lists
 	ax.legend([handle for i,handle in enumerate(handles)] + \
 			[resident_screen_handle, employee_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['resident screen', 'employee screen'], ncol=2, loc=2, fontsize=12)
+	          ['resident screen', 'employee screen'], ncol=2, loc=6, 
+	          fontsize=14, bbox_to_anchor=[0, 0.55])
 
-	ax.set_xlabel('steps')
-	ax.set_ylabel('%')
-	ax.set_ylim(-0.05, 1.05)
-	ax.xaxis.set_major_locator(MultipleLocator(20))
-	ax.xaxis.set_minor_locator(MultipleLocator(5))
-	ax.set_title('{} (N={})'.format(agent_type, N))
+	ax.set_xlabel('steps', fontsize=20)
+	ax.set_ylabel('% of population', fontsize=20)
+	ax.set_ylim(-1, 100)
+	ax.set_xlim(0, 60)
+	ax.xaxis.set_major_locator(MultipleLocator(10))
+	ax.xaxis.set_minor_locator(MultipleLocator(1))
+	ax.tick_params(axis='both', which='major', labelsize=14)
+
+	ax.set_title('{}s (N={})'.format(agent_type, N), fontsize=20)
