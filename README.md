@@ -7,7 +7,7 @@ A simple simulation to explore the spread of COVID-19 in nursing homes via agent
 
 
 
-**This software is under development and intended to respond rapidly to the current situation. Please use ist with caution and bear in mind that there might be bugs**
+**This software is under development and intended to respond rapidly to the current situation. Please use it with caution and bear in mind that there might be bugs**
 
 Reference:  
 
@@ -69,7 +69,9 @@ The assumptions made by the model to simplify the dynamics of infection spread a
 The following requires the activation of the virtual environment you created during installation  
 ```source .my_venv/bin/activate```
 
-I provide an exemplary [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/example.ipynb) that illustrates how a simulation model is set up and run, how results are visualised and how data from a model run can be collected.
+I provide an exemplary [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/example.ipynb) that illustrates how a simulation model is set up and run, how results are visualised and how data from a model run can be collected.  
+
+I also provide the [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/screening_frequency_data_creation.ipynb) used to run the simulations and create the data used in the publication **Agent-based simulations for optimized prevention of the spread of SARS-CoV-2 in nursing homes** as well as the [Jupyter Notebook](https://github.com/JanaLasser/SEIRX_nursing_homes/blob/master/screening_frequency_analysis.ipynb) used to create the heatmaps for the different analysed screnarios from the simulation data.
 
 ## Acknowledgements
 I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from [Caritas Austria](https://www.caritas.at/) for the fruitful discussions that led to the development of this project.
