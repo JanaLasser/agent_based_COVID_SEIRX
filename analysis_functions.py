@@ -67,7 +67,9 @@ def get_statistics(df, col):
     return {
         '{}_mean'.format(col):df[col].mean(),
         '{}_median'.format(col):df[col].median(),
+        '{}_0.025'.format(col):df[col].quantile(0.025),
+        '{}_0.75'.format(col):df[col].quantile(0.75),
         '{}_0.25'.format(col):df[col].quantile(0.25),
-        '{}_0.95'.format(col):df[col].quantile(0.95),
+        '{}_0.975'.format(col):df[col].quantile(0.975),
         '{}_std'.format(col):df[col].std(),
     }
