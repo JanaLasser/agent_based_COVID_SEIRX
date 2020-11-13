@@ -3,6 +3,8 @@ __pycache__/
 
 *.ipynb    
 !example.ipynb
+!screening_frequency_data_creation.ipynb
+!screening_frequency_analysis.ipynb
 
 *.svg
 *.png
