@@ -2,7 +2,7 @@ from agent_SEIRX import agent_SEIRX
 
 
 
-class Employee(agent_SEIRX):
+class employee(agent_SEIRX):
     '''
     An employee with an infection status
     '''

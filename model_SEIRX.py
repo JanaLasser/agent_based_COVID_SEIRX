@@ -4,122 +4,7 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
-from agent_resident import resident
-from agent_employee import Employee
 from testing_strategy import Testing
-
-
-## data collection functions ##
-def count_E_resident(model):
-    E = np.asarray(
-        [a.exposed for a in model.schedule.agents if a.type == 'resident']).sum()
-    return E
-
-
-def count_I_resident(model):
-    I = np.asarray(
-        [a.infectious for a in model.schedule.agents if a.type == 'resident']).sum()
-    return I
-
-
-def count_I_symptomatic_resident(model):
-    I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'resident'and a.symptomatic_course)]).sum()
-    return I
-
-
-def count_I_asymptomatic_resident(model):
-    I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'resident'and a.symptomatic_course == False)]).sum()
-    return I
-
-
-def count_R_resident(model):
-    R = np.asarray(
-        [a.recovered for a in model.schedule.agents if a.type == 'resident']).sum()
-    return R
-
-
-def count_X_resident(model):
-    X = np.asarray(
-        [a.quarantined for a in model.schedule.agents if a.type == 'resident']).sum()
-    return X
-
-
-def count_E_employee(model):
-    E = np.asarray(
-        [a.exposed for a in model.schedule.agents if a.type == 'employee']).sum()
-    return E
-
-
-def count_I_employee(model):
-    I = np.asarray(
-        [a.infectious for a in model.schedule.agents if a.type == 'employee']).sum()
-    return I
-
-
-def count_I_symptomatic_employee(model):
-    I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'employee'and a.symptomatic_course)]).sum()
-    return I
-
-
-def count_I_asymptomatic_employee(model):
-    I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'employee'and a.symptomatic_course == False)]).sum()
-    return I
-
-
-def count_R_employee(model):
-    R = np.asarray(
-        [a.recovered for a in model.schedule.agents if a.type == 'employee']).sum()
-    return R
-
-
-def count_X_employee(model):
-    X = np.asarray(
-        [a.quarantined for a in model.schedule.agents if a.type == 'employee']).sum()
-    return X
-
-
-def get_number_of_diagnostic_tests(model):
-    return model.number_of_diagnostic_tests
-
-
-def get_number_of_preventive_screening_tests(model):
-    return model.number_of_preventive_screening_tests
-
-
-def check_resident_screen(model):
-    return model.screened_residents
-
-
-def check_employee_screen(model):
-    return model.screened_employees
-
-
-def get_infection_state(agent):
-    if agent.exposed == True: return 'exposed'
-    elif agent.infectious == True: return 'infectious'
-    elif agent.recovered == True: return 'recovered'
-    else: return 'susceptible'
-
-
-def get_quarantine_state(agent):
-    if agent.quarantined == True: return True
-    else: return False
-
-
-def get_undetected_infections(model):
-    return model.undetected_infections
-
-
-def get_predetected_infections(model):
-    return model.predetected_infections
-
-
-def get_pending_test_infections(model):
-    return model.pending_test_infections
 
 # parameter sanity check functions
 
@@ -142,15 +27,17 @@ def check_positive_int(var):
     return var
 
 
-def check_area_dict(var):
+def check_contact_type_dict(var):
 	assert type(var) == dict, 'not a dictionary'
-	assert set(var.keys()).issubset({'facility', 'room', 'table', 'quarters'}), \
-		'does not contain the correct area types (has to be room, table, quarters)'
+	assert set(var.keys()).issubset({'very_far', 'far', 'intermediate', 'close'}), \
+		'does not contain the correct contact types (has to be very_far, far, intermediate or close)'
 	return var
 
-def check_K1_areas(var):
+
+def check_K1_contact_types(var):
     for area in var:
-        assert area in ['facility', 'quarters', 'table', 'room'], 'are not recognised'
+        assert area in ['very_far', 'far', 'intermediate',
+            'close'], 'K1 contact type not recognised'
     return var
 
 
@@ -168,27 +55,25 @@ def check_graph(var):
     areas = [e[2]['area'] for e in var.edges(data=True)]
     areas = set(areas)
     for a in areas:
-        assert a in {'facility', 'room', 'table', 'quarters'}, 'area not recognised'
+        assert a in {'very_far', 'far', 'intermediate',
+            'close'}, 'contact type not recognised'
     return var
 
 
-def check_index_case_mode(var):
-	assert var in ['single_employee', 'single_resident', 'continuous_employee',
-	'continuous_resident', 'continuous_both'], 'unknown index case mode'
+def check_index_case(var, agent_types):
+	allowed_strings = agent_types
+	allowed_strings.extend('continuous')
+	assert var in allowed_strings, 'unknown index case mode'
 	return var
 
 
 class SEIRX(Model):
     '''
-    A model with a number of residents/inhabitatns and employees that reproduces
-    the SEIRX dynamics of pandemic spread in a long time care facility. Note:
+    A model with a number of different agents that reproduces
+    the SEIRX dynamics of pandemic spread in a facility. Note:
     all times are set to correspond to days
 
-    G: networkx undirected graph, interaction graph between inhabitants.
-    Note: the number of nodes in G also sets the number of inhabitants
-
-    employees_per_quarter: integer, number of employees per living quarter of
-    the facility
+    G: networkx undirected graph, interaction graph between agents.
 
     verbosity: integer in [0, 1, 2], controls text output to std out to track
     simulation progress and transmission dynamics
@@ -208,70 +93,96 @@ class SEIRX(Model):
     quarantine_duration: positive integer, sets the time a positively tested
     agent is quarantined
 
-    symptom_probability: float in the range [0, 1], sets the probability for a
-    symptomatic disease course
-
     subclinical_modifier: float, modifies the infectiousness of asymptomatic
     cases
 
-    infection_risk_area_weights: dictionary of the form {'room':int, 'table':int,
-    'quarters':int} that sets transmission risk multipliers for different living
-    areas of inhabitants
+    infection_risk_contact_type_weights: dictionary of the form
+    {'very_far':float, 'far':float, 'intermediate':float, 'close':float}
+    that sets transmission risk multipliers for different contact types of
+    agents
 
-    K1_areas: list of strings. Definition of areas for which agents are 
-    considered "K1 contact persons" if they had contact to a positively tested
-    person in a given area. Possible areas are "quarters", "room", "table"
+    K1_contact_types: list of strings. Definition of contact types for which
+    agents are considered "K1 contact persons" if they had contact to a
+    positively tested person in a given area. Possible contact types are
+    'very_far', 'far', 'intermediate', 'close'
 
-    time_until_test_result: positive integer, sets the time until a test result
-    arrives after an agent has been tested
+    diagnostic_test_type: string, specifies the test technology and
+    test result turnover time used for diagnostic testing. See module
+    "Testing" for different implemented testing techologies
+
+    preventive_screening_test_type: string, specifies the test technology and
+    test result turnover time used for preventive sreening. See module
+    "Testing" for different implemented testing techologies
 
     follow_up_testing_interval: positive integer, sets the time a follow-up
     screen is run after an initial screen triggered by a positive test result
 
-    screening_interval_residents: positive integer, sets the time for regular
-    preventive screens of the resident population
+    liberating_testing: boolean, flag that specifies, whether or not an agent
+    is released from quarantine after returning a negative test result
 
-    screening_interval_employees: positive integer, sets the time for regular
-    preventive screens of the employee population
+	index_case: specifies whether agents have a continuing risk in
+	every step of the simulation to become an index case ('continuous') or
+	whether a single (randomly chosen) agent from a group will be the index
+	case. In this case, index_case needs to be the name of the agent group from
+	which the index case will be chosen
 
-    index_case_mode: string, can be 'continuous' or 'single'. If 'continuous',
-    new index cases can be introduced by employees in every simulation time step.
-    If 'single', one employee is an index case (exposed) in the first time step
-    of the simulation but no further index cases are introduced throughout the
-    course of the simulation
+	agent_types: dictionary of the structure
+		{
+		agent type:
+			{
+			screening interval : integer, number of days between each preventive
+			screen in this agent group
 
-    index_probability_employee: float, sets the probability an employee will
-    become an index case in one simulation time step if index_case_mode is one
-    of 'continuous_employee' or 'continuous_both'
+			index probability : float in the range [0, 1], sets the probability
+			to become an index case in each time step
 
-    index_probability_resident: float, sets the probability an employee will
-    become an index case in one simulation time step if index_case_mode is one
-    of 'continuous_inhabitant' or 'continuous_both'
+			transmission_risk : float in the range [0, 1], sets the probability
+			to transmit an infection if in contact with a susceptible agent
+
+			reception_risk : float in the range [0, 1], sets the probability to
+			get infected if in contact with an infectious agnt
+
+			symptom_probability : float in the range [0, 1], sets the probability
+			for a symptomatic disease course
+			}
+		}
+
+	The dictionary's keys are the names of the agent types which have to
+	correspond to the node attributes in the contact graph. The screening
+	interval sets the time-delay between preventive screens of this agent group,
+	the index probability sets the probability of a member of this agent group
+	becoming an index case in every time step
 
     seed: positive integer, fixes the seed of the simulation to enable
     repeatable simulation runs
     '''
 
-    def __init__(self, G, employees_per_quarter, verbosity=0, testing=True,
-    	infection_duration=11, exposure_duration=4, time_until_symptoms=6,
-        quarantine_duration=14, symptom_probability=0.6, subclinical_modifier=1,
-    	infection_risk_area_weights={'room':4,'table':2,'quarters':1,'facility':0.1},
-        K1_areas=['room', 'table'], diagnostic_test_type='one_day_PCR',
-        preventive_screening_test_type='one_day_PCR',
-        follow_up_testing_interval=None, screening_interval_residents=None, 
-        screening_interval_employees=None, liberating_testing = False,
-        index_case_mode='continuous_employee',
-        index_probability_employee=0.01, index_probability_resident=0.01,
-        seed=0):
+    def __init__(self, G, verbosity, testing,
+    	infection_duration, exposure_duration, time_until_symptoms,
+        quarantine_duration, subclinical_modifier,
+    	infection_risk_contact_type_weights,
+        K1_contact_types, diagnostic_test_type,
+        preventive_screening_test_type,
+        follow_up_testing_interval, liberating_testing,
+        index_case,
+        agent_types,
+        seed):
+
+        print(testing)
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
         # flag to turn off the testing & tracing strategy
         self.testing = check_bool(testing)
         self.running = True  # needed for the batch runner implemented by mesa
+        # set the interaction mode to simultaneous activation
+        self.schedule = SimultaneousActivation(self)
 
-        # one of two ways to introduce index cases into the system
-        self.index_case_mode = check_index_case_mode(index_case_mode)
+        # specifies either continuous probability for index cases in agent
+        # groups based on the 'index_probability' for each agent group, or a
+        # single (randomly chosen) index case in the passed agent group
+        self.index_case = check_index_case(index_case)
+
         self.Nstep = 0  # internal step counter used to launch screening tests
 
         # durations
@@ -285,79 +196,84 @@ class SEIRX(Model):
         # duration of quarantine
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
-        # infection risk
-        self.transmission_risk_resident_resident = 0.015  # per infected per day
-        self.transmission_risk_employee_resident = 0.015  # per infected per day
-        self.transmission_risk_employee_employee = 0.015  # per infected per day
-        self.transmission_risk_resident_employee = 0.015  # per infected per day
-        self.infection_risk_area_weights = check_area_dict(
-            infection_risk_area_weights)
+        self.infection_risk_area_weights = check_contact_type_dict(
+            infection_risk_contact_type_weights)
 
-        # index case probability for every employee in every step
-        self.index_probability_employee = check_probability(
-            index_probability_employee)
-        self.index_probability_resident = check_probability(
-            index_probability_resident)
-
-        # symptom probability
-        self.symptom_probability = check_probability(symptom_probability)
         # modifier for infectiosness for asymptomatic cases
         self.subclinical_modifier = check_positive(subclinical_modifier)
 
-        ## agents and their interactions
-        # interaction graph of residents
-        self.G = check_graph(G)  
+        # agents and their interactions
+        # interaction graph of agents
+        self.G = check_graph(G)
         # add weights as edge attributes so they can be visualised easily
         for e in G.edges(data=True):
-            G[e[0]][e[1]]['weight'] = self.infection_risk_area_weights[G[e[0]][e[1]]['area']]
+            G[e[0]][e[1]]['weight'] = self.infection_risk_contact_type_weights[G[e[0]]
+                [e[1]]['contact_type']]
 
-        # add resident agents to the scheduler
-        IDs = list(self.G.nodes)
-        quarters = [self.G.nodes[ID]['quarter'] for ID in IDs]
-        self.schedule = SimultaneousActivation(self)
-        for ID, quarter in zip(IDs, quarters):
-            p = resident(ID, quarter, self, verbosity)
-            self.schedule.add(p)
-        self.num_residents = len(IDs)
+        # extract the different agent types from the contact graph
+        self.agent_types = list(agent_types.keys())
+        # set index case probabilities for each agent type
+        self.index_probabilities = {t: check_probability(
+        	agent_types[t]['index_probability']) for t in self.agent_types}
+        # set transmission risks for each agent type
+        self.transmission_risks = {t: check_probability(
+        	agent_types[t]['transmission_risk']) for t in self.agent_types}
+        # set reception risks for each agent type
+        self.transmission_risks = {t: check_probability(
+        	agent_types[t]['reception_risk']) for t in self.agent_types}
+        # set symptom probabilities for each agent type
+        self.symptom_probabilities = {t: check_probability(
+        	agent_types[t]['symptom_probability']) for t in self.agent_types}
 
-        # add employee agents to the scheduler
-        self.employees_per_quarter = check_positive_int(employees_per_quarter)
-        quarters = set([n[1]['quarter'] for n in self.G.nodes(data=True)])
-        i = 1
-        for quarter in quarters:
-            for j in range(self.employees_per_quarter):
-                e = Employee('e{}'.format(i), quarter, self, verbosity)
-                self.schedule.add(e)
-                i += 1
+        ######### placeholder #########
+        ### add agents to the model ###
+        ###############################
 
-        self.num_agents = len(IDs) + self.employees_per_quarter * len(quarters)
-
-
-        # infect the first employee to introduce the disease.
-        if self.index_case_mode == 'single_employee':
-            employees = [
-                a for a in self.schedule.agents if a.type == 'employee']
-            employees[0].exposed = True
+        # infect the first agent in single index case mode
+        if self.index_case != 'continuous':
+            infection_targets = [
+                a for a in self.schedule.agents if a.type == index_case]
+            # pick a random agent to infect in the selected agent group
+            target = np.random.randint(len(infection_targets))
+            infection_targets[target].exposed = True
             if self.verbosity > 0:
-                print('employee exposed: {}'.format(employees[0].ID))
-
-        # infect the first inhabitant to introduce the disease.
-        if self.index_case_mode == 'single_resident':
-            residents = [a for a in self.schedule.agents if a.type == 'resident']
-            residents[0].exposed = True
-            if self.verbosity > 0:
-                print('resident exposed: {}'.format(residents[0].ID))
-
-        # flag that indicates whether a screen took place this turn in a given
-        # agent group
-        self.screened_residents = False
-        self.screened_employees = False
+                print('{} exposed: {}'.format(index_case,
+                 	infection_targets[target].ID))
 
         # list of agents that were tested positive this turn
         self.newly_positive_agents = []
+        # flag that indicates if there were new positive tests this turn
         self.new_positive_tests = False
-        self.scheduled_follow_up_screen_resident = False
-        self.scheduled_follow_up_screen_employee = False
+        # dictionary of flags that indicate whether a given agent group has
+        # been creened this turn
+        self.screened_agents = {agent_type: False for agent_type in
+        	self.agent_types}
+
+        # dictionary of counters that count the days since a given agent group
+        # was screened. Initialized differently for different index case modes
+        if self.index_case_mode == 'continuous':
+        	self.days_since_last_agent_screen = {agent_type: 0 for agent_type in
+        	self.agent_types}
+        # NOTE: if we initialize these variables with 0 in the case of a single
+        # index case, we introduce a bias since in 'single index case mode' the
+        # first index case will always become exposed in step 0. To realize
+        # random states of the preventive sceening procedure with respect to the
+        # incidence of the index case, we have to randomly pick the days since
+        # the last screen for the agent group from which the index case is
+        else:
+        	self.days_since_last_agent_screen = {}
+        	for agent_type in self.agent_types:
+        		if agent_type == index_case:
+        			self.days_since_last_agent_screen.update({
+        				agent_type: self.random.choice(range(0,
+        				 self.screening_intervals[agent_type] + 1))})
+        		else:
+        			self.days_since_last_agent_screen.update({agent_type: 0})
+
+        # dictionary of flags that indicates whether a follow-up screen for a
+        # given agent group is scheduled
+        self.scheduled_follow_up_screen = {agent_type: False for agent_type in
+        	self.agent_types}
 
         # counters
         self.number_of_diagnostic_tests = 0
@@ -366,64 +282,36 @@ class SEIRX(Model):
         self.predetected_infections = 0
         self.pending_test_infections = 0
 
-        # counter for days since the last test screen
-        # NOTE: if we initialize these variables with 0 in the case of a single
-        # index case for either employees or inhabitants, we introduce a
-        # bias since in 'single index case mode' the first index case will always
-        # become exposed in step 0. To realize random states of the preventive
-        # scenning procedure with respect to the incidence of the index case, we
-        # have to randomly pick the "days_since_last_X_screen" as well
-
-        if self.index_case_mode == 'single_employee' and \
-        	screening_interval_employees != None:
-            self.days_since_last_resident_screen = 0
-            self.days_since_last_employee_screen = \
-                self.random.choice(range(0, screening_interval_employees + 1))
-
-        elif self.index_case_mode == 'single_resident' and \
-        	screening_interval_residents != None:
-        	self.days_since_last_employee_screen = 0
-        	self.days_since_last_resident_screen = \
-                self.random.choice(range(0, screening_interval_residents + 1))
-
-        else:
-            self.days_since_last_employee_screen = 0
-            self.days_since_last_resident_screen = 0
-
         # testing strategy
+        # extract the screening intervals for each agent type
+        screening_intervals = {t: check_positive_int(
+        	agent_types[t]['screening_interval']) for t in self.agent_types}
+
         self.Testing = Testing(self, diagnostic_test_type,
              preventive_screening_test_type,
              check_positive_int(follow_up_testing_interval),
-             check_positive_int(screening_interval_residents),
-             check_positive_int(screening_interval_employees),
+             screening_intervals,
              check_bool(liberating_testing),
-             check_K1_areas(K1_areas),
+             check_K1_contact_ypes(K1_contact_types),
              verbosity)
-        
-        # data collectors to save population counts and resident / employee
-        # states every time step
+
+        # data collectors to save population counts and agent states every
+        # time step
         self.datacollector = DataCollector(
-            model_reporters = {'E_resident':count_E_resident,
-                               'I_resident':count_I_resident,
-                               'I_symptomatic_resident':count_I_symptomatic_resident,
-                               'R_resident':count_R_resident,
-                               'X_resident':count_X_resident,
-                               'E_employee':count_E_employee,
-                               'I_employee':count_I_employee,
-                               'I_symptomatic_employee':count_I_symptomatic_employee,
-                               'R_employee':count_R_employee,
-                               'X_employee':count_X_employee,
-                               'screen_residents':check_resident_screen,
-                               'screen_employees':check_employee_screen,
-                               'number_of_diagnostic_tests':get_number_of_diagnostic_tests,
-                               'number_of_preventive_screening_tests':get_number_of_preventive_screening_tests,
-                               'undetected_infections':get_undetected_infections,
-                               'predetected_infections':get_predetected_infections,
-                               'pending_test_infections':get_pending_test_infections},
+            model_reporters={
+            					'number_of_diagnostic_tests':
+            					self.get_number_of_diagnostic_tests,
+                               	'number_of_preventive_screening_tests':
+                               	self.get_number_of_preventive_screening_tests,
+                               	'undetected_infections':
+                               	self.get_undetected_infections,
+                               	'predetected_infections':
+                               	self.get_predetected_infections,
+                               	'pending_test_infections':
+                               	self.get_pending_test_infections},
 
-            agent_reporters = {'infection_state':get_infection_state,
-                               'quarantine_state':get_quarantine_state})
-
+            agent_reporters={'infection_state': self.get_infection_state,
+                               'quarantine_state': self.get_quarantine_state})
 
     def test_agent(self, a, test_type):
         a.tested = True
@@ -433,18 +321,17 @@ class SEIRX(Model):
         else:
             self.number_of_preventive_screening_tests += 1
 
-
         if a.exposed:
             # tests that happen in the period of time in which the agent is
             # exposed but not yet infectious
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable']:
-                if self.verbosity > 0: 
-                    print('{} {} sent positive sample (even though not infectious yet)'\
+                if self.verbosity > 0:
+                    print('{} {} sent positive sample (even though not infectious yet)'
                     .format(a.type, a.ID))
                 a.sample = 'positive'
                 self.predetected_infections += 1
             else:
-                if self.verbosity > 0: print('{} {} sent negative sample'\
+                if self.verbosity > 0: print('{} {} sent negative sample'
                     .format(a.type, a.ID))
                 a.sample = 'negative'
 
@@ -453,21 +340,21 @@ class SEIRX(Model):
             # infectious and the infection is detectable by a given test
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable'] and \
                a.days_since_exposure <= self.Testing.tests[test_type]['time_testable']:
-                if self.verbosity > 0: 
+                if self.verbosity > 0:
                     print('{} {} sent positive sample'.format(a.type, a.ID))
                 a.sample = 'positive'
 
             # track the undetected infections to assess how important they are
             # for infection spread
             else:
-                if self.verbosity > 0: 
-                    print('{} {} sent negative sample (even though infectious)'\
+                if self.verbosity > 0:
+                    print('{} {} sent negative sample (even though infectious)'
                     .format(a.type, a.ID))
                 a.sample = 'negative'
                 self.undetected_infections += 1
 
         else:
-            if self.verbosity > 0: print('{} {} sent negative sample'\
+            if self.verbosity > 0: print('{} {} sent negative sample'
                 .format(a.type, a.ID))
             a.sample = 'negative'
 
@@ -475,25 +362,18 @@ class SEIRX(Model):
         if a.days_since_tested >= self.Testing.tests[test_type]['time_until_test_result']:
             a.act_on_test_result()
 
-
-
     def screen_agents(self, agent_group, test_type):
         # only test agents that have not been tested already in this simulation
         # step and that are not already known positive cases
-        untested_agents = [a for a in self.schedule.agents if \
-            (a.tested == False and a.known_positive == False \
+        untested_agents = [a for a in self.schedule.agents if
+            (a.tested == False and a.known_positive == False
                 and a.type == agent_group)]
 
         if len(untested_agents) > 0:
-            if agent_group == 'resident': 
-                self.screened_residents = True
-            elif agent_group == 'employee': 
-                self.screened_employees = True
-            else:
-                print('unknown agent group!')
+            self.screened_agents[agent_group] = True
 
             for a in untested_agents:
-                self.test_agent(a, test_type)                
+                self.test_agent(a, test_type)
 
             if self.verbosity > 0:
                 print()
@@ -501,16 +381,15 @@ class SEIRX(Model):
             if self.verbosity > 0:
                 print('no agents tested because all agents have already been tested')
 
-
-    # the type of the test used in the pending test result is stored in the 
+    # the type of the test used in the pending test result is stored in the
     # variable pending_test
+
     def collect_test_results(self):
-        agents_with_test_results = [a for a in self.schedule.agents if \
-            (a.pending_test and \
+        agents_with_test_results = [a for a in self.schedule.agents if
+            (a.pending_test and
              a.days_since_tested >= self.Testing.tests[a.pending_test]['time_until_test_result'])]
 
         return agents_with_test_results
-
 
     def trace_contacts(self, a):
         if a.quarantined == False:
@@ -518,39 +397,26 @@ class SEIRX(Model):
             if self.verbosity > 0:
                 print('qurantined {} {}'.format(a.type, a.ID))
 
-        if a.type == 'resident':
-            # find all residents that share edges with the given resident
-            # that are classified as K1 contact areas in the testing
-            # strategy
-            K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if \
-                e[2]['area'] in self.Testing.K1_areas]
-            K1_contacts = [a for a in self.schedule.agents if \
-                (a.type == 'resident' and a.ID in K1_contacts)]
-            for K1_contact in K1_contacts:
-                if self.verbosity > 0:
-                    print('quarantined {} {} (K1 contact of {} {})'\
-                        .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
-                K1_contact.quarantined = True
+        # find all agents that share edges with the agent
+        # that are classified as K1 contact types in the testing
+        # strategy
+        K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if
+            e[2]['contact_type'] in self.Testing.K1_contact_types]
+        K1_contacts = [a for a in self.schedule.agents if a.ID in K1_contacts]
 
-        if a.type == 'employee' and 'quarters' in self.Testing.K1_areas:
-            # find all employees that work in the same quarters as 
-            # the infected employee and send them to quarantine
-            quarter = a.quarter
-            K1_contacts = [e for e in self.schedule.agents if e.quarter == quarter]
-            for K1_contact in K1_contacts:
-                if self.verbosity > 0:
-                    print('quarantined {} {} (K1 contact of {} {})'\
-                        .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
-                K1_contact.quarantined = True
+        for K1_contact in K1_contacts:
+            if self.verbosity > 0:
+                print('quarantined {} {} (K1 contact of {} {})'
+                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
+            K1_contact.quarantined = True
 
-        
     def step(self):
         if self.testing:
             if self.verbosity > 0: print('* testing and tracing *')
 
-            # find symptomatic agents that have not been tested yet and are not 
+            # find symptomatic agents that have not been tested yet and are not
             # in quarantine and test them
-            newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents \
+            newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents
                 if (a.symptoms == True and a.tested == False and a.quarantined == False)])
 
             for a in newly_symptomatic_agents:
@@ -567,9 +433,9 @@ class SEIRX(Model):
 
             # trace and quarantine contacts of newly positive agents
             if len(self.newly_positive_agents) > 0:
-                if self.verbosity > 0: print('new positive test(s) from {}'\
+                if self.verbosity > 0: print('new positive test(s) from {}'
                     .format([a.ID for a in self.newly_positive_agents]))
-                
+
                 # send all K1 contacts of positive agents into quarantine
                 for a in self.newly_positive_agents:
                     self.trace_contacts(a)
@@ -593,111 +459,96 @@ class SEIRX(Model):
             # (a)
             if self.new_positive_tests == True:
 
-                #if self.Testing.follow_up_testing_interval != None:
-                #    if self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
-                #        if self.verbosity > 0: 
-                #            print('initiating resident screen because of positive test(s)')
-                #        self.screen_agents('resident')
-                #        self.screened_residents = True
-                #        self.days_since_last_resident_screen = 0
-                #        self.scheduled_follow_up_screen_resident = True
-                #    else:
-                #        if self.verbosity > 0: 
-                #            print('not initiating resident screen because of positive test(s) (last screen too close)')
-                #        self.screened_residents = False
-                #        self.days_since_last_resident_screen += 1
+            	for agent_type in self.agent_types:
+	                if self.verbosity > 0:
+	                    print('initiating {} screen because of positive test(s)'
+	                    	.format(agent_type))
+	                self.screen_agents(
+	                    agent_type, self.Testing.diagnostic_test_type)
+	                self.screened_agents[agent_type] = True
+	                self.days_since_last_agent_screen[agent_type] = 0
+	                self.scheduled_follow_up_screen[agent_type] = True
 
-                if self.verbosity > 0: 
-                    print('initiating resident screen because of positive test(s)')
-                self.screen_agents('resident', self.Testing.diagnostic_test_type)
-                self.screened_residents = True
-                self.days_since_last_resident_screen = 0
-                self.scheduled_follow_up_screen_resident = True
-
-
-                #if self.Testing.follow_up_testing_interval != None:
-                #    if self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
-                #        if self.verbosity > 0: 
-                #            print('initiating employee screen because of positive test(s)')
-                #        self.screen_agents('employee')
-                #        self.screened_employees = True
-                #        self.days_since_last_employee_screen = 0
-                #        self.scheduled_follow_up_screen_employee = True
-                #    else:
-                #        if self.verbosity > 0: 
-                #            print('not initiating employee screen because of positive test(s) (last screen too close)')
-                #        self.screened_employees = False
-                #        self.days_since_last_employee_screen += 1
-
-                if self.verbosity > 0: 
-                    print('initiating employee screen because of positive test(s)')
-                self.screen_agents('employee', self.Testing.diagnostic_test_type)
-                self.screened_employees = True
-                self.days_since_last_employee_screen = 0
-                self.scheduled_follow_up_screen_employee = True
-                
             # (b)
             elif self.Testing.follow_up_testing_interval != None and \
-                (self.scheduled_follow_up_screen_resident or self.scheduled_follow_up_screen_employee):
+                sum(list(self.scheduled_follow_up_screen.values())) > 0:
 
-                    if self.scheduled_follow_up_screen_resident and \
-                       self.days_since_last_resident_screen >= self.Testing.follow_up_testing_interval:
-                        if self.verbosity > 0: print('initiating resident follow-up screen')
-                        self.screen_agents('resident', self.Testing.diagnostic_test_type)
-                        self.screened_residents = True
-                        self.days_since_last_resident_screen = 0
+                for agent_type in self.agent_types:
+                    if self.scheduled_follow_up_screen[agent_type] and\
+                       self.days_since_last_agent_screen[agent_type] >=\
+                       self.Testing.follow_up_testing_interval:
+
+                        if self.verbosity > 0:
+                            print('initiating {} follow-up screen'
+                                .format(agent_type))
+                        self.screen_agents(
+                            agent_type, self.Testing.diagnostic_test_type)
+                        self.screened_agents[agent_type] = True
+                        self.days_since_last_agent_screen[agent_type] = 0
                     else:
                         if self.verbosity > 0: 
-                            print('not initiating resident follow-up screen (last screen too close)')
-                        self.screened_residents = False
-                        self.days_since_last_resident_screen += 1
-
-                    if self.scheduled_follow_up_screen_employee and \
-                       self.days_since_last_employee_screen >= self.Testing.follow_up_testing_interval:
-                        if self.verbosity > 0: print('initiating employee follow-up screen')
-                        self.screen_agents('employee', self.Testing.diagnostic_test_type)
-                        self.screened_employees = True
-                        self.days_since_last_employee_screen = 0
-                        self.scheduled_follow_up_screen = False 
-                    else:
-                        if self.verbosity > 0: 
-                            print('not initiating employee follow-up screen (last screen too close)')
-                        self.screened_employees = False
-                        self.days_since_last_employee_screen += 1
+                            print('not initiating {} follow-up screen (last screen too close)'\
+                            	.format(agent_type))
+                        self.screened_agents[agent_type] = False
+                        self.days_since_last_agent_screen[agent_type] += 1
 
             # (c) 
-            elif (self.Testing.screening_interval_residents != None or\
-                  self.Testing.screening_interval_employees != None):
+            elif np.any(self.Testing.screening_intervals):
+                for agent_type in self.agent_types:
+                    if self.Testing.screening_intervals[agent_type] != None and\
+                    self.days_since_last_agent_screen[agent_type] >=\
+                    self.Testing.screening_intervals[test_type]:
+                        if self.verbosity > 0: 
+                            print('initiating preventive {} screen'\
+                                .format(agent_type))
+                        self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type)
+                        self.screen_agents[agent_type] = True
+                        self.days_since_last_agent_screen[agent_type] = 0
+                    else:
+                        self.screen_agents[agent_type] = False
+                        self.days_since_last_agent_screen[agent_type] += 1
 
-                # preventive resident screens
-                if self.Testing.screening_interval_residents != None and\
-                   self.days_since_last_resident_screen >= self.Testing.screening_interval_residents:
-                    if self.verbosity > 0: print('initiating preventive resident screen')
-                    self.screen_agents('resident', self.Testing.preventive_screening_test_type)
-                    self.screened_residents = True
-                    self.days_since_last_resident_screen = 0
-                else:
-                    self.screened_residents = False
-                    self.days_since_last_resident_screen += 1
-
-                # preventive employee screens
-                if self.Testing.screening_interval_employees != None and\
-                   self.days_since_last_employee_screen >= self.Testing.screening_interval_employees:
-                   if self.verbosity > 0: print('initiating preventive employee screen')
-                   self.screen_agents('employee', self.Testing.preventive_screening_test_type)
-                   self.screened_employees = True
-                   self.days_since_last_employee_screen = 0 
-                else:
-                    self.screened_employees = False
-                    self.days_since_last_employee_screen += 1
             else:
-                self.screened_residents = False
-                self.screened_employees = False
-                self.days_since_last_resident_screen += 1
-                self.days_since_last_employee_screen += 1
+            	for agent_type in self.agent_types:
+            		self.screen_agents[agent_type] = False
+            		self.days_since_last_agent_screen[agent_type] += 1
 
 
         if self.verbosity > 0: print('* agent interaction *')
         self.datacollector.collect(self)
         self.schedule.step()
         self.Nstep += 1
+
+    ## data collection functions ##
+
+    def get_number_of_diagnostic_tests(model):
+        return model.number_of_diagnostic_tests
+
+
+    def get_number_of_preventive_screening_tests(model):
+        return model.number_of_preventive_screening_tests
+
+
+    def get_infection_state(agent):
+        if agent.exposed == True: return 'exposed'
+        elif agent.infectious == True: return 'infectious'
+        elif agent.recovered == True: return 'recovered'
+        else: return 'susceptible'
+
+
+    def get_quarantine_state(agent):
+        if agent.quarantined == True: return True
+        else: return False
+
+
+    def get_undetected_infections(model):
+        return model.undetected_infections
+
+
+    def get_predetected_infections(model):
+        return model.predetected_infections
+
+
+    def get_pending_test_infections(model):
+        return model.pending_test_infections
