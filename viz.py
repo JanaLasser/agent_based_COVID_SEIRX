@@ -84,8 +84,6 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 			resident_handles.update({n:handle})
 
 
-
-
 	## draw employees
 	employees = [a.unique_id for a in model.schedule.agents if a.type == 'employee']
 	employee_states = model.datacollector.get_agent_vars_dataframe()
@@ -135,6 +133,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 		 marker='o', linestyle='', markersize=15)
 	X_handle = plt.Line2D((0,1),(0,0), color='k',marker='o', 
 		linestyle='', markersize=15, mfc='none', mew=3)
+
 	#Create legend from custom artist/label lists
 	legend = leg_ax.legend([S_handle, E_handle, I_handle, R_handle, X_handle],
 	          ['susceptible', 'exposed', 'infected', 'recovered', 'quarantined'],
@@ -166,11 +165,11 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.plot(pop_numbers['E_{}'.format(agent_type)]/N* 100,\
 		 label='E', color=colors['exposed'], linewidth=linewidth, zorder=1)
 
-	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N* 100, \
-		 label='$I_2$', color=colors['infectious'],
+	ax.plot(pop_numbers['I_symptomatic_{}'.format(agent_type)]/N* 100, \
+		 label='$I_1$', color=colors['infectious'],
 		  linewidth=linewidth, zorder=1)
 
-	ax.plot(pop_numbers['I_{}'.format(agent_type)]/N* 100, \
+	ax.plot(pop_numbers['I_asymptomatic_{}'.format(agent_type)]/N* 100, \
 		 label='$I_2$', color=colors['infectious'], alpha=0.3,
 		  linewidth=linewidth, zorder=1)
 

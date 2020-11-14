@@ -111,13 +111,15 @@ data_collection_functions = \
     }
 
 
+
+
 class SEIRX_nursing_home(SEIRX):
 
     def __init__(self, G, verbosity=0, testing=True,
         infection_duration=11, exposure_duration=4, time_until_symptoms=6,
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
-            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
+            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 2},
         K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, liberating_testing=False,
