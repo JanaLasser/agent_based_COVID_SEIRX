@@ -77,19 +77,26 @@ class agent_SEIRX(Agent):
         contacts = [a for a in self.model.schedule.agents if a.ID in contacts]
         return contacts
 
-    def transmit_infection(self, contacts, transmission_risk, modifier):
+    def transmit_infection(self, contacts, transmission_risk, base_modifier):
         for c in contacts:
             if (c.exposed == False) and (c.infectious == False) and \
                (c.recovered == False) and (c.contact_to_infected == False):
 
-                if self.type == 'resident' and c.type == 'resident':
-                    modifier *= self.model.G.get_edge_data('p1','p2')['weight']
+                # modify the transmission risk based on the contact type
+                modifier = base_modifier * \
+                           self.model.G.get_edge_data(self.ID, c.ID)['weight']
+                # modify the transmission risk based on the reception risk of 
+                # the receiving agent
+                modifier *= self.model.reception_risks[c.type]
 
+                modified_transmission_risk = 1 - transmission_risk * modifier
 
                 # draw random number for transmission
                 transmission = self.random.random()
 
-                if transmission > 1 - transmission_risk * modifier:
+                #print(modified_transmission_risk)
+
+                if transmission > modified_transmission_risk:
                     c.contact_to_infected = True
                     self.transmissions += 1
 
@@ -205,7 +212,7 @@ class agent_SEIRX(Agent):
         # I.e. agents that will become symptomatic down the road might
         # already be more infectious before they show any symptoms than
         # agents that stay asymptomatic
-        if self.random.random() <= self.model.symptom_probability:
+        if self.random.random() <= self.model.symptom_probabilities[self.type]:
             self.symptomatic_course = True
             if self.verbose > 0:
                 print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))

@@ -12,7 +12,7 @@ class resident(agent_SEIRX):
     def __init__(self, unique_id, quarter, model, verbosity):
         super().__init__(unique_id, quarter, model, verbosity)
         self.type = 'resident'
-        self.index_probability = self.model.index_probability_resident
+        self.index_probability = self.model.index_probabilities[self.type]
         
 
     def step(self):
@@ -23,8 +23,8 @@ class resident(agent_SEIRX):
         "advance"-step to simulate "simultaneous" interaction
         '''
         # check for external infection in continuous index case modes
-        if self.model.index_case_mode in ['continuous_resident',\
-                                          'continuous_both']:
+        if self.model.index_case in ['continuous'] and \
+           self.index_probability > 0:
             self.introduce_external_infection()
 
         # simulate contacts to other employees and residents if the agent is
@@ -51,6 +51,8 @@ class resident(agent_SEIRX):
                 # code transmission to residents and transmission to employees
                 # separately to allow for differences in transmission risk
                 self.transmit_infection(residents, 
-                    self.model.transmission_risk_resident_resident, modifier)
+                    self.model.transmission_risks[self.type], modifier)
                 self.transmit_infection(employees, 
-                    self.model.transmission_risk_resident_employee, modifier)
+                    self.model.transmission_risks[self.type], modifier)
+
+

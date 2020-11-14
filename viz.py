@@ -148,9 +148,9 @@ def draw_infection_timeline(model, agent_type, ax):
 	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
 	if agent_type == 'resident':
-		N = model.num_residents
+		N = model.num_agents['resident']
 	elif agent_type == 'employee':
-		N = model.employees_per_quarter
+		N = model.num_agents['employee']
 		N_quarters = len(list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes])))
 		N *= N_quarters
 	else:

@@ -6,6 +6,39 @@ from mesa.datacollection import DataCollector
 
 from testing_strategy import Testing
 
+## data collection functions ##
+
+def get_N_diagnostic_tests(model):
+    return model.number_of_diagnostic_tests
+
+
+def get_N_preventive_screening_tests(model):
+    return model.number_of_preventive_screening_tests
+
+
+def get_infection_state(agent):
+    if agent.exposed == True: return 'exposed'
+    elif agent.infectious == True: return 'infectious'
+    elif agent.recovered == True: return 'recovered'
+    else: return 'susceptible'
+
+
+def get_quarantine_state(agent):
+    if agent.quarantined == True: return True
+    else: return False
+
+
+def get_undetected_infections(model):
+    return model.undetected_infections
+
+
+def get_predetected_infections(model):
+    return model.predetected_infections
+
+
+def get_pending_test_infections(model):
+    return model.pending_test_infections
+
 # parameter sanity check functions
 
 
@@ -31,6 +64,9 @@ def check_contact_type_dict(var):
 	assert type(var) == dict, 'not a dictionary'
 	assert set(var.keys()).issubset({'very_far', 'far', 'intermediate', 'close'}), \
 		'does not contain the correct contact types (has to be very_far, far, intermediate or close)'
+	assert all((isinstance(i, int) or isinstance(i, float)) for i in var.values()), \
+		'contact type weights are not numeric'
+
 	return var
 
 
@@ -42,7 +78,8 @@ def check_K1_contact_types(var):
 
 
 def check_probability(var):
-	assert type(var) == float, 'not a float'
+	assert (type(var) == float) or (var == 0) or (var == 1), \
+		 '{} not a float'.format(var)
 	assert var >= 0, 'probability negative'
 	assert var <= 1, 'probability larger than 1'
 	return var
@@ -52,17 +89,17 @@ def check_graph(var):
     assert type(var) == nx.Graph, 'not a networkx graph'
     assert len(var.nodes) > 0, 'graph has no nodes'
     assert len(var.edges) > 0, 'graph has no edges'
-    areas = [e[2]['area'] for e in var.edges(data=True)]
+    areas = [e[2]['contact_type'] for e in var.edges(data=True)]
     areas = set(areas)
     for a in areas:
         assert a in {'very_far', 'far', 'intermediate',
-            'close'}, 'contact type not recognised'
+            'close'}, 'contact type {} not recognised'.format(a)
     return var
 
 
 def check_index_case(var, agent_types):
-	allowed_strings = agent_types
-	allowed_strings.extend('continuous')
+	allowed_strings = agent_types[:]
+	allowed_strings.extend(['continuous'])
 	assert var in allowed_strings, 'unknown index case mode'
 	return var
 
@@ -164,11 +201,7 @@ class SEIRX(Model):
         K1_contact_types, diagnostic_test_type,
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
-        index_case,
-        agent_types,
-        seed):
-
-        print(testing)
+        index_case, agent_types, seed):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -177,11 +210,6 @@ class SEIRX(Model):
         self.running = True  # needed for the batch runner implemented by mesa
         # set the interaction mode to simultaneous activation
         self.schedule = SimultaneousActivation(self)
-
-        # specifies either continuous probability for index cases in agent
-        # groups based on the 'index_probability' for each agent group, or a
-        # single (randomly chosen) index case in the passed agent group
-        self.index_case = check_index_case(index_case)
 
         self.Nstep = 0  # internal step counter used to launch screening tests
 
@@ -201,17 +229,20 @@ class SEIRX(Model):
 
         # modifier for infectiosness for asymptomatic cases
         self.subclinical_modifier = check_positive(subclinical_modifier)
+        # modifiers for the infection risk, depending on contact type
+        self.infection_risk_contact_type_weights = infection_risk_contact_type_weights
 
         # agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
         # add weights as edge attributes so they can be visualised easily
         for e in G.edges(data=True):
-            G[e[0]][e[1]]['weight'] = self.infection_risk_contact_type_weights[G[e[0]]
-                [e[1]]['contact_type']]
+            G[e[0]][e[1]]['weight'] = self.infection_risk_contact_type_weights\
+            	[G[e[0]][e[1]]['contact_type']]
 
         # extract the different agent types from the contact graph
         self.agent_types = list(agent_types.keys())
+   
         # set index case probabilities for each agent type
         self.index_probabilities = {t: check_probability(
         	agent_types[t]['index_probability']) for t in self.agent_types}
@@ -219,26 +250,35 @@ class SEIRX(Model):
         self.transmission_risks = {t: check_probability(
         	agent_types[t]['transmission_risk']) for t in self.agent_types}
         # set reception risks for each agent type
-        self.transmission_risks = {t: check_probability(
+        self.reception_risks = {t: check_probability(
         	agent_types[t]['reception_risk']) for t in self.agent_types}
         # set symptom probabilities for each agent type
         self.symptom_probabilities = {t: check_probability(
         	agent_types[t]['symptom_probability']) for t in self.agent_types}
 
+        # testing strategy
+        # extract the screening intervals for each agent type
+        screening_intervals = {t: check_positive_int(
+        	agent_types[t]['screening_interval']) for t in self.agent_types}
+
+        self.Testing = Testing(self, diagnostic_test_type,
+             preventive_screening_test_type,
+             check_positive_int(follow_up_testing_interval),
+             screening_intervals,
+             check_bool(liberating_testing),
+             check_K1_contact_types(K1_contact_types),
+             verbosity)
+
+
+        # specifies either continuous probability for index cases in agent
+        # groups based on the 'index_probability' for each agent group, or a
+        # single (randomly chosen) index case in the passed agent group
+        self.index_case = check_index_case(index_case, self.agent_types)
+
         ######### placeholder #########
         ### add agents to the model ###
         ###############################
 
-        # infect the first agent in single index case mode
-        if self.index_case != 'continuous':
-            infection_targets = [
-                a for a in self.schedule.agents if a.type == index_case]
-            # pick a random agent to infect in the selected agent group
-            target = np.random.randint(len(infection_targets))
-            infection_targets[target].exposed = True
-            if self.verbosity > 0:
-                print('{} exposed: {}'.format(index_case,
-                 	infection_targets[target].ID))
 
         # list of agents that were tested positive this turn
         self.newly_positive_agents = []
@@ -251,7 +291,8 @@ class SEIRX(Model):
 
         # dictionary of counters that count the days since a given agent group
         # was screened. Initialized differently for different index case modes
-        if self.index_case_mode == 'continuous':
+        if (self.index_case == 'continuous') or \
+      	   (not np.any(list(self.Testing.screening_intervals.values()))):
         	self.days_since_last_agent_screen = {agent_type: 0 for agent_type in
         	self.agent_types}
         # NOTE: if we initialize these variables with 0 in the case of a single
@@ -266,7 +307,7 @@ class SEIRX(Model):
         		if agent_type == index_case:
         			self.days_since_last_agent_screen.update({
         				agent_type: self.random.choice(range(0,
-        				 self.screening_intervals[agent_type] + 1))})
+        				 self.Testing.screening_intervals[agent_type] + 1))})
         		else:
         			self.days_since_last_agent_screen.update({agent_type: 0})
 
@@ -282,36 +323,23 @@ class SEIRX(Model):
         self.predetected_infections = 0
         self.pending_test_infections = 0
 
-        # testing strategy
-        # extract the screening intervals for each agent type
-        screening_intervals = {t: check_positive_int(
-        	agent_types[t]['screening_interval']) for t in self.agent_types}
-
-        self.Testing = Testing(self, diagnostic_test_type,
-             preventive_screening_test_type,
-             check_positive_int(follow_up_testing_interval),
-             screening_intervals,
-             check_bool(liberating_testing),
-             check_K1_contact_ypes(K1_contact_types),
-             verbosity)
-
         # data collectors to save population counts and agent states every
         # time step
         self.datacollector = DataCollector(
-            model_reporters={
-            					'number_of_diagnostic_tests':
-            					self.get_number_of_diagnostic_tests,
-                               	'number_of_preventive_screening_tests':
-                               	self.get_number_of_preventive_screening_tests,
-                               	'undetected_infections':
-                               	self.get_undetected_infections,
-                               	'predetected_infections':
-                               	self.get_predetected_infections,
-                               	'pending_test_infections':
-                               	self.get_pending_test_infections},
+            model_reporters=
+            	{
+            	'N_diagnostic_tests':get_N_diagnostic_tests,
+                'N_preventive_screening_tests':get_N_preventive_screening_tests,
+                'undetected_infections':get_undetected_infections,
+                'predetected_infections':get_predetected_infections,
+                'pending_test_infections':get_pending_test_infections
+                },
 
-            agent_reporters={'infection_state': self.get_infection_state,
-                               'quarantine_state': self.get_quarantine_state})
+            agent_reporters=
+            	{
+            	'infection_state': get_infection_state,
+                'quarantine_state': get_quarantine_state
+                })
 
     def test_agent(self, a, test_type):
         a.tested = True
@@ -493,25 +521,26 @@ class SEIRX(Model):
                         self.days_since_last_agent_screen[agent_type] += 1
 
             # (c) 
-            elif np.any(self.Testing.screening_intervals):
+            elif np.any(list(self.Testing.screening_intervals.values())):
                 for agent_type in self.agent_types:
+
                     if self.Testing.screening_intervals[agent_type] != None and\
                     self.days_since_last_agent_screen[agent_type] >=\
-                    self.Testing.screening_intervals[test_type]:
+                    self.Testing.screening_intervals[agent_type]:
                         if self.verbosity > 0: 
                             print('initiating preventive {} screen'\
                                 .format(agent_type))
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type)
-                        self.screen_agents[agent_type] = True
+                        self.screened_agents[agent_type] = True
                         self.days_since_last_agent_screen[agent_type] = 0
                     else:
-                        self.screen_agents[agent_type] = False
+                        self.screened_agents[agent_type] = False
                         self.days_since_last_agent_screen[agent_type] += 1
 
             else:
             	for agent_type in self.agent_types:
-            		self.screen_agents[agent_type] = False
+            		self.screened_agents[agent_type] = False
             		self.days_since_last_agent_screen[agent_type] += 1
 
 
@@ -520,35 +549,3 @@ class SEIRX(Model):
         self.schedule.step()
         self.Nstep += 1
 
-    ## data collection functions ##
-
-    def get_number_of_diagnostic_tests(model):
-        return model.number_of_diagnostic_tests
-
-
-    def get_number_of_preventive_screening_tests(model):
-        return model.number_of_preventive_screening_tests
-
-
-    def get_infection_state(agent):
-        if agent.exposed == True: return 'exposed'
-        elif agent.infectious == True: return 'infectious'
-        elif agent.recovered == True: return 'recovered'
-        else: return 'susceptible'
-
-
-    def get_quarantine_state(agent):
-        if agent.quarantined == True: return True
-        else: return False
-
-
-    def get_undetected_infections(model):
-        return model.undetected_infections
-
-
-    def get_predetected_infections(model):
-        return model.predetected_infections
-
-
-    def get_pending_test_infections(model):
-        return model.pending_test_infections

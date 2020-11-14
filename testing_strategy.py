@@ -9,16 +9,15 @@ def check_test_type(var, tests):
 class Testing():
 	def __init__(self, model, diagnostic_test_type, 
 		preventive_screening_test_type, follow_up_testing_interval,
-		screening_interval_residents, screening_interval_employees,
-		liberating_testing, K1_areas, verbosity):
+		screening_intervals, liberating_testing, 
+		K1_contact_types, verbosity):
 
 		self.follow_up_testing_interval = follow_up_testing_interval
-		self.screening_interval_residents = screening_interval_residents
-		self.screening_interval_employees = screening_interval_employees
+		self.screening_intervals = screening_intervals
 		self.liberating_testing = liberating_testing
 		self.model = model
 		self.verbosity = verbosity
-		self.K1_areas = K1_areas
+		self.K1_contact_types = K1_contact_types
 
 		self.tests = {
 		'same_day_antigen':
