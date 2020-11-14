@@ -88,6 +88,28 @@ def check_resident_screen(model):
 def check_employee_screen(model):
     return model.screened_agents['employee']
 
+data_collection_functions = \
+    {
+    'resident':
+        {
+        'E':count_E_resident,
+        'I':count_I_resident,
+        'I_asymptomatic':count_I_asymptomatic_resident,
+        'I_symptomatic':count_I_symptomatic_resident,
+        'R':count_R_resident,
+        'X':count_X_resident
+         },
+    'employee':
+        {
+        'E':count_E_employee,
+        'I':count_I_employee,
+        'I_asymptomatic':count_I_asymptomatic_employee,
+        'I_symptomatic':count_I_symptomatic_employee,
+        'R':count_R_employee,
+        'X':count_X_employee
+         }
+    }
+
 
 class SEIRX_nursing_home(SEIRX):
 
@@ -117,30 +139,29 @@ class SEIRX_nursing_home(SEIRX):
         
         # data collectors to save population counts and agent states every
         # time step
-        self.datacollector = DataCollector(
-            model_reporters = 
-                {
-                'E_resident':count_E_resident,
-                'I_resident':count_I_resident,
-                'I_symptomatic_resident':count_I_symptomatic_resident,
-                'R_resident':count_R_resident,
-                'X_resident':count_X_resident,
-                'E_employee':count_E_employee,
-                'I_employee':count_I_employee,
-                'I_symptomatic_employee':count_I_symptomatic_employee,
-                'R_employee':count_R_employee,
-                'X_employee':count_X_employee,
-                'screen_residents':check_resident_screen,
-                'screen_employees':check_employee_screen,
-                'N_diagnostic_tests':get_N_diagnostic_tests,
-                'N_preventive_screening_tests':get_N_preventive_screening_tests,
-                'undetected_infections':get_undetected_infections,
-                'predetected_infections':get_predetected_infections,
-                'pending_test_infections':get_pending_test_infections
-                },
+        model_reporters = {}
+        for agent_type in self.agent_types:
+            for state in ['E','I','I_asymptomatic','I_symptomatic','R','X']:
+                model_reporters.update({'{}_{}'.format(state, agent_type):\
+                    data_collection_functions[agent_type][state]})
 
-            agent_reporters = 
-                {
-                'infection_state':get_infection_state,
-                'quarantine_state':get_quarantine_state
-                })
+        model_reporters.update(\
+            {
+            'screen_residents':check_resident_screen,
+            'screen_employees':check_employee_screen,
+            'N_diagnostic_tests':get_N_diagnostic_tests,
+            'N_preventive_screening_tests':get_N_preventive_screening_tests,
+            'undetected_infections':get_undetected_infections,
+            'predetected_infections':get_predetected_infections,
+            'pending_test_infections':get_pending_test_infections
+            })
+
+        agent_reporters =\
+            {
+            'infection_state':get_infection_state,
+            'quarantine_state':get_quarantine_state
+             }
+
+        self.datacollector = DataCollector(
+            model_reporters = model_reporters,
+            agent_reporters = agent_reporters)
