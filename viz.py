@@ -39,6 +39,8 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
 	quarters.sort()
 
+	G = model.G
+
 	## draw residents
 	residents = [a.unique_id for a in model.schedule.agents if a.type == 'resident']
 
@@ -50,9 +52,6 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 
 	quarantine_states = resident_states.loc[step].sort_index()['quarantine_state']
 
-	G = model.G
-	nodes = list(G.nodes)
-	nodes.sort()
 
 	x_max = np.asarray([a[0] for a in pos.values()]).max()
 	x_min = np.asarray([a[0] for a in pos.values()]).min()
@@ -64,8 +63,11 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 
 	pat_ax.set_ylim(y_min - y_step/2, y_max + y_step) 
 	pat_ax.text(x_max - x_extent / 2 - 0.1, y_max + y_step / 2, 'residents', fontsize=14)
+
+	resident_edges = [(x, y) for x,y, z in G.edges(data=True) \
+       if (G.nodes[x]['type'] == 'resident' and G.nodes[y]['type'] == 'resident')]
 	
-	for u, v in list(G.edges):
+	for u, v in resident_edges:
 		weight = G[u][v]['weight']**2 / 5
 		try:
 			pat_ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], \
@@ -74,7 +76,7 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 			print('warning: edge ({}, {}) not found in position map'.format(u, v))
 
 	resident_handles = {}
-	for n in nodes:
+	for n in residents:
 		if quarantine_states[n]:
 			handle = pat_ax.scatter(pos[n][0], pos[n][1], color=color_list[n], s=150, zorder=2,
 			edgecolors='k', linewidth=3)
@@ -92,7 +94,9 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	employee_states['color'] = employee_states['infection_state'].replace(colors)
 	color_list = employee_states.loc[step].sort_index()['color']
 	quarantine_states = employee_states.loc[step].sort_index()['quarantine_state']
-	N_employee = model.employees_per_quarter
+
+	quarter_list = [y['quarter'] for x,y in G.nodes(data=True) if y['type'] == 'employee']
+	N_employee = len(quarter_list) / len(set(quarter_list))
 
 	employee_handles = {}
 
