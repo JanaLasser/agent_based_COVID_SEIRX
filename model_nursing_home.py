@@ -5,9 +5,6 @@ from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
 from model_SEIRX import*
-from agent_resident import resident
-from agent_employee import employee
-from testing_strategy import Testing
 
 
 ## data collection functions ##
@@ -116,28 +113,7 @@ class SEIRX_nursing_home(SEIRX):
             preventive_screening_test_type, follow_up_testing_interval,
             liberating_testing, index_case, agent_types, seed)
 
-        agent_classes = {'resident':resident, 'employee':employee}
-        self.num_agents = {}
 
-        # extract the agent nodes from the graph and add them to the scheduler
-        for agent_type in self.agent_types:
-            IDs = [x for x,y in G.nodes(data=True) if y['type'] == agent_type]
-            self.num_agents.update({agent_type:len(IDs)})
-            quarters = [self.G.nodes[ID]['quarter'] for ID in IDs]
-            for ID, quarter in zip(IDs, quarters):
-                a = agent_classes[agent_type](ID, quarter, self, verbosity)
-                self.schedule.add(a)
-
-        # infect the first agent in single index case mode
-        if self.index_case != 'continuous':
-            infection_targets = [
-                a for a in self.schedule.agents if a.type == index_case]
-            # pick a random agent to infect in the selected agent group
-            target = np.random.randint(0, len(infection_targets))
-            infection_targets[target].exposed = True
-            if self.verbosity > 0:
-                print('{} exposed: {}'.format(index_case,
-                    infection_targets[target].ID))
         
         # data collectors to save population counts and agent states every
         # time step
