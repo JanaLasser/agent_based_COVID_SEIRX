@@ -203,7 +203,7 @@ class SEIRX(Model):
         K1_contact_types, diagnostic_test_type,
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
-        index_case, agent_types, seed):
+        index_case, agent_types):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -327,7 +327,7 @@ class SEIRX(Model):
         else:
         	self.days_since_last_agent_screen = {}
         	for agent_type in self.agent_types:
-        		if agent_type == index_case:
+        		if self.Testing.screening_intervals[agent_type] != None:
         			self.days_since_last_agent_screen.update({
         				agent_type: self.random.choice(range(0,
         				 self.Testing.screening_intervals[agent_type] + 1))})
