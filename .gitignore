@@ -5,6 +5,7 @@ __pycache__/
 !example.ipynb
 !screening_frequency_data_creation.ipynb
 !screening_frequency_analysis.ipynb
+!outbreak_visualization.ipynb
 
 *.svg
 *.png
