@@ -4,6 +4,8 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
+import sys
+sys.path.insert(0,'..')
 from model_SEIRX import*
 
 
@@ -119,11 +121,11 @@ class SEIRX_nursing_home(SEIRX):
         infection_duration=11, exposure_duration=4, time_until_symptoms=6,
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
-            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 2},
+            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
         K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, liberating_testing=False,
-        index_case='employee', seed=0,
+        index_case='employee', 
         agent_types={'type1': {'screening_interval': None,
                               'index_probability': None,
                               'transmission_risk': 0.015,
@@ -135,7 +137,7 @@ class SEIRX_nursing_home(SEIRX):
             subclinical_modifier, infection_risk_contact_type_weights,
             K1_contact_types, diagnostic_test_type, 
             preventive_screening_test_type, follow_up_testing_interval,
-            liberating_testing, index_case, agent_types, seed)
+            liberating_testing, index_case, agent_types)
 
 
         
