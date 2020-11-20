@@ -11,19 +11,19 @@ colors = {'susceptible':'g',
 	      'testable':'k'}
 
 def get_pos(G, model):
-	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
+	units = list(set([model.G.nodes[ID]['unit'] for ID in model.G.nodes]))
 	num_residents = len([a for a in model.schedule.agents if \
-		(a.type == 'resident' and a.quarter == 'Q1')])
+		(a.type == 'resident' and a.unit == 'Q1')])
 
-	fixed = ['r{}'.format(i * num_residents + 1) for i in range(len(quarters))]
+	fixed = ['r{}'.format(i * num_residents + 1) for i in range(len(units))]
 
-	if len(quarters) == 4:
+	if len(units) == 4:
 		coords = [[-3, -3], [-3, 3], [3, 3], [3, -3]]
 
-	elif len(quarters) == 3:
+	elif len(units) == 3:
 		coords = [[0, -3], [-3, 3], [3, 3]]
 
-	elif len(quarters) == 2:
+	elif len(units) == 2:
 		coords = [[-3, 0], [3, 0]]
 	else:
 		coords = [[0, 0]]
@@ -36,8 +36,8 @@ def get_pos(G, model):
 	return pos
 
 def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
-	quarters = list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes]))
-	quarters.sort()
+	units = list(set([model.G.nodes[ID]['unit'] for ID in model.G.nodes]))
+	units.sort()
 
 	G = model.G
 
@@ -95,20 +95,20 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 	color_list = employee_states.loc[step].sort_index()['color']
 	quarantine_states = employee_states.loc[step].sort_index()['quarantine_state']
 
-	quarter_list = [y['quarter'] for x,y in G.nodes(data=True) if y['type'] == 'employee']
-	N_employee = len(quarter_list) / len(set(quarter_list))
+	unit_list = [y['unit'] for x,y in G.nodes(data=True) if y['type'] == 'employee']
+	N_employee = len(unit_list) / len(set(unit_list))
 
 	employee_handles = {}
 
-	emp_ax.set_xlim(-0.5, len(quarters) - 1 + 0.5)
+	emp_ax.set_xlim(-0.5, len(units) - 1 + 0.5)
 	emp_ax.set_ylim(-1, N_employee)
 	emp_ax.text(0 - 0.25,  N_employee - 0.45, 'employees', fontsize=14)
 
-	for j, quarter in enumerate(quarters):
+	for j, unit in enumerate(units):
 	    employees = [a.unique_id for a in model.schedule.agents if \
-	        (a.type == 'employee' and a.quarter == quarter)]
+	        (a.type == 'employee' and a.unit == unit)]
 
-	    #emp_ax.text(j - 0.065, -0.8, quarter, fontsize=14)
+	    #emp_ax.text(j - 0.065, -0.8, unit, fontsize=14)
 
 	    for i, e in enumerate(employees):
 	        ypos = i
@@ -154,8 +154,8 @@ def draw_infection_timeline(model, agent_type, ax):
 		N = model.num_agents['resident']
 	elif agent_type == 'employee':
 		N = model.num_agents['employee']
-		N_quarters = len(list(set([model.G.nodes[ID]['quarter'] for ID in model.G.nodes])))
-		N *= N_quarters
+		N_units = len(list(set([model.G.nodes[ID]['unit'] for ID in model.G.nodes])))
+		N *= N_units
 	else:
 		print('unknown agent type!')
 
