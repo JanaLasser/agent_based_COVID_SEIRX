@@ -55,3 +55,18 @@ class employee(agent_SEIRX):
                     self.model.transmission_risks[self.type], modifier)
 
 
+    def get_employee_resident_contacts(self):
+        # only contacts to residents in the same quarter are possible
+        contacts = [a for a in self.model.schedule.agents if
+            (a.type == 'resident' and a.quarter == self.quarter)]
+        return contacts
+
+    def get_employee_employee_contacts(self):
+        # only contacts to employees in the same quarter
+        contacts = [a for a in self.model.schedule.agents if
+            (a.type == 'employee' and a.quarter == self.quarter)]
+
+        # TODO: implement random cross-quarter interaction of employees
+        # if self.model.employee_cross_quarter_interaction:
+        return contacts
+

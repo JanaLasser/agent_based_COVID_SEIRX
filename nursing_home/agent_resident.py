@@ -1,8 +1,6 @@
 from agent_SEIRX import agent_SEIRX
 
 
-# NOTE: "residents" and "inhabitants" are used interchangeably in the documentation
-
 
 class resident(agent_SEIRX):
     '''
@@ -54,5 +52,20 @@ class resident(agent_SEIRX):
                     self.model.transmission_risks[self.type], modifier)
                 self.transmit_infection(employees, 
                     self.model.transmission_risks[self.type], modifier)
+
+
+    def get_resident_employee_contacts(self):
+        # only contacts to employees in the same quarter are possible
+        contacts = [a for a in self.model.schedule.agents if
+            (a.type == 'employee' and a.quarter == self.quarter)]
+        return contacts
+
+    def get_resident_resident_contacts(self):
+        # resident <-> resident contacts are determined by the contact network
+        # get a list of neighbor IDs from the interaction network
+        contacts = [tup[1] for tup in list(self.model.G.edges(self.ID))]
+        # get the neighboring agents from the scheduler using their IDs
+        contacts = [a for a in self.model.schedule.agents if a.ID in contacts]
+        return contacts
 
 
