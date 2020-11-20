@@ -4,9 +4,16 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
+import sys
+sys.path.insert(0,'school')
+sys.path.insert(0, 'nursing_home')
+
 from testing_strategy import Testing
 from agent_resident import resident
 from agent_employee import employee
+from agent_student import student
+from agent_teacher import teacher
+from agent_family_member import family_member
 
 ## data collection functions ##
 
@@ -278,7 +285,9 @@ class SEIRX(Model):
         self.index_case = check_index_case(index_case, self.agent_types)
 
         # dictionary of available agent classes with agent types and classes
-        agent_classes = {'resident':resident, 'employee':employee}
+        agent_classes = {'resident':resident, 'employee':employee,
+                         'student':student, 'teacher':teacher,
+                         'family_member':family_member}
 
         self.num_agents = {}
 

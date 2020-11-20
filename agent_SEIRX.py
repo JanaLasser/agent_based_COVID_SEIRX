@@ -9,11 +9,11 @@ class agent_SEIRX(Agent):
     generic agent class needs to implement their own step() function
     '''
 
-    def __init__(self, unique_id, quarter, model, verbosity):
+    def __init__(self, unique_id, unit, model, verbosity):
         super().__init__(unique_id, model)
         self.verbose = verbosity
         self.ID = unique_id
-        self.quarter = quarter
+        self.unit = unit
 
         # infection states
         self.exposed = False
