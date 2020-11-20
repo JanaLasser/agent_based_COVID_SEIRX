@@ -7,8 +7,8 @@ class employee(agent_SEIRX):
     An employee with an infection status
     '''
 
-    def __init__(self, unique_id, quarter, model, verbosity):
-        super().__init__(unique_id, quarter, model, verbosity)
+    def __init__(self, unique_id, unit, model, verbosity):
+        super().__init__(unique_id, unit, model, verbosity)
         self.type = 'employee'
         self.index_probability = self.model.index_probabilities[self.type]
         
@@ -56,17 +56,17 @@ class employee(agent_SEIRX):
 
 
     def get_employee_resident_contacts(self):
-        # only contacts to residents in the same quarter are possible
+        # only contacts to residents in the same unit are possible
         contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'resident' and a.quarter == self.quarter)]
+            (a.type == 'resident' and a.unit == self.unit)]
         return contacts
 
     def get_employee_employee_contacts(self):
-        # only contacts to employees in the same quarter
+        # only contacts to employees in the same unit
         contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'employee' and a.quarter == self.quarter)]
+            (a.type == 'employee' and a.unit == self.unit)]
 
-        # TODO: implement random cross-quarter interaction of employees
-        # if self.model.employee_cross_quarter_interaction:
+        # TODO: implement random cross-unit interaction of employees
+        # if self.model.employee_cross_unit_interaction:
         return contacts
 
