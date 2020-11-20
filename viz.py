@@ -15,7 +15,7 @@ def get_pos(G, model):
 	num_residents = len([a for a in model.schedule.agents if \
 		(a.type == 'resident' and a.quarter == 'Q1')])
 
-	fixed = ['p{}'.format(i * num_residents + 1) for i in range(len(quarters))]
+	fixed = ['r{}'.format(i * num_residents + 1) for i in range(len(quarters))]
 
 	if len(quarters) == 4:
 		coords = [[-3, -3], [-3, 3], [3, 3], [3, -3]]
