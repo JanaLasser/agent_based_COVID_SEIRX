@@ -3,7 +3,10 @@ from mesa import Agent
 
 class agent_SEIRX(Agent):
     '''
-    An agent with an infection status
+    An agent with an infection status. NOTe: this agent is not
+    functional on it's own, as it does not implement a step()
+    function. Therefore, every agent class that inherits from this
+    generic agent class needs to implement their own step() function
     '''
 
     def __init__(self, unique_id, quarter, model, verbosity):
@@ -36,7 +39,13 @@ class agent_SEIRX(Agent):
         self.transmissions = 0
         self.transmission_targets = {}
 
-    # generic helper functions
+    # generic helper functions that are inherited by other agent classes
+    def get_contacts(self, agent_group):
+        contacts = [a for a in self.model.schedule.agents if
+            (a.type == agent_group and self.model.G.has_edge(self.ID, a.ID))]
+        return contacts
+
+
     def introduce_external_infection(self):
         if (self.infectious == False) and (self.exposed == False) and\
            (self.recovered == False):
@@ -47,35 +56,6 @@ class agent_SEIRX(Agent):
                     print('{} {} is index case'.format(
                         self.type, self.unique_id))
 
-
-    def get_employee_resident_contacts(self):
-        # only contacts to residents in the same quarter are possible
-        contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'resident' and a.quarter == self.quarter)]
-        return contacts
-
-    def get_employee_employee_contacts(self):
-        # only contacts to employees in the same quarter
-        contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'employee' and a.quarter == self.quarter)]
-
-        # TODO: implement random cross-quarter interaction of employees
-        # if self.model.employee_cross_quarter_interaction:
-        return contacts
-
-    def get_resident_employee_contacts(self):
-        # only contacts to employees in the same quarter are possible
-        contacts = [a for a in self.model.schedule.agents if
-            (a.type == 'employee' and a.quarter == self.quarter)]
-        return contacts
-
-    def get_resident_resident_contacts(self):
-        # resident <-> resident contacts are determined by the contact network
-        # get a list of neighbor IDs from the interaction network
-        contacts = [tup[1] for tup in list(self.model.G.edges(self.ID))]
-        # get the neighboring agents from the scheduler using their IDs
-        contacts = [a for a in self.model.schedule.agents if a.ID in contacts]
-        return contacts
 
     def transmit_infection(self, contacts, transmission_risk, base_modifier):
         for c in contacts:
