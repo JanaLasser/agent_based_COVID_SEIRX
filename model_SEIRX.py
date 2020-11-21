@@ -295,9 +295,10 @@ class SEIRX(Model):
         for agent_type in self.agent_types:
             IDs = [x for x,y in G.nodes(data=True) if y['type'] == agent_type]
             self.num_agents.update({agent_type:len(IDs)})
-            quarters = [self.G.nodes[ID]['quarter'] for ID in IDs]
-            for ID, quarter in zip(IDs, quarters):
-                a = agent_classes[agent_type](ID, quarter, self, verbosity)
+
+            units = [self.G.nodes[ID]['unit'] for ID in IDs]
+            for ID, unit in zip(IDs, units):
+                a = agent_classes[agent_type](ID, unit, self, verbosity)
                 self.schedule.add(a)
 
 		# infect the first agent in single index case mode
