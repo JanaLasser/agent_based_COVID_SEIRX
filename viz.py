@@ -150,14 +150,8 @@ def draw_states(model, step, pos, pat_ax, emp_ax, leg_ax):
 def draw_infection_timeline(model, agent_type, ax):
 	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
-	if agent_type == 'resident':
-		N = model.num_agents['resident']
-	elif agent_type == 'employee':
-		N = model.num_agents['employee']
-		N_units = len(list(set([model.G.nodes[ID]['unit'] for ID in model.G.nodes])))
-		N *= N_units
-	else:
-		print('unknown agent type!')
+
+	N = len([x for x,y in model.G.nodes(data=True) if y['type'] == agent_type])
 
 	pop_numbers['S_{}'.format(agent_type)] = N - pop_numbers['E_{}'.format(agent_type)]\
 											   - pop_numbers['I_{}'.format(agent_type)]\
@@ -184,28 +178,20 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='X', color=colors['quarantined'], linewidth=linewidth, zorder=1)
 
 	# draw screen lines
-	for i, screen in enumerate(pop_numbers['screen_residents']):
+	for i, screen in enumerate(pop_numbers['screen_{}s'.format(agent_type)]):
 		if screen:
 			ax.plot([i, i], [0, 100], color='FireBrick', alpha=0.3,
-			 linewidth=7, zorder=2)
-	for i, screen in enumerate(pop_numbers['screen_employees']):
-		if screen:
-			ax.plot([i, i], [0, 100], color='DarkBlue', alpha=0.3, linewidth=2,
-				zorder=2)
-
+			 linewidth=4, zorder=2)
 
 	# legend with custom artist for the screening lines
 	handles, labels = ax.get_legend_handles_labels()
-	resident_screen_handle = plt.Line2D((0,1),(0,0), color='FireBrick'
-		, alpha=0.3, linewidth=7)
-	employee_screen_handle = plt.Line2D((0,1),(0,0), color='DarkBlue',
-		 linewidth=2, alpha=0.3)
+	screen_handle = plt.Line2D((0,1),(0,0), color='FireBrick'
+		, alpha=0.3, linewidth=4)
 
 	#Create legend from custom artist/label lists
-	ax.legend([handle for i,handle in enumerate(handles)] + \
-			[resident_screen_handle, employee_screen_handle],
+	ax.legend([handle for i,handle in enumerate(handles)] + [screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['resident screen', 'employee screen'], ncol=2, loc=6, 
+	          ['{} screen'.format(agent_type)], ncol=2, loc=6, 
 	          fontsize=14, bbox_to_anchor=[0, 0.55])
 
 	ax.set_xlabel('steps', fontsize=20)
