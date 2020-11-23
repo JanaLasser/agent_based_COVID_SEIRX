@@ -258,6 +258,7 @@ class agent_SEIRX(Agent):
 
         if self.quarantined:
             self.days_quarantined += 1
+            self.model.quarantine_counters[self.type] += 1
 
         if self.exposed or self.infectious:
             self.days_since_exposure += 1

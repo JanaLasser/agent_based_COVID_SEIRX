@@ -355,6 +355,7 @@ class SEIRX(Model):
         self.undetected_infections = 0
         self.predetected_infections = 0
         self.pending_test_infections = 0
+        self.quarantine_counters = {agent_type:0 for agent_type in agent_types.keys()}
 
         # data collectors to save population counts and agent states every
         # time step
