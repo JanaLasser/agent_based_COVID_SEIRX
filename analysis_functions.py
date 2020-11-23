@@ -14,7 +14,7 @@ def count_infected(model, agent_type):
     
     return infected_agents
     
-def calculate_R0(model):
+def calculate_R0(model, agent_types):
     transmissions = [a.transmissions for a in model.schedule.agents]
     infected = [test_infection(a) for a in model.schedule.agents]
     IDs = [a.ID for a in model.schedule.agents]
@@ -25,10 +25,14 @@ def calculate_R0(model):
                        'transmissions':transmissions})
     df = df[df['was_infected'] == 1]
     overall_R0 = df['transmissions'].mean()
-    resident_R0 = df[df['type'] == 'resident']['transmissions'].mean()
-    employee_R0 = df[df['type'] == 'employee']['transmissions'].mean()
+
+
+    R0 = {}
+    for agent_type in agent_types:
+        agent_R0 = df[df['type'] == agent_type]['transmissions'].mean()
+        R0.update({agent_type:agent_R0})
     
-    return (overall_R0, resident_R0, employee_R0)
+    return R0
 
 def calculate_finite_size_R0(model):
     df = pd.DataFrame(columns=['ID', 'agent_type', 't', 'target'])
