@@ -8,13 +8,11 @@ def test_infection(a):
     else:
         return 0
     
-def count_infected(model):
-    infected_residents = np.asarray([test_infection(a) for a in model.schedule.agents \
-                         if a.type == 'resident']).sum()
-    infected_employees = np.asarray([test_infection(a) for a in model.schedule.agents \
-                         if a.type == 'employee']).sum()
+def count_infected(model, agent_type):
+    infected_agents = np.asarray([test_infection(a) for a in model.schedule.agents \
+                         if a.type == agent_type]).sum()
     
-    return infected_employees, infected_residents
+    return infected_agents
     
 def calculate_R0(model):
     transmissions = [a.transmissions for a in model.schedule.agents]
