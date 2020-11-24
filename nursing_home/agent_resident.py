@@ -52,9 +52,9 @@ class resident(agent_SEIRX):
                 # code transmission to residents and transmission to employees
                 # separately to allow for differences in transmission risk
                 self.transmit_infection(residents, 
-                    self.model.transmission_risks[self.type], modifier)
+                    self.transmission_risk, modifier)
                 self.transmit_infection(employees, 
-                    self.model.transmission_risks[self.type], modifier)
+                    self.transmission_risk, modifier)
 
 
     def get_resident_employee_contacts(self):

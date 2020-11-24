@@ -58,4 +58,4 @@ class family_member(agent_SEIRX):
                 # code transmission to other agent groups
                 # separately to allow for differences in transmission risk
                 self.transmit_infection(family_members, 
-                    self.model.transmission_risks[self.type], modifier)
+                    self.transmission_risk, modifier)

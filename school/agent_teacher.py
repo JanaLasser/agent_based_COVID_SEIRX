@@ -57,6 +57,6 @@ class teacher(agent_SEIRX):
                 # code transmission to other agent groups
                 # separately to allow for differences in transmission risk
                 self.transmit_infection(teachers, 
-                    self.model.transmission_risks[self.type], modifier)
+                    self.transmission_risk, modifier)
                 self.transmit_infection(students, 
-                    self.model.transmission_risks[self.type], modifier)
+                    self.transmission_risk, modifier)
