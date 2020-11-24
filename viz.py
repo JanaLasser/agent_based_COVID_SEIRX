@@ -197,7 +197,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.set_xlabel('steps', fontsize=20)
 	ax.set_ylabel('% of population', fontsize=20)
 	ax.set_ylim(-1, 100)
-	ax.set_xlim(0, 60)
+	#ax.set_xlim(0, 60)
 	ax.xaxis.set_major_locator(MultipleLocator(10))
 	ax.xaxis.set_minor_locator(MultipleLocator(1))
 	ax.tick_params(axis='both', which='major', labelsize=14)

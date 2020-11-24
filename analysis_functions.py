@@ -13,6 +13,24 @@ def count_infected(model, agent_type):
                          if a.type == agent_type]).sum()
     
     return infected_agents
+
+def count_infection_endpoints(model):
+    endpoints = [a for a in model.schedule.agents if a.recovered and \
+         a.transmissions == 0]
+
+    return len(endpoints)
+
+def count_typed_transmissions(model, source_type, target_type):
+    type_dict = {'t':'teacher', 's':'student', 'f':'family_member', \
+        'r':'resident', 'e':'employee'}
+    sources = [a for a in model.schedule.agents if a.type == source_type]
+    transmissions = 0
+    for source in sources:
+        for target, step in source.transmission_targets.items():
+            if type_dict[target[0]] == target_type:
+                transmissions += 1
+    return transmissions
+
     
 def calculate_R0(model, agent_types):
     transmissions = [a.transmissions for a in model.schedule.agents]
