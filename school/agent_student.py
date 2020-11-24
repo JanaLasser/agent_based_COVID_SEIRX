@@ -9,7 +9,21 @@ class student(agent_SEIRX):
         super().__init__(unique_id, unit, model, verbosity)
         self.type = 'student'
         self.index_probability = self.model.index_probabilities[self.type]
-        
+
+        self.age = model.G.nodes(data=True)[self.unique_id]['age']
+
+        self.transmission_risk = self.age_adjust_risk(self.model.transmission_risks[self.type], self.age)
+        self.reception_risk = self.age_adjust_risk(self.model.reception_risks[self.type], self.age)
+
+
+    def age_adjust_risk(self, base_risk, age):
+        '''linear interpolation such that at age 6 the risk is 50% and at age 18
+        the risk is that of an adult (=base risk)'''
+        max_age = 18
+        min_age = 6
+        risk = base_risk * (1 - (0.5- 1/((max_age - min_age) * 2) * (age - 6)))
+        return risk
+            
 
     def step(self):
         '''
