@@ -236,3 +236,115 @@ class SEIRX_school(SEIRX):
         self.datacollector = DataCollector(
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
+
+    def step(self):
+        if self.testing:
+            if self.verbosity > 0: print('* testing and tracing *')
+
+            # find symptomatic agents that have not been tested yet and are not
+            # in quarantine and test them
+            newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents
+                if (a.symptoms == True and a.tested == False and a.quarantined == False)])
+
+            for a in newly_symptomatic_agents:
+                # all symptomatic agents are quarantined by default
+                if self.verbosity > 0:
+                    print('quarantined: {} {}'.format(a.type, a.ID))
+                a.quarantined = True
+                self.test_agent(a, self.Testing.diagnostic_test_type)
+
+            # collect and act on new test results
+            agents_with_test_results = self.collect_test_results()
+            for a in agents_with_test_results:
+                a.act_on_test_result()
+
+            # trace and quarantine contacts of newly positive agents
+            if len(self.newly_positive_agents) > 0:
+                if self.verbosity > 0: print('new positive test(s) from {}'
+                    .format([a.ID for a in self.newly_positive_agents]))
+
+                # send all K1 contacts of positive agents into quarantine
+                for a in self.newly_positive_agents:
+                    self.trace_contacts(a)
+
+                # indicate that a screen should happen because there are new
+                # positive test results
+                self.new_positive_tests = True
+                self.newly_positive_agents = []
+
+            else:
+                self.new_positive_tests = False
+
+            # screening:
+            # a screen should take place if
+            # (a) there are new positive test results
+            # (b) as a follow-up screen for a screen that was initiated because
+            # of new positive cases
+            # (c) if there is a preventive screening policy and it is time for
+            # a preventive screen in a given agent group
+
+            # (a)
+            if (self.testing == 'background' or self.testing == 'preventive')\
+               and self.new_positive_tests == True:
+
+            	for agent_type in ['students', 'teachers']:
+	                if self.verbosity > 0:
+	                    print('initiating {} screen because of positive test(s)'
+	                    	.format(agent_type))
+	                self.screen_agents(
+	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
+	                self.days_since_last_agent_screen[agent_type] = 0
+	                self.scheduled_follow_up_screen[agent_type] = True
+
+            # (b)
+            elif (self.testing == 'background' or self.testing == 'preventive') and \
+                self.Testing.follow_up_testing_interval != None and \
+                sum(list(self.scheduled_follow_up_screen.values())) > 0:
+
+                for agent_type in self.agent_types:
+                    if self.scheduled_follow_up_screen[agent_type] and\
+                       self.days_since_last_agent_screen[agent_type] >=\
+                       self.Testing.follow_up_testing_interval:
+
+                        if self.verbosity > 0:
+                            print('initiating {} follow-up screen'
+                                .format(agent_type))
+                        self.screen_agents(
+                            agent_type, self.Testing.diagnostic_test_type, 'follow_up')
+                        self.days_since_last_agent_screen[agent_type] = 0
+                    else:
+                        if self.verbosity > 0: 
+                            print('not initiating {} follow-up screen (last screen too close)'\
+                            	.format(agent_type))
+                        self.screened_agents['follow_up'][agent_type] = False
+                        self.days_since_last_agent_screen[agent_type] += 1
+
+            # (c) 
+            elif self.testing == 'preventive' and \
+                np.any(list(self.Testing.screening_intervals.values())):
+                for agent_type in self.agent_types:
+
+                    if self.Testing.screening_intervals[agent_type] != None and\
+                    self.days_since_last_agent_screen[agent_type] >=\
+                    self.Testing.screening_intervals[agent_type]:
+                        if self.verbosity > 0: 
+                            print('initiating preventive {} screen'\
+                                .format(agent_type))
+                        self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type, 'preventive')
+                        self.days_since_last_agent_screen[agent_type] = 0
+                    else:
+                        self.screened_agents['preventive'][agent_type] = False
+                        self.days_since_last_agent_screen[agent_type] += 1
+
+            else:
+                for agent_type in self.agent_types:
+                    for screen_type in ['reactive', 'follow_up', 'preventive']:
+                        self.screened_agents[screen_type][agent_type] = False
+                    self.days_since_last_agent_screen[agent_type] += 1
+
+
+        if self.verbosity > 0: print('* agent interaction *')
+        self.datacollector.collect(self)
+        self.schedule.step()
+        self.Nstep += 1
