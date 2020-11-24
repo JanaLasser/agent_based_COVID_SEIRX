@@ -2,7 +2,8 @@
 __pycache__/
 
 *.ipynb    
-!example.ipynb
+!example_nursing_home.ipynb
+!example_school.ipynb
 !screening_frequency_data_creation.ipynb
 !screening_frequency_analysis.ipynb
 !outbreak_visualization.ipynb
