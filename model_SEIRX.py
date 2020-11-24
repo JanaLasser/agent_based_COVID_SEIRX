@@ -86,6 +86,14 @@ def check_K1_contact_types(var):
     return var
 
 
+def check_testing(var):
+    assert var in ['diagnostic', 'background', 'prevenive', False], \
+        'unknown testing mode: {}'.format(var)
+
+    return var
+
+
+
 def check_probability(var):
 	assert (type(var) == float) or (var == 0) or (var == 1), \
 		 '{} not a float'.format(var)
@@ -215,7 +223,7 @@ class SEIRX(Model):
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
         # flag to turn off the testing & tracing strategy
-        self.testing = check_bool(testing)
+        self.testing = check_testing(testing)
         self.running = True  # needed for the batch runner implemented by mesa
         # set the interaction mode to simultaneous activation
         self.schedule = SimultaneousActivation(self)
@@ -519,7 +527,8 @@ class SEIRX(Model):
             # a preventive screen in a given agent group
 
             # (a)
-            if self.new_positive_tests == True:
+            if (self.testing == 'background' or self.testing == 'preventive')\
+               and self.new_positive_tests == True:
 
             	for agent_type in self.agent_types:
 	                if self.verbosity > 0:
@@ -532,7 +541,8 @@ class SEIRX(Model):
 	                self.scheduled_follow_up_screen[agent_type] = True
 
             # (b)
-            elif self.Testing.follow_up_testing_interval != None and \
+            elif (self.testing == 'background' or self.testing == 'preventive') and \
+                self.Testing.follow_up_testing_interval != None and \
                 sum(list(self.scheduled_follow_up_screen.values())) > 0:
 
                 for agent_type in self.agent_types:
@@ -555,7 +565,8 @@ class SEIRX(Model):
                         self.days_since_last_agent_screen[agent_type] += 1
 
             # (c) 
-            elif np.any(list(self.Testing.screening_intervals.values())):
+            elif self.testing == 'preventive' and \
+                np.any(list(self.Testing.screening_intervals.values())):
                 for agent_type in self.agent_types:
 
                     if self.Testing.screening_intervals[agent_type] != None and\
