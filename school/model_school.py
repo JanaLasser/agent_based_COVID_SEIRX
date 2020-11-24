@@ -119,12 +119,28 @@ def count_X_family_member(model):
     return X
 
 
-def check_student_screen(model):
-    return model.screened_agents['student']
+def check_reactive_student_screen(model):
+    return model.screened_agents['reactive']['student']
 
 
-def check_teacher_screen(model):
-    return model.screened_agents['teacher']
+def check_follow_up_student_screen(model):
+    return model.screened_agents['follow_up']['student']
+
+
+def check_preventive_student_screen(model):
+    return model.screened_agents['preventive']['student']
+
+
+def check_reactive_teacher_screen(model):
+    return model.screened_agents['reactive']['teacher']
+
+
+def check_follow_up_teacher_screen(model):
+    return model.screened_agents['follow_up']['teacher']
+
+
+def check_preventive_teacher_screen(model):
+    return model.screened_agents['preventive']['teacher']
 
 
 
@@ -198,8 +214,12 @@ class SEIRX_school(SEIRX):
 
         model_reporters.update(\
             {
-            'screen_students':check_student_screen,
-            'screen_teachers':check_teacher_screen,
+            'screen_students_reactive':check_reactive_student_screen,
+            'screen_students_follow_up':check_follow_up_student_screen,
+            'screen_students_preventive':check_preventive_student_screen,
+            'screen_teachers_reactive':check_reactive_teacher_screen,
+            'screen_teachers_follow_up':check_follow_up_teacher_screen,
+            'screen_teachers_preventive':check_preventive_teacher_screen,
             'N_diagnostic_tests':get_N_diagnostic_tests,
             'N_preventive_screening_tests':get_N_preventive_screening_tests,
             'undetected_infections':get_undetected_infections,
