@@ -83,12 +83,28 @@ def count_X_employee(model):
     return X
 
 
-def check_resident_screen(model):
-    return model.screened_agents['resident']
+def check_reactive_resident_screen(model):
+    return model.screened_agents['reactive']['resident']
 
 
-def check_employee_screen(model):
-    return model.screened_agents['employee']
+def check_follow_up_resident_screen(model):
+    return model.screened_agents['follow_up']['resident']
+
+
+def check_preventive_resident_screen(model):
+    return model.screened_agents['preventive']['resident']
+
+
+def check_reactive_employee_screen(model):
+    return model.screened_agents['reactive']['employee']
+
+
+def check_follow_up_employee_screen(model):
+    return model.screened_agents['follow_up']['employee']
+
+
+def check_preventive_employee_screen(model):
+    return model.screened_agents['preventive']['employee']
 
 data_collection_functions = \
     {
@@ -151,8 +167,12 @@ class SEIRX_nursing_home(SEIRX):
 
         model_reporters.update(\
             {
-            'screen_residents':check_resident_screen,
-            'screen_employees':check_employee_screen,
+            'screen_residents_reactive':check_reactive_resident_screen,
+            'screen_residents_follow_up':check_follow_up_resident_screen,
+            'screen_residents_preventive':check_preventive_resident_screen,
+            'screen_employees_reactive':check_reactive_employee_screen,
+            'screen_employees_follow_up':check_follow_up_employee_screen,
+            'screen_employees_preventive':check_preventive_employee_screen,
             'N_diagnostic_tests':get_N_diagnostic_tests,
             'N_preventive_screening_tests':get_N_preventive_screening_tests,
             'undetected_infections':get_undetected_infections,
