@@ -87,7 +87,7 @@ def check_K1_contact_types(var):
 
 
 def check_testing(var):
-    assert var in ['diagnostic', 'background', 'prevenive', False], \
+    assert var in ['diagnostic', 'background', 'preventive', False], \
         'unknown testing mode: {}'.format(var)
 
     return var
@@ -327,8 +327,11 @@ class SEIRX(Model):
         self.new_positive_tests = False
         # dictionary of flags that indicate whether a given agent group has
         # been creened this turn
-        self.screened_agents = {agent_type: False for agent_type in
-        	self.agent_types}
+        self.screened_agents= {
+            'reactive':{agent_type: False for agent_type in self.agent_types},
+            'follow_up':{agent_type: False for agent_type in self.agent_types},
+            'preventive':{agent_type: False for agent_type in self.agent_types}}
+
 
         # dictionary of counters that count the days since a given agent group
         # was screened. Initialized differently for different index case modes
@@ -432,7 +435,7 @@ class SEIRX(Model):
         if a.days_since_tested >= self.Testing.tests[test_type]['time_until_test_result']:
             a.act_on_test_result()
 
-    def screen_agents(self, agent_group, test_type):
+    def screen_agents(self, agent_group, test_type, screen_type):
         # only test agents that have not been tested already in this simulation
         # step and that are not already known positive cases
         untested_agents = [a for a in self.schedule.agents if
@@ -440,7 +443,7 @@ class SEIRX(Model):
                 and a.type == agent_group)]
 
         if len(untested_agents) > 0:
-            self.screened_agents[agent_group] = True
+            self.screened_agents[screen_type][agent_group] = True
 
             for a in untested_agents:
                 self.test_agent(a, test_type)
@@ -535,8 +538,7 @@ class SEIRX(Model):
 	                    print('initiating {} screen because of positive test(s)'
 	                    	.format(agent_type))
 	                self.screen_agents(
-	                    agent_type, self.Testing.diagnostic_test_type)
-	                self.screened_agents[agent_type] = True
+	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
 	                self.days_since_last_agent_screen[agent_type] = 0
 	                self.scheduled_follow_up_screen[agent_type] = True
 
@@ -554,14 +556,13 @@ class SEIRX(Model):
                             print('initiating {} follow-up screen'
                                 .format(agent_type))
                         self.screen_agents(
-                            agent_type, self.Testing.diagnostic_test_type)
-                        self.screened_agents[agent_type] = True
+                            agent_type, self.Testing.diagnostic_test_type, 'follow_up')
                         self.days_since_last_agent_screen[agent_type] = 0
                     else:
                         if self.verbosity > 0: 
                             print('not initiating {} follow-up screen (last screen too close)'\
                             	.format(agent_type))
-                        self.screened_agents[agent_type] = False
+                        self.screened_agents['follow_up'][agent_type] = False
                         self.days_since_last_agent_screen[agent_type] += 1
 
             # (c) 
@@ -576,17 +577,17 @@ class SEIRX(Model):
                             print('initiating preventive {} screen'\
                                 .format(agent_type))
                         self.screen_agents(agent_type,
-                            self.Testing.preventive_screening_test_type)
-                        self.screened_agents[agent_type] = True
+                            self.Testing.preventive_screening_test_type, 'preventive')
                         self.days_since_last_agent_screen[agent_type] = 0
                     else:
-                        self.screened_agents[agent_type] = False
+                        self.screened_agents['preventive'][agent_type] = False
                         self.days_since_last_agent_screen[agent_type] += 1
 
             else:
-            	for agent_type in self.agent_types:
-            		self.screened_agents[agent_type] = False
-            		self.days_since_last_agent_screen[agent_type] += 1
+                for agent_type in self.agent_types:
+                    for screen_type in ['reactive', 'follow_up', 'preventive']:
+                        self.screened_agents[screen_type][agent_type] = False
+                    self.days_since_last_agent_screen[agent_type] += 1
 
 
         if self.verbosity > 0: print('* agent interaction *')

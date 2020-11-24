@@ -178,20 +178,28 @@ def draw_infection_timeline(model, agent_type, ax):
 		 label='X', color=colors['quarantined'], linewidth=linewidth, zorder=1)
 
 	# draw screen lines
-	for i, screen in enumerate(pop_numbers['screen_{}s'.format(agent_type)]):
-		if screen:
-			ax.plot([i, i], [0, 100], color='FireBrick', alpha=0.3,
-			 linewidth=4, zorder=2)
+	screen_colours = {'reactive':'grey', 'follow_up':'blue', 'preventive':'green'}
+	screen_types = ['reactive', 'follow_up', 'preventive']
+	for screen_type in screen_types:
+		for i, screen in enumerate(pop_numbers['screen_{}s_{}'.format(agent_type, screen_type)]):
+			if screen:
+				ax.plot([i, i], [0, 100], color=screen_colours[screen_type], alpha=0.3,
+				 linewidth=4, zorder=2)
 
 	# legend with custom artist for the screening lines
 	handles, labels = ax.get_legend_handles_labels()
-	screen_handle = plt.Line2D((0,1),(0,0), color='FireBrick'
+	reactive_screen_handle = plt.Line2D((0,1),(0,0), color=screen_colours['reactive']
+		, alpha=0.3, linewidth=4)
+	follow_up_screen_handle = plt.Line2D((0,1),(0,0), color=screen_colours['follow_up']
+		, alpha=0.3, linewidth=4)
+	preventive_screen_handle = plt.Line2D((0,1),(0,0), color=screen_colours['preventive']
 		, alpha=0.3, linewidth=4)
 
 	#Create legend from custom artist/label lists
-	ax.legend([handle for i,handle in enumerate(handles)] + [screen_handle],
+	ax.legend([handle for i,handle in enumerate(handles)] + \
+			  [reactive_screen_handle, follow_up_screen_handle, preventive_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['{} screen'.format(agent_type)], ncol=2, loc=6, 
+	          ['{} {} screen'.format(st.replace('_', '-'), agent_type) for st in screen_types], ncol=2, loc=6, 
 	          fontsize=14, bbox_to_anchor=[0, 0.55])
 
 	ax.set_xlabel('steps', fontsize=20)
