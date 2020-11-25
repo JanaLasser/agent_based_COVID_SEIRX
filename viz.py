@@ -199,7 +199,8 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.legend([handle for i,handle in enumerate(handles)] + \
 			  [reactive_screen_handle, follow_up_screen_handle, preventive_screen_handle],
 	          [label for i,label in enumerate(labels)] + \
-	          ['{} {} screen'.format(st.replace('_', '-'), agent_type) for st in screen_types], ncol=2, loc=6, 
+	          ['{} {} screen'.format(st.replace('_', '-'), agent_type.replace('_', ' '))\
+	          	 for st in screen_types], ncol=2, loc=6, 
 	          fontsize=14, bbox_to_anchor=[0, 0.55])
 
 	ax.set_xlabel('steps', fontsize=20)
