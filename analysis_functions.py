@@ -98,3 +98,113 @@ def get_statistics(df, col):
         '{}_0.975'.format(col):df[col].quantile(0.975),
         '{}_std'.format(col):df[col].std(),
     }
+
+def get_transmission_chain(model, schedule):
+    tm_events = pd.DataFrame()
+    location_types = {'student_student_same_class':'class',
+                      'student_student_other_class':'hallway',
+                      'student_teacher':'class',
+                      'teacher_teacher':'faculty_room',
+                      'student_family':'home',
+                      'family_family':'home'}
+
+    for a in model.schedule.agents:
+        if a.transmissions > 0:
+            for target, day in a.transmission_targets.items():
+                location = ''
+                hour = np.nan
+                target = get_agent(model, target)
+                
+                ## determine transmission locations and times
+                # transmissions from students to other students, teachers or family
+                # members
+                if a.type == 'student':
+                    student_class = model.G.nodes(data=True)[a.ID]['unit']
+                    
+                    if target.type == 'student':
+                        target_class = model.G.nodes(data=True)[target.ID]['unit']
+                        
+                        # transmission between students in the same class
+                        if student_class == target_class:
+                            location = 'class_{}'.format(student_class)
+                            # pick an hour in which the students are in the same
+                            # room at random
+                            hour = np.random.choice([1, 2, 3, 4, 6, 7, 8, 9], 1)[0]
+                            
+                        # transmission between students in different classes:
+                        # transmission occurs in the hallway during lunch
+                        else:
+                            location = 'hallway'
+                            hour = 5
+                        
+                    # transmissions from students to teachers occur in the student's
+                    # classroom at a time when the teacher is in that classroom
+                    # according to the schedule
+                    elif target.type == 'teacher':
+                        location = 'class_{}'.format(student_class)
+                        hour = schedule.loc[target.ID, '{}'.format(student_class)]
+                    
+                    # transmissions to family members occur at home after schoole
+                    elif target.type == 'family_member':
+                        location = 'home'
+                        hour = 10
+                        
+                    else:
+                        print('agent type not supported')
+
+                # transmissions from teachers to other teachers or students
+                elif a.type == 'teacher':
+                    # transmissions from teachers to students occur in the student's
+                    # classroom at a time when the teacher is in that classroom
+                    # according to the schedule
+                    if target.type == 'student':
+                        student_class = model.G.nodes(data=True)[target.ID]['unit']
+                        location = 'class_{}'.format(student_class)
+                        hour = schedule.loc[a.ID, '{}'.format(student_class)]
+                        
+                    # transmissions between teachers occur during the lunch break
+                    # in the faculty room
+                    elif target.type == 'teacher':
+                        location = 'faculty_room'
+                        hour = 5
+                        
+                    elif target.type == 'family_member':
+                        print('this should not happen!')
+                        
+                    else:
+                        print('agent type not supported')
+
+                # transmissions from family members to other family members
+                elif a.type == 'family_member':
+                    if target.type == 'student':
+                        print('this should not happen!')
+                        
+                    elif target.type == 'teacher':
+                        print('this should not happen!')
+                        
+                    # transmissions between family members occur at home after school
+                    elif target.type == 'family_member':
+                        location = 'home'
+                        hour = 10
+                        
+                    else:
+                        print('agent type not supported')
+
+                else:
+                    print('agent type not supported')
+                
+                assert not np.isnan(hour), 'schedule messup!'
+                assert len(location) > 0, 'location messup!'
+                tm_events = tm_events.append({
+                    'day':day,
+                    'hour':hour,
+                    'location':location,
+                    'source_ID':a.ID,
+                    'source_type':a.type,
+                    'target_ID':target.ID,
+                    'target_type':target.type},
+                ignore_index=True)
+                
+    tm_events['day'] = tm_events['day'].astype(int)
+    tm_events = tm_events.sort_values(by=['day', 'hour']).reset_index(drop=True)
+    return tm_events
