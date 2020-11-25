@@ -262,10 +262,13 @@ class SEIRX(Model):
         self.agent_types = list(agent_types.keys())
 
 
-        # set agent characteristics for all agent groups
+        ## set agent characteristics for all agent groups
+        # list of agent characteristics
         params = ['screening_interval','index_probability','transmission_risk',
                 'reception_risk', 'symptom_probability', 'mask']
 
+        # default values that are used in case a characteristic is not specified
+        # for an agent group
         defaults = {'screening_interval':None,
                     'index_probability':0,
                     'transmission_risk':0.01,
@@ -273,20 +276,25 @@ class SEIRX(Model):
                     'symptom_probability':0.6,
                     'mask':False}
 
+        # sanity checks that are applied to parameters passed to the class
+        # constructor to make sure they conform to model expectations
         check_funcs = [check_positive_int, check_probability, check_probability,
                        check_probability, check_probability, check_bool]
 
+        # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.transmission_risks = {}
         self.reception_risks = {}
         self.symptom_probabilities = {}
         self.masks = {}
-
         param_dicts = [self.screening_intervals, self.index_probabilities, 
                        self.transmission_risks, self.reception_risks, 
                        self.symptom_probabilities, self.masks]
 
+        # iterate over all possible agent parameters and agent groups: set the
+        # respective value to the value passed through the constructor or to 
+        # the default value otherwise
         for param,param_dict,check_func in zip(params,param_dicts,check_funcs):
             for at in self.agent_types:
                 try:
@@ -294,8 +302,10 @@ class SEIRX(Model):
                 except KeyError:
                     param_dict.update({at:defaults[param]})
 
-        # testing strategy
-
+        # pass all parameters relevant for the testing strategy to the testing
+        # class. NOTE: this separation is not a strictly necessary design 
+        # decision but I like to keep the parameters related to testing and 
+        # tracing in a separate place
         self.Testing = Testing(self, diagnostic_test_type,
              preventive_screening_test_type,
              check_positive_int(follow_up_testing_interval),
