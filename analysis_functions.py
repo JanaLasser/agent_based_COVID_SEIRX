@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
+def get_agent(model, ID):
+    for a in model.schedule.agents:
+        if a.ID == ID:
+            return a
+
 def test_infection(a):
     if a.infectious or a.recovered or a.exposed:
         return 1
