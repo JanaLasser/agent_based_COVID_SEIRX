@@ -211,4 +211,69 @@ def draw_infection_timeline(model, agent_type, ax):
 	ax.xaxis.set_minor_locator(MultipleLocator(1))
 	ax.tick_params(axis='both', which='major', labelsize=14)
 
-	ax.set_title('{}s (N={})'.format(agent_type, N), fontsize=20)
+	ax.set_title('{}s (N={})'.format(agent_type.replace('_', ' '), N), fontsize=20)
+
+def draw_combined_infection_timeline(model, agent_groups, ax):
+	linewidth = 3
+	pop_numbers = model.datacollector.get_model_vars_dataframe()
+
+	N_total = len([x for x,y in model.G.nodes(data=True) if y['type'] in agent_groups])
+
+	pop_numbers['S_combined'] = 0
+	pop_numbers['E_combined'] = 0
+	pop_numbers['I_symptomatic_combined'] = 0
+	pop_numbers['I_asymptomatic_combined'] = 0
+	pop_numbers['R_combined'] = 0
+	pop_numbers['X_combined'] = 0
+
+	for agent_type in agent_groups:
+		N_agent = len([x for x,y in model.G.nodes(data=True) if y['type'] == agent_type])
+		pop_numbers['S_{}'.format(agent_type)] = N_agent - pop_numbers['E_{}'.format(agent_type)]\
+												   - pop_numbers['I_{}'.format(agent_type)]\
+												   - pop_numbers['R_{}'.format(agent_type)]
+
+		pop_numbers['S_combined'] += pop_numbers['S_{}'.format(agent_type)]
+		pop_numbers['E_combined'] += pop_numbers['E_{}'.format(agent_type)]
+		pop_numbers['I_symptomatic_combined'] += pop_numbers['I_symptomatic_{}'.format(agent_type)]
+		pop_numbers['I_asymptomatic_combined'] += pop_numbers['I_asymptomatic_{}'.format(agent_type)]
+		pop_numbers['R_combined'] += pop_numbers['R_{}'.format(agent_type)]
+		pop_numbers['X_combined'] += pop_numbers['X_{}'.format(agent_type)]
+
+
+	ax.plot(pop_numbers['S_combined'] / N_total * 100,\
+		 label='S', color=colors['susceptible'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['E_combined'] / N_total * 100,\
+		 label='E', color=colors['exposed'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['I_symptomatic_combined'] / N_total * 100, \
+		 label='$I_1$', color=colors['infectious'],
+		  linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['I_asymptomatic_combined'] / N_total * 100, \
+		 label='$I_2$', color=colors['infectious'], alpha=0.3,
+		  linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['R_combined'] / N_total * 100, \
+		 label='R', color=colors['recovered'], linewidth=linewidth, zorder=1)
+
+	ax.plot(pop_numbers['X_combined'] / N_total * 100, \
+		 label='X', color=colors['quarantined'], linewidth=linewidth, zorder=1)
+
+	# legend with custom artist for the screening lines
+	handles, labels = ax.get_legend_handles_labels()
+
+	#Create legend from custom artist/label lists
+	ax.legend([handle for i,handle in enumerate(handles)],
+	          [label for i,label in enumerate(labels)], ncol=2, loc=6, 
+	          fontsize=14, bbox_to_anchor=[0, 0.55])
+
+	ax.set_xlabel('steps', fontsize=20)
+	ax.set_ylabel('% of population', fontsize=20)
+	ax.set_ylim(-1, 100)
+	#ax.set_xlim(0, 60)
+	ax.xaxis.set_major_locator(MultipleLocator(10))
+	ax.xaxis.set_minor_locator(MultipleLocator(1))
+	ax.tick_params(axis='both', which='major', labelsize=14)
+
+	ax.set_title('combined (N={})'.format(N_total), fontsize=20)
