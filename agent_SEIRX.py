@@ -9,13 +9,26 @@ class agent_SEIRX(Agent):
     generic agent class needs to implement their own step() function
     '''
 
-    def __init__(self, unique_id, unit, model, verbosity):
+    def __init__(self, unique_id, unit, model,
+        exposure_duration, time_until_symptoms, infection_duration,
+        verbosity):
         super().__init__(unique_id, model)
         self.verbose = verbosity
         self.ID = unique_id
         self.unit = unit
 
-        # infection states
+        ## epidemiological parameters drawn from distributions
+        # NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
+        # number of days agents stay infectuous
+
+        # days after transmission until agent becomes infectuous
+        self.exposure_duration = exposure_duration
+        # days after becoming infectuous until showing symptoms
+        self.time_until_symptoms = time_until_symptoms
+        # number of days agents stay infectuous
+        self.infection_duration = infection_duration
+
+        ## infection states
         self.exposed = False
         self.infectious = False
         self.symptomatic_course = False
@@ -237,13 +250,13 @@ class agent_SEIRX(Agent):
             self.become_exposed()
 
         # determine if agent has transitioned from exposed to infected
-        if self.days_since_exposure == self.model.exposure_duration:
+        if self.days_since_exposure == self.exposure_duration:
             self.become_infected()
 
-        if self.days_since_exposure == self.model.time_until_symptoms:
+        if self.days_since_exposure == self.time_until_symptoms:
             self.show_symptoms()
 
-        if self.days_since_exposure == self.model.infection_duration:
+        if self.days_since_exposure == self.infection_duration:
             self.recover()
 
         # determine if agent is released from quarantine
