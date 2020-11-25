@@ -570,7 +570,6 @@ class SEIRX(Model):
                         if self.verbosity > 0: 
                             print('not initiating {} follow-up screen (last screen too close)'\
                             	.format(agent_type))
-                        self.screened_agents['follow_up'][agent_type] = False
 
             # (c) 
             elif self.testing == 'preventive' and \
@@ -583,15 +582,18 @@ class SEIRX(Model):
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type, 'preventive')
                     else:
-                        self.screened_agents['preventive'][agent_type] = False
+                        if self.verbosity > 0: 
+                            print('not initiating {} preventive screen (last screen too close)'\
+                                .format(agent_type))
 
             else:
                 # do nothing
                 pass
 
             for agent_type in self.agent_types:
-                for screen_type in ['reactive', 'follow_up', 'preventive']:
-                    if not self.screened_agents[screen_type][agent_type]:
+                if not (self.screened_agents['reactive'][agent_type] or \
+                        self.screened_agents['follow_up'][agent_type] or \
+                        self.screened_agents['preventive'][agent_type]):
                         self.days_since_last_agent_screen[agent_type] += 1
 
 

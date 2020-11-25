@@ -143,6 +143,18 @@ def check_preventive_teacher_screen(model):
     return model.screened_agents['preventive']['teacher']
 
 
+def check_reactive_family_member_screen(model):
+    return model.screened_agents['reactive']['family_member']
+
+
+def check_follow_up_family_member_screen(model):
+    return model.screened_agents['follow_up']['family_member']
+
+
+def check_preventive_family_member_screen(model):
+    return model.screened_agents['preventive']['family_member']
+
+
 
 data_collection_functions = \
     {
@@ -221,6 +233,9 @@ class SEIRX_school(SEIRX):
             'screen_teachers_reactive':check_reactive_teacher_screen,
             'screen_teachers_follow_up':check_follow_up_teacher_screen,
             'screen_teachers_preventive':check_preventive_teacher_screen,
+            'screen_family_members_reactive':check_reactive_family_member_screen,
+            'screen_family_members_follow_up':check_follow_up_family_member_screen,
+            'screen_family_members_preventive':check_preventive_family_member_screen,
             'N_diagnostic_tests':get_N_diagnostic_tests,
             'N_preventive_screening_tests':get_N_preventive_screening_tests,
             'undetected_infections':get_undetected_infections,
@@ -269,7 +284,6 @@ class SEIRX_school(SEIRX):
             # (a)
             if (self.testing == 'background' or self.testing == 'preventive')\
                and self.new_positive_tests == True:
-                print('(a)')
                 for agent_type in ['teacher', 'student']:
 	                self.screen_agents(
 	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
@@ -279,7 +293,6 @@ class SEIRX_school(SEIRX):
             elif (self.testing == 'background' or self.testing == 'preventive') and \
                 self.Testing.follow_up_testing_interval != None and \
                 sum(list(self.scheduled_follow_up_screen.values())) > 0:
-                print('(b)')
                 for agent_type in ['teacher', 'student']:
                     if self.scheduled_follow_up_screen[agent_type] and\
                        self.days_since_last_agent_screen[agent_type] >=\
@@ -294,7 +307,6 @@ class SEIRX_school(SEIRX):
             # (c) 
             elif self.testing == 'preventive' and \
                 np.any(list(self.Testing.screening_intervals.values())):
-                print('(c)')
 
                 for agent_type in ['teacher', 'student']:
                     if self.Testing.screening_intervals[agent_type] != None and\
@@ -302,15 +314,19 @@ class SEIRX_school(SEIRX):
                     self.Testing.screening_intervals[agent_type]:
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type, 'preventive')
+                    else:
+                        if self.verbosity > 0: 
+                            print('not initiating {} preventive screen (last screen too close)'\
+                                .format(agent_type))
 
             else:
-                print('(d)')
                 # do nothing
                 pass
 
             for agent_type in self.agent_types:
-            	for screen_type in ['reactive', 'follow_up', 'preventive']:
-            		if not self.screened_agents[screen_type][agent_type]:
+            	if not (self.screened_agents['reactive'][agent_type] or \
+            		    self.screened_agents['follow_up'][agent_type] or \
+            		    self.screened_agents['preventive'][agent_type]):
             			self.days_since_last_agent_screen[agent_type] += 1
 
 
