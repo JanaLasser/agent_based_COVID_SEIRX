@@ -10,8 +10,31 @@ class family_member(agent_SEIRX):
         self.type = 'family_member'
         self.index_probability = self.model.index_probabilities[self.type]
 
+        self.mask = model.masks[self.type]
+
         self.transmission_risk = self.model.transmission_risks[self.type]
         self.reception_risk = self.model.reception_risks[self.type]
+
+        # modulate transmission risk based mask wearing
+        self.transmission_risk = self.mask_adjust_transmission(\
+            self.transmission_risk, self.mask)
+
+        # modulate reception risk based on mask wearing
+        self.reception_risk = self.mask_adjust_reception(\
+            self.reception_risk, self.mask)
+
+
+    def mask_adjust_transmission(self, risk, mask):
+        if mask:
+            risk *= 0.5
+        return risk
+
+    # generic helper functions that are inherited by other agent classes
+    def mask_adjust_reception(self, risk, mask):
+        if mask:
+            risk *= 0.7
+        return risk
+
         
 
     def step(self):
