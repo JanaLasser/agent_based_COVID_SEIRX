@@ -193,7 +193,7 @@ data_collection_functions = \
 class SEIRX_school(SEIRX):
 
     def __init__(self, G, verbosity=0, testing=True,
-        infection_duration=11, exposure_duration=4, time_until_symptoms=6,
+        exposure_duration=4, time_until_symptoms=6,infection_duration=11, 
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
             'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
@@ -208,8 +208,8 @@ class SEIRX_school(SEIRX):
                               'symptom_probability': 0.6}},
         seed=None):
 
-        super().__init__(G, verbosity, testing, infection_duration, 
-            exposure_duration, time_until_symptoms, quarantine_duration,
+        super().__init__(G, verbosity, testing, exposure_duration, 
+            time_until_symptoms, infection_duration, quarantine_duration,
             subclinical_modifier, infection_risk_contact_type_weights,
             K1_contact_types, diagnostic_test_type, 
             preventive_screening_test_type, follow_up_testing_interval,
