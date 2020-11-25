@@ -1,5 +1,8 @@
 import numpy as np
 import networkx as nx
+from scipy.special import gamma
+from scipy.optimize import root_scalar
+
 from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
@@ -121,6 +124,33 @@ def check_index_case(var, agent_types):
 	return var
 
 
+def get_weibull_shape(k, mu, var):
+    '''
+    Calculates the shape parameter of a Weibull distribution, given its mean
+    mu and its variance var
+    '''
+    return var / mu**2 - gamma(1 + 2/k) / gamma(1+1/k)**2 + 1
+
+
+
+def get_weibull_scale(mu, k):
+    '''
+    Calculates the scale parameter of a Weibull distribution, given its mean
+    mu and its shape parameter k
+    '''
+    return mu / gamma(1 + 1/k)
+
+
+def weibull_two_param(shape, scale):
+    '''
+    A two-parameter Weibull distribution, based on numpy ramdon's single 
+    parameter distribution. We use this distribution in the simulation to draw
+    random epidemiological parameters for agents from the given distribution
+    See https://numpy.org/doc/stable/reference/random/generated/numpy.random.weibull.html
+    '''
+    return scale * np.random.weibull(shape)
+
+
 class SEIRX(Model):
     '''
     A model with a number of different agents that reproduces
@@ -213,13 +243,21 @@ class SEIRX(Model):
     '''
 
     def __init__(self, G, verbosity, testing,
-    	infection_duration, exposure_duration, time_until_symptoms,
+    	exposure_duration, time_until_symptoms, infection_duration,
         quarantine_duration, subclinical_modifier,
     	infection_risk_contact_type_weights,
         K1_contact_types, diagnostic_test_type,
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
         index_case, agent_types, seed=None):
+
+        # mesa models already implement fixed seeds through their own random
+        # number generations. Sadly, we need to use the Weibull distribution
+        # here, which is not implemented in mesa's random number generation
+        # module. Therefore, we need to initialize the numpy random number
+        # generator with the given seed as well
+        if seed != None:
+            np.random.seed(seed)
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -231,14 +269,30 @@ class SEIRX(Model):
 
         self.Nstep = 0  # internal step counter used to launch screening tests
 
-        # durations
-        # NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
-        # number of days agents stay infectuous
-        self.infection_duration = check_positive_int(infection_duration)
-        # days after transmission until agent becomes infectuous
-        self.exposure_duration = check_positive_int(exposure_duration)
-        # days after becoming infectuous until showing symptoms
-        self.time_until_symptoms = check_positive_int(time_until_symptoms)
+        ## epidemiological parameters: can be either a single integer or the
+        # mean and standard deviation of a distribution
+        self.epi_params = {}
+
+        for param, param_name in zip([exposure_duration, time_until_symptoms,
+                infection_duration],['exposure_duration', 'time_until_symptoms',
+                'infection_duration']):
+
+            if isinstance(param, int):
+                self.epi_params[param_name] = check_positive_int(param)
+            elif isinstance(param, list) and len(param) == 2:
+
+                mu = check_positive(param[0])
+                var = check_positive(param[1]**2)
+                shape = root_scalar(get_weibull_shape, args=(mu, var),
+                            method='toms748', bracket=[0.2, 500]).root
+                scale = get_weibull_scale(mu, shape)
+
+                self.epi_params[param_name] = [shape, scale]         
+            else:
+                print('{} format not recognized, should be either a single '+\
+                  'int or a tuple of two positive numbers'.format(param_name))       
+
+
         # duration of quarantine
         self.quarantine_duration = check_positive_int(quarantine_duration)
 
@@ -327,14 +381,32 @@ class SEIRX(Model):
 
         self.num_agents = {}
 
+        ## add agents
         # extract the agent nodes from the graph and add them to the scheduler
         for agent_type in self.agent_types:
             IDs = [x for x,y in G.nodes(data=True) if y['type'] == agent_type]
             self.num_agents.update({agent_type:len(IDs)})
 
+            # get the agent locations from the graph node attributes
             units = [self.G.nodes[ID]['unit'] for ID in IDs]
             for ID, unit in zip(IDs, units):
-                a = agent_classes[agent_type](ID, unit, self, verbosity)
+
+                epi_params = []
+                # for each of the three epidemiological parameters, check if
+                # the parameter is an integer (if yes, pass it directly to the
+                # agent constructor), or if it is specified by the shape and 
+                # scale parameters of a Weibull distribution. In the latter 
+                # case, draw a new number for every agent from the distribution
+                # NOTE: parameters drawn from the distribution are rounded to
+                # the nearest integer
+                for param_name, param in self.epi_params.items():
+                    if isinstance(param, int):
+                        epi_params.append(param)
+                    else:
+                        epi_params.append(round(weibull_two_param(param[0], param[1])))
+
+                a = agent_classes[agent_type](ID, unit, self, epi_params[0], 
+                                  epi_params[1], epi_params[2], verbosity)
                 self.schedule.add(a)
 
 		# infect the first agent in single index case mode
