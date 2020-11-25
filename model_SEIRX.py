@@ -208,7 +208,8 @@ class SEIRX(Model):
 	becoming an index case in every time step
 
     seed: positive integer, fixes the seed of the simulation to enable
-    repeatable simulation runs
+    repeatable simulation runs. If seed = None, the simulation will be 
+    initialized at random.
     '''
 
     def __init__(self, G, verbosity, testing,
@@ -259,29 +260,46 @@ class SEIRX(Model):
 
         # extract the different agent types from the contact graph
         self.agent_types = list(agent_types.keys())
-   
-        # set index case probabilities for each agent type
-        self.index_probabilities = {t: check_probability(
-        	agent_types[t]['index_probability']) for t in self.agent_types}
-        # set transmission risks for each agent type
-        self.transmission_risks = {t: check_probability(
-        	agent_types[t]['transmission_risk']) for t in self.agent_types}
-        # set reception risks for each agent type
-        self.reception_risks = {t: check_probability(
-        	agent_types[t]['reception_risk']) for t in self.agent_types}
-        # set symptom probabilities for each agent type
-        self.symptom_probabilities = {t: check_probability(
-        	agent_types[t]['symptom_probability']) for t in self.agent_types}
+
+
+        # set agent characteristics for all agent groups
+        params = ['screening_interval','index_probability','transmission_risk',
+                'reception_risk', 'symptom_probability', 'mask']
+
+        defaults = {'screening_interval':None,
+                    'index_probability':0,
+                    'transmission_risk':0.01,
+                    'reception_risk':1,
+                    'symptom_probability':0.6,
+                    'mask':False}
+
+        check_funcs = [check_positive_int, check_probability, check_probability,
+                       check_probability, check_probability, check_bool]
+
+        self.screening_intervals = {}
+        self.index_probabilities = {}
+        self.transmission_risks = {}
+        self.reception_risks = {}
+        self.symptom_probabilities = {}
+        self.masks = {}
+
+        param_dicts = [self.screening_intervals, self.index_probabilities, 
+                       self.transmission_risks, self.reception_risks, 
+                       self.symptom_probabilities, self.masks]
+
+        for param,param_dict,check_func in zip(params,param_dicts,check_funcs):
+            for at in self.agent_types:
+                try:
+                    param_dict.update({at:check_func(agent_types[at][param])})
+                except KeyError:
+                    param_dict.update({at:defaults[param]})
 
         # testing strategy
-        # extract the screening intervals for each agent type
-        screening_intervals = {t: check_positive_int(
-        	agent_types[t]['screening_interval']) for t in self.agent_types}
 
         self.Testing = Testing(self, diagnostic_test_type,
              preventive_screening_test_type,
              check_positive_int(follow_up_testing_interval),
-             screening_intervals,
+             self.screening_intervals,
              check_bool(liberating_testing),
              check_K1_contact_types(K1_contact_types),
              verbosity)
