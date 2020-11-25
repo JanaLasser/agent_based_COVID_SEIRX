@@ -438,12 +438,18 @@ class SEIRX(Model):
     def screen_agents(self, agent_group, test_type, screen_type):
         # only test agents that have not been tested already in this simulation
         # step and that are not already known positive cases
+
+        if self.verbosity > 0: 
+            print('initiating {} {} screen'\
+                                .format(screen_type, agent_group))
+
         untested_agents = [a for a in self.schedule.agents if
             (a.tested == False and a.known_positive == False
                 and a.type == agent_group)]
 
         if len(untested_agents) > 0:
             self.screened_agents[screen_type][agent_group] = True
+            self.days_since_last_agent_screen[agent_group] = 0
 
             for a in untested_agents:
                 self.test_agent(a, test_type)
@@ -483,43 +489,56 @@ class SEIRX(Model):
                     .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
             K1_contact.quarantined = True
 
+    def test_symptomatic_agents(self):
+        # find symptomatic agents that have not been tested yet and are not
+        # in quarantine and test them
+        newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents
+            if (a.symptoms == True and a.tested == False and a.quarantined == False)])
+
+        for a in newly_symptomatic_agents:
+            # all symptomatic agents are quarantined by default
+            if self.verbosity > 0:
+                print('quarantined: {} {}'.format(a.type, a.ID))
+            a.quarantined = True
+            self.test_agent(a, self.Testing.diagnostic_test_type)
+
+    def quarantine_contacts(self):
+        # trace and quarantine contacts of newly positive agents
+        if len(self.newly_positive_agents) > 0:
+            if self.verbosity > 0: print('new positive test(s) from {}'
+                .format([a.ID for a in self.newly_positive_agents]))
+
+            # send all K1 contacts of positive agents into quarantine
+            for a in self.newly_positive_agents:
+                self.trace_contacts(a)
+
+            # indicate that a screen should happen because there are new
+            # positive test results
+            self.new_positive_tests = True
+            self.newly_positive_agents = []
+
+        else:
+            self.new_positive_tests = False
+
+
     def step(self):
         if self.testing:
-            if self.verbosity > 0: print('* testing and tracing *')
+            for agent_type in self.agent_types:
+                for screen_type in ['reactive', 'follow_up', 'preventive']:
+                    self.screened_agents[screen_type][agent_type] = False
 
-            # find symptomatic agents that have not been tested yet and are not
-            # in quarantine and test them
-            newly_symptomatic_agents = np.asarray([a for a in self.schedule.agents
-                if (a.symptoms == True and a.tested == False and a.quarantined == False)])
-
-            for a in newly_symptomatic_agents:
-                # all symptomatic agents are quarantined by default
-                if self.verbosity > 0:
-                    print('quarantined: {} {}'.format(a.type, a.ID))
-                a.quarantined = True
-                self.test_agent(a, self.Testing.diagnostic_test_type)
+            if self.verbosity > 0: 
+                print('* testing and tracing *')
+            
+            self.test_symptomatic_agents()
+            
 
             # collect and act on new test results
             agents_with_test_results = self.collect_test_results()
             for a in agents_with_test_results:
                 a.act_on_test_result()
-
-            # trace and quarantine contacts of newly positive agents
-            if len(self.newly_positive_agents) > 0:
-                if self.verbosity > 0: print('new positive test(s) from {}'
-                    .format([a.ID for a in self.newly_positive_agents]))
-
-                # send all K1 contacts of positive agents into quarantine
-                for a in self.newly_positive_agents:
-                    self.trace_contacts(a)
-
-                # indicate that a screen should happen because there are new
-                # positive test results
-                self.new_positive_tests = True
-                self.newly_positive_agents = []
-
-            else:
-                self.new_positive_tests = False
+            
+            self.quarantine_contacts()
 
             # screening:
             # a screen should take place if
@@ -532,38 +551,26 @@ class SEIRX(Model):
             # (a)
             if (self.testing == 'background' or self.testing == 'preventive')\
                and self.new_positive_tests == True:
-
-            	for agent_type in self.agent_types:
-	                if self.verbosity > 0:
-	                    print('initiating {} screen because of positive test(s)'
-	                    	.format(agent_type))
+                for agent_type in self.agent_types:
 	                self.screen_agents(
 	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
-	                self.days_since_last_agent_screen[agent_type] = 0
 	                self.scheduled_follow_up_screen[agent_type] = True
 
             # (b)
             elif (self.testing == 'background' or self.testing == 'preventive') and \
                 self.Testing.follow_up_testing_interval != None and \
                 sum(list(self.scheduled_follow_up_screen.values())) > 0:
-
                 for agent_type in self.agent_types:
                     if self.scheduled_follow_up_screen[agent_type] and\
                        self.days_since_last_agent_screen[agent_type] >=\
                        self.Testing.follow_up_testing_interval:
-
-                        if self.verbosity > 0:
-                            print('initiating {} follow-up screen'
-                                .format(agent_type))
                         self.screen_agents(
                             agent_type, self.Testing.diagnostic_test_type, 'follow_up')
-                        self.days_since_last_agent_screen[agent_type] = 0
                     else:
                         if self.verbosity > 0: 
                             print('not initiating {} follow-up screen (last screen too close)'\
                             	.format(agent_type))
                         self.screened_agents['follow_up'][agent_type] = False
-                        self.days_since_last_agent_screen[agent_type] += 1
 
             # (c) 
             elif self.testing == 'preventive' and \
@@ -573,21 +580,19 @@ class SEIRX(Model):
                     if self.Testing.screening_intervals[agent_type] != None and\
                     self.days_since_last_agent_screen[agent_type] >=\
                     self.Testing.screening_intervals[agent_type]:
-                        if self.verbosity > 0: 
-                            print('initiating preventive {} screen'\
-                                .format(agent_type))
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type, 'preventive')
-                        self.days_since_last_agent_screen[agent_type] = 0
                     else:
                         self.screened_agents['preventive'][agent_type] = False
-                        self.days_since_last_agent_screen[agent_type] += 1
 
             else:
-                for agent_type in self.agent_types:
-                    for screen_type in ['reactive', 'follow_up', 'preventive']:
-                        self.screened_agents[screen_type][agent_type] = False
-                    self.days_since_last_agent_screen[agent_type] += 1
+                # do nothing
+                pass
+
+            for agent_type in self.agent_types:
+                for screen_type in ['reactive', 'follow_up', 'preventive']:
+                    if not self.screened_agents[screen_type][agent_type]:
+                        self.days_since_last_agent_screen[agent_type] += 1
 
 
         if self.verbosity > 0: print('* agent interaction *')
