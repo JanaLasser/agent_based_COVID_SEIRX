@@ -218,7 +218,7 @@ class SEIRX(Model):
         K1_contact_types, diagnostic_test_type,
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
-        index_case, agent_types):
+        index_case, agent_types, seed=None):
 
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
@@ -314,7 +314,7 @@ class SEIRX(Model):
             infection_targets = [
                 a for a in self.schedule.agents if a.type == index_case]
             # pick a random agent to infect in the selected agent group
-            target = np.random.randint(0, len(infection_targets))
+            target = self.random.randint(0, len(infection_targets))
             infection_targets[target].exposed = True
             if self.verbosity > 0:
                 print('{} exposed: {}'.format(index_case,

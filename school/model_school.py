@@ -193,14 +193,15 @@ class SEIRX_school(SEIRX):
                               'index_probability': None,
                               'transmission_risk': 0.015,
                               'reception_risk': 0.015,
-                              'symptom_probability': 0.6}}):
+                              'symptom_probability': 0.6}},
+        seed=None):
 
         super().__init__(G, verbosity, testing, infection_duration, 
             exposure_duration, time_until_symptoms, quarantine_duration,
             subclinical_modifier, infection_risk_contact_type_weights,
             K1_contact_types, diagnostic_test_type, 
             preventive_screening_test_type, follow_up_testing_interval,
-            liberating_testing, index_case, agent_types)
+            liberating_testing, index_case, agent_types, seed)
 
 
         
