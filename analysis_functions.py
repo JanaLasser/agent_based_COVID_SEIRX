@@ -204,7 +204,114 @@ def get_transmission_chain(model, schedule):
                     'target_ID':target.ID,
                     'target_type':target.type},
                 ignore_index=True)
-                
-    tm_events['day'] = tm_events['day'].astype(int)
-    tm_events = tm_events.sort_values(by=['day', 'hour']).reset_index(drop=True)
-    return tm_events
+
+
+    if len(tm_events) > 0:            
+        tm_events['day'] = tm_events['day'].astype(int)
+        tm_events = tm_events.sort_values(by=['day', 'hour']).reset_index(drop=True)
+        return tm_events
+    else:
+        return None
+
+def get_ensemble_observables_school(model, run):
+    R0, _ = calculate_finite_size_R0(model)
+    infected_students = count_infected(model, 'student')
+    infected_teachers = count_infected(model, 'teacher')
+    infected_family_members = count_infected(model, 'family_member')
+    infected_agents = infected_students + infected_teachers + infected_family_members
+    data = model.datacollector.get_model_vars_dataframe()
+    N_diagnostic_tests = data['N_diagnostic_tests'].max()
+    N_preventive_screening_tests = data['N_preventive_screening_tests'].max()
+    transmissions = sum([a.transmissions for a in model.schedule.agents])
+    infected_without_transmissions = count_infection_endpoints(model)
+    student_student_transmissions = count_typed_transmissions(model, 'student', 'student')
+    teacher_student_transmissions = count_typed_transmissions(model, 'teacher', 'student')
+    student_teacher_transmissions = count_typed_transmissions(model, 'student', 'teacher')
+    teacher_teacher_transmissions = count_typed_transmissions(model, 'teacher', 'teacher')
+    student_family_member_transmissions = count_typed_transmissions(model, 'student', 'family_member')
+    family_member_family_member_transmissions = count_typed_transmissions(model, 'family_member', 'family_member')
+    quarantine_days_student = model.quarantine_counters['student']
+    quarantine_days_teacher = model.quarantine_counters['teacher']
+    quarantine_days_family_member = model.quarantine_counters['family_member']
+    pending_test_infections = data['pending_test_infections'].max()
+    undetected_infections = data['undetected_infections'].max()
+    predetected_infections = data['predetected_infections'].max()
+    duration = len(data)
+
+    row = {'run':run, 
+          'R0':R0,
+          'infected_students':infected_students,
+          'infected_teachers':infected_teachers,
+          'infected_family_members':infected_family_members,
+          'infected_agents':infected_agents,
+          'N_diagnostic_tests':N_diagnostic_tests,
+          'N_preventive_tests':N_preventive_screening_tests,
+          'transmissions':transmissions,
+          'infected_without_transmissions':infected_without_transmissions,
+          'student_student_transmissions':student_student_transmissions,
+          'teacher_student_transmissions':teacher_student_transmissions,
+          'student_teacher_transmissions':student_teacher_transmissions,
+          'teacher_teacher_transmissions':teacher_teacher_transmissions,
+          'student_family_member_transmissions':student_family_member_transmissions,
+          'family_member_family_member_transmissions':family_member_family_member_transmissions,
+          'quarantine_days_student':quarantine_days_student,
+          'quarantine_days_teacher':quarantine_days_teacher,
+          'quarantine_days_family_member':quarantine_days_family_member,
+          'pending_test_infections':pending_test_infections,
+          'undetected_infections':undetected_infections,
+          'predetected_infections':predetected_infections,
+          'duration':duration}
+
+    return row
+
+def get_representative_run(N_infected, path):
+    filenames = os.listdir(path)
+    medians = {int(f.split('_')[1]):int(f.split('_')[3].split('.')[0]) \
+               for f in filenames}
+    dist = np.inf
+    closest_run = None
+    
+    for run, median in medians.items():
+        if np.abs(N_infected - median) < dist:
+            closest_run = run
+            
+    return pickle.load(open(join(res_path + '/tmp', \
+                       'run_{}_N_{}.p'.format(run, medians[run])), 'rb'))
+
+def dump_JSON(path, classes, students, floors,
+              test_type, test_turnover, index_case, screen_frequency_student, 
+              screen_frequency_teacher, mask, half_classes,
+              network, node_list, schedule, observables, rep_transmission_events):
+    
+    node_list = node_list.to_json()
+    schedule = schedule.to_json()
+    try:
+        rep_transmission_events = rep_transmission_events.to_json()
+    except AttributeError:
+        pass
+    network = nx.node_link_data(network, attrs=None)
+    
+    data = {'classes':classes,
+            'students':students,
+            'floors':floors,
+            'testtype':test_type,
+            'testturnover':test_turnover,
+            'indexcase':index_case,
+            'screenfrequencyteacher':screen_frequency_teacher,
+            'screenfrequencystudent':screen_frequency_student,
+            'mask':mask,
+            'halfclasses':half_classes,
+            'network':network,
+            'nodelist':node_list,
+            'schedule':schedule,
+            'observables':observables,
+            'reptransevents':rep_transmission_events}
+    
+    with open(join(path, 'classes-{}_students-{}_floors-{}_testtype-{}'
+                   .format(classes, students, floors, test_type) + \
+                   '_testturnover-{}_indexcase-{}_screenfrequencyteacher-{}'
+                   .format(test_turnover, index_case, screen_frequency_teacher) +\
+                   '_screenfrequencystudent-{}_mask-{}_halfclasses-{}.txt'\
+                   .format(screen_frequency_student, mask, half_classes)),'w')\
+                   as outfile:
+        json.dump(data, outfile)
