@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
+import os
+import json
+import pickle
+from os.path import join
 
 def get_agent(model, ID):
     for a in model.schedule.agents:
@@ -275,13 +279,18 @@ def get_representative_run(N_infected, path):
         if np.abs(N_infected - median) < dist:
             closest_run = run
             
-    return pickle.load(open(join(res_path + '/tmp', \
+    return pickle.load(open(join(path, \
                        'run_{}_N_{}.p'.format(run, medians[run])), 'rb'))
 
-def dump_JSON(path, classes, students, floors,
-              test_type, test_turnover, index_case, screen_frequency_student, 
+def dump_JSON(path, school_type, classes, students, floors,
+              test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, mask, half_classes,
               network, node_list, schedule, observables, rep_transmission_events):
+
+    turnover, _, ttype = test_type.split('_')
+    turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
+    turnover = turnovers[turnover]
+    bool_dict = {True:'T', False:'F'}
     
     node_list = node_list.to_json()
     schedule = schedule.to_json()
@@ -291,27 +300,28 @@ def dump_JSON(path, classes, students, floors,
         pass
     network = nx.node_link_data(network, attrs=None)
     
-    data = {'classes':classes,
+    data = {'school_type':school_type,
+            'classes':classes,
             'students':students,
             'floors':floors,
-            'testtype':test_type,
-            'testturnover':test_turnover,
+            'test_type':ttype,
+            'test_turnover':turnover,
             'indexcase':index_case,
-            'screenfrequencyteacher':screen_frequency_teacher,
-            'screenfrequencystudent':screen_frequency_student,
+            'screen_frequency_teacher':screen_frequency_teacher,
+            'screen_frequency_student':screen_frequency_student,
             'mask':mask,
-            'halfclasses':half_classes,
+            'half_classes':half_classes,
             'network':network,
-            'nodelist':node_list,
+            'node_list':node_list,
             'schedule':schedule,
             'observables':observables,
-            'reptransevents':rep_transmission_events}
+            'rep_trans_events':rep_transmission_events}
     
-    with open(join(path, 'classes-{}_students-{}_floors-{}_testtype-{}'
-                   .format(classes, students, floors, test_type) + \
-                   '_testturnover-{}_indexcase-{}_screenfrequencyteacher-{}'
-                   .format(test_turnover, index_case, screen_frequency_teacher) +\
-                   '_screenfrequencystudent-{}_mask-{}_halfclasses-{}.txt'\
-                   .format(screen_frequency_student, mask, half_classes)),'w')\
+    with open(join(path, 'test-{}_'.format(ttype) + \
+                   'turnover-{}_index-{}_tf-{}_'
+                   .format(turnover, index_case[0], screen_frequency_teacher) +\
+                   'sf-{}_mask-{}_half-{}.txt'\
+                   .format(screen_frequency_student, bool_dict[mask],\
+                    bool_dict[half_classes])),'w')\
                    as outfile:
         json.dump(data, outfile)
