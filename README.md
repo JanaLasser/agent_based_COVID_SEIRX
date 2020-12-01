@@ -102,9 +102,18 @@ Note: if you want to clone the development branch, use
 The following requires the activation of the virtual environment you created during installation  
 ```source .my_venv/bin/activate```
 
-I provide exemplary Jupyter Notebooks for [nursing homes](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/example_nursing_home.ipynb) and [schools](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/school/example_school.ipynb) that illustrate how a simulation model is set up and run for these two applications, how results are visualised and how data from a model run can be collected.  
+I provide exemplary Jupyter Notebooks for [nursing homes](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/example_nursing_home.ipynb) and [schools](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/school/example_school.ipynb) that illustrate how a simulation model is set up and run for these two applications, how results are visualised and how data from a model run can be collected. Run the example notebook from the terminal:  
+```jupyter-notebook nursing_home/example_nursing_home.ipynb```  
+or  
 
-I also provide the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/screening_frequency_data_creation.ipynb) used to run the simulations and create the data used in the publication **Agent-based simulations for optimized prevention of the spread of SARS-CoV-2 in nursing homes** as well as the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/nursing_home/screening_frequency_analysis.ipynb) used to create the heatmaps for the different analysed screnarios from the simulation data.
+```jupyter-notebook school/example_school.ipynb```
+
+I also provide the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/screening_frequency_data_creation.ipynb) used to run the simulations and create the data used in the publication **Agent-based simulations for optimized prevention of the spread of SARS-CoV-2 in nursing homes** as well as the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/nursing_home/screening_frequency_analysis.ipynb) used to create the heatmaps for the different analysed screnarios from the simulation data. Run these notebooks from the terminal using:
+
+```jupyter-notebook nursing_home/screening_frequency_data_creation.ipynb```  
+and  
+```jupyter-notebook nursing_home/screening_frequency_analysis.ipynb```  
+
 
 ## Acknowledgements
 I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from [Caritas Austria](https://www.caritas.at/) for the fruitful discussions that led to the development of this project.
