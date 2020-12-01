@@ -85,13 +85,17 @@ The assumptions made by the model to simplify the dynamics of infection spread a
 Note: this is currently not working because the dependencies are buggy. This simulation uses the standard scientific python stack (python 3.7, numpy, pandas, matplotlib) plus networkx and mesa. If these libraries are installed, the simulation should work out of the box.
 
 1. Clone the repository:  
-```git clone https://github.com/JanaLasser/SEIRX_nursing_homes.git```  
-2. Create and activate a virtual environment  
-```python3 -m venv .my_venv```  
+```git clone https://github.com/JanaLasser/agent_based_COVID_SEIRX.git```  
+Note: if you want to clone the development branch, use  
+```git clone --branch dev https://github.com/JanaLasser/agent_based_COVID_SEIRX.git``` 
+2. Navigate to the repository
+```cd agent_based_COVID_SEIRX```
+3. Create and activate a virtual environment. Make sure you use a Python version >= 3.8
+```virtualenv -p=/usr/bin/python3.8 .my_venv```  
 ```source .my_venv/bin/activate```  
-3. Update pip  
+4. Update pip  
 ``` pip install --upgrade pip```  
-4. Install dependencies  
+5. Install dependencies  
 ```pip install -r requirements.txt```  
 
 ## Running the simulation
