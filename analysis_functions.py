@@ -292,10 +292,12 @@ def dump_JSON(path, school_type, classes, students, floors,
     turnover = turnovers[turnover]
     bool_dict = {True:'T', False:'F'}
     
-    node_list = node_list.to_json()
-    schedule = schedule.to_json()
+    node_list = node_list.to_json(orient='records')
+    schedule = schedule.to_json(orient='records')
+    # can be empty, if there are no transmission events in the simulation
     try:
-        rep_transmission_events = rep_transmission_events.to_json()
+        rep_transmission_events = rep_transmission_events\
+            .to_json(orient='records')
     except AttributeError:
         pass
     network = nx.node_link_data(network, attrs=None)
