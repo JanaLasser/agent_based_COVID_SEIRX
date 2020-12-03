@@ -74,14 +74,13 @@ def get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes):
     return class_neighbours
 
 
-def get_age_distribution(school_type, school_types, N_classes):
+def get_age_distribution(school_type, age_brackets, N_classes):
     '''
     Given a school type (that sets the age-range of the students in the school),
     distributes the available age-brackets evenly over the number of classes.
     Returns a dictionary of the form {class:age}
 	'''
     classes = list(range(1, N_classes + 1))
-    age_brackets = school_types[school_type]
     N_age_brackets = len(age_brackets)
     classes_per_age_bracket = int(N_classes / N_age_brackets)
     
@@ -279,7 +278,7 @@ def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbour
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		school_types, family_sizes):
+		age_brackets, family_sizes):
     # number of teachers in a school
     N_teachers = N_classes * 2
     # number of teaching units / day
@@ -298,7 +297,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     # relations of classes based on spatial proximity
     floors, floors_inv = get_floor_distribution(N_floors, N_classes)
     class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
-    age_bracket_map = get_age_distribution('volksschule', school_types, N_classes)
+    age_bracket_map = get_age_distribution('volksschule', age_brackets, N_classes)
     
     # compose the graph
     G = nx.Graph()
