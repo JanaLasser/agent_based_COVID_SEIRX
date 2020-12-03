@@ -318,6 +318,9 @@ class SEIRX(Model):
         ## epidemiological parameters: can be either a single integer or the
         # mean and standard deviation of a distribution
         self.epi_params = {}
+        # counter to track the number of pathological parameter combinations
+        # that had to be re-rolled (only here for debugging and control reasons)
+        self.param_rerolls = 0
 
         for param, param_name in zip([exposure_duration, time_until_symptoms,
                 infection_duration],['exposure_duration', 'time_until_symptoms',
@@ -325,6 +328,7 @@ class SEIRX(Model):
 
             if isinstance(param, int):
                 self.epi_params[param_name] = check_positive_int(param)
+
             elif isinstance(param, list) and len(param) == 2:
 
                 mu = check_positive(param[0])
@@ -350,7 +354,7 @@ class SEIRX(Model):
         # modifiers for the infection risk, depending on contact type
         self.infection_risk_contact_type_weights = infection_risk_contact_type_weights
 
-        # agents and their interactions
+        ## agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
         # add weights as edge attributes so they can be visualised easily
@@ -437,7 +441,7 @@ class SEIRX(Model):
             units = [self.G.nodes[ID]['unit'] for ID in IDs]
             for ID, unit in zip(IDs, units):
 
-                epi_params = []
+                epi_params = {}
                 # for each of the three epidemiological parameters, check if
                 # the parameter is an integer (if yes, pass it directly to the
                 # agent constructor), or if it is specified by the shape and 
@@ -445,14 +449,29 @@ class SEIRX(Model):
                 # case, draw a new number for every agent from the distribution
                 # NOTE: parameters drawn from the distribution are rounded to
                 # the nearest integer
-                for param_name, param in self.epi_params.items():
-                    if isinstance(param, int):
-                        epi_params.append(param)
-                    else:
-                        epi_params.append(round(weibull_two_param(param[0], param[1])))
+                while True:
+                    for param_name, param in self.epi_params.items():
+                        if isinstance(param, int):
+                            epi_params[param_name] = param
 
-                a = agent_classes[agent_type](ID, unit, self, epi_params[0], 
-                                  epi_params[1], epi_params[2], verbosity)
+                        else:
+                            epi_params[param_name] = round(weibull_two_param(param[0], param[1]))
+
+                    if epi_params['infection_duration'] >= \
+                       epi_params['exposure_duration'] and\
+                       epi_params['time_until_symptoms'] >= \
+                       epi_params['exposure_duration']:
+                       break
+                    else:
+                        self.param_rerolls += 1
+                        if verbosity > 0:
+                            print('pathological epi-param case found!')
+                            print(epi_params)
+
+                a = agent_classes[agent_type](ID, unit, self, 
+                    epi_params['exposure_duration'], 
+                    epi_params['time_until_symptoms'], 
+                    epi_params['infection_duration'], verbosity)
                 self.schedule.add(a)
 
 		# infect the first agent in single index case mode
