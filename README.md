@@ -90,7 +90,7 @@ Note: if you want to clone the development branch, use
 ```git clone --branch dev https://github.com/JanaLasser/agent_based_COVID_SEIRX.git``` 
 2. Navigate to the repository  
 ```cd agent_based_COVID_SEIRX```
-3. Create and activate a virtual environment. Make sure you use a Python version >= 3.8  
+3. Create and activate a virtual environment. Make sure you use a Python binary with a version version >= 3.8  
 ```virtualenv -p=/usr/bin/python3.8 .my_venv```  
 ```source .my_venv/bin/activate```  
 4. Update pip  
