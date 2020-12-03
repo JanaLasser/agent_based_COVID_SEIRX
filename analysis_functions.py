@@ -77,8 +77,13 @@ def calculate_finite_size_R0(model):
     N_transmissions = []
     for ft in first_transmitters:
         N_transmissions.append(len(df[df['ID'] == ft]))
-        
-    return np.mean(N_transmissions), df
+    
+    mean = np.mean(N_transmissions)
+    if np.isnan(mean):
+        return 0, df
+    else:
+        return mean, df
+
 
 def get_transmission_network(model):
     transmissions = []
@@ -282,10 +287,16 @@ def get_representative_run(N_infected, path):
     return pickle.load(open(join(path, \
                        'run_{}_N_{}.p'.format(run, medians[run])), 'rb'))
 
-def dump_JSON(path, school_type, classes, students, floors,
+def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, mask, half_classes,
-              network, node_list, schedule, observables, rep_transmission_events):
+              network, node_list, schedule, observables,
+              rep_transmission_events):
+
+    school_type = school['type']
+    classes = school['classes']
+    students = school['students']
+    floors = school['floors']
 
     turnover, _, ttype = test_type.split('_')
     turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
