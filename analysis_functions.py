@@ -121,6 +121,19 @@ def get_statistics(df, col):
         '{}_std'.format(col):df[col].std(),
     }
 
+def get_agent_states(model):
+    state_data = model.datacollector.get_agent_vars_dataframe()
+    state_data = state_data[(state_data['quarantine_state'] == False) &\
+                            (state_data['infection_state'] != 'susceptible')]
+
+    state_data = state_data.reset_index()
+    state_data = state_data.drop_duplicates(subset=['AgentID',\
+        'infection_state', 'quarantine_state'])
+
+    state_data = state_data.rename(columns={'AgentID':'node_ID',
+                                            'Step':'day'})
+
+    return state_data
 
 def get_transmission_chain(model, schedule):
     tm_events = pd.DataFrame()
@@ -305,7 +318,7 @@ def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, mask, half_classes,
               node_list, schedule, rep_transmission_events,
-              agent_states):
+              state_data):
 
     school_type = school['type']
     classes = school['classes']
@@ -321,8 +334,8 @@ def dump_JSON(path, school,
     del node_list['index']
     schedule = json.loads(schedule.to_json(orient='split'))
     del schedule['index']
-    agent_states = json.loads(agent_states.to_json(orient='split'))
-    del agent_states['index']
+    state_data = json.loads(state_data.to_json(orient='split'))
+    del state_data['index']
 
     # can be empty, if there are no transmission events in the simulation
     try:
@@ -348,7 +361,7 @@ def dump_JSON(path, school,
             'node_list':node_list,
             'schedule':schedule,
             'rep_trans_events':rep_transmission_events,
-            'agent_states':agent_states}
+            'agent_states':state_data}
     
     with open(join(path, 'test-{}_'.format(ttype) + \
                    'turnover-{}_index-{}_tf-{}_'
