@@ -125,7 +125,12 @@ def generate_class(G, class_size, student_counter, class_counter, floors, \
     Generate the nodes for students in a class and contacts between all students
     (complete graph), given the class size. Node IDs are of the form 'si', where
     i is an incrementing global counter of students. Students have contacts of 
-    'intermediate' strength to each other. Nodes get additional attributes:
+    'far' (low risk) strength to all other students, except for their two 
+    closest neighbours, with whom they have 'intermediate' contacts (high risk).
+    Therefore, the student network is a superposition of a ring with intermediate
+    contacts and a complete graph with far contacts.
+
+    Nodes get additional attributes:
         'type': is set to 'student'
         'unit': is set to the class, using the incrementing class_counter
         'floor': is the floor the class is situated on
@@ -144,16 +149,30 @@ def generate_class(G, class_size, student_counter, class_counter, floors, \
     
     student_nodes = ['s{}'.format(i) for i in range(student_counter, \
                                 student_counter + class_size )]
+
     G.add_nodes_from(student_nodes)
     nx.set_node_attributes(G, \
         {s:{'type':'student', 'unit':'class_{}'.format(class_counter), 
             'floor':class_floor, 'age':student_age} for s in student_nodes})
-    
+
+    # add contacts of type "far" between all students (complete graph)
     for s1 in student_nodes:
         for s2 in student_nodes:
             if s1 != s2:
                 G.add_edge(s1, s2, link_type='student_student',
-                           contact_type='intermediate')
+                           contact_type='far')
+
+
+    # generate intermediate contacts in a ring
+    for i, n in enumerate(student_nodes[0:-1]):
+        G[student_nodes[i-1]][n]['contact_type'] ='intermediate'
+        G[student_nodes[i+1]][n]['contact_type'] ='intermediate'
+    # add the contacts for the last student separately, since this would
+    # exceed the list indexing otherwise
+    #G[student_nodes[i-2]][student_nodes[-1]]['contact_type'] ='intermediate'
+    G[student_nodes[0]][student_nodes[-1]]['contact_type'] ='intermediate'
+
+
     return G, student_counter + class_size, class_counter + 1
 
 
@@ -278,26 +297,18 @@ def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbour
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_brackets, family_sizes):
+		age_brackets, family_sizes, N_hours, cross_class_contacts):
     # number of teachers in a school
     N_teachers = N_classes * 2
-    # number of teaching units / day
-    N_hours = 8
     # number of classes a teacher is in contact with
     N_classes_taught = int(N_hours / 2)
     # number of neighbouring classes for each class
     N_close_classes = 2 # needs to be even
-    # number of inter-class contacts for neighboring classes:
-    # as each class has cross_class_contacts to each of it's N_close_classes 
-    # neighbours, the total number of inter-class contacts between each pair of 
-    # neighboring classes is X*Y
-    cross_class_contacts = 2
     
     # distribution of classes over the available floors and neighborhood 
     # relations of classes based on spatial proximity
     floors, floors_inv = get_floor_distribution(N_floors, N_classes)
-    class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
-    age_bracket_map = get_age_distribution('volksschule', age_brackets, N_classes)
+    age_bracket_map = get_age_distribution(school_type, age_brackets, N_classes)
     
     # compose the graph
     G = nx.Graph()
@@ -318,7 +329,9 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
         G, family_counter = generate_family(G, s, family_counter, family_sizes)
 
     # create inter-class contacts
-    G = add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbours)
+    if cross_class_contacts > 0:
+        class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
+        G = add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbours)
     
     return G, schedule
 
@@ -330,7 +343,7 @@ def get_node_list(G):
 	    elif n[1]['type'] == 'teacher':
 	        location = 'faculty_room'
 	    else:
-	        student = [item for sublist in G.edges('f1') for item in sublist \
+	        student = [item for sublist in G.edges(n[0]) for item in sublist \
 	                   if item.startswith('s')][0]
 	        location = 'home_{}'.format(student)
 	    node_list = node_list.append({'ID':n[0],
