@@ -84,6 +84,19 @@ def calculate_finite_size_R0(model):
     else:
         return mean, df
 
+def count_infected_by_age(model, age_brackets):
+	age_counts = {}
+	for ab in age_brackets:
+	    lower = int(ab.split('-')[0])
+	    upper = int(ab.split('-')[1])
+	    
+	    infected = len([a for a in model.schedule.agents if a.type == 'student' and \
+	               a.recovered == True and a.age >= lower and a.age <= upper])
+	    
+	    age_counts[ab] = infected
+
+	return age_counts
+
 
 def get_transmission_network(model):
     transmissions = []
@@ -107,6 +120,7 @@ def get_statistics(df, col):
         '{}_0.975'.format(col):df[col].quantile(0.975),
         '{}_std'.format(col):df[col].std(),
     }
+
 
 def get_transmission_chain(model, schedule):
     tm_events = pd.DataFrame()
@@ -290,8 +304,8 @@ def get_representative_run(N_infected, path):
 def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, mask, half_classes,
-              network, node_list, schedule, observables,
-              rep_transmission_events):
+              node_list, schedule, rep_transmission_events,
+              agent_states):
 
     school_type = school['type']
     classes = school['classes']
@@ -303,15 +317,22 @@ def dump_JSON(path, school,
     turnover = turnovers[turnover]
     bool_dict = {True:'T', False:'F'}
     
-    node_list = node_list.to_json(orient='records')
-    schedule = schedule.to_json(orient='records')
+    node_list = json.loads(node_list.to_json(orient='split'))
+    del node_list['index']
+    schedule = json.loads(schedule.to_json(orient='split'))
+    del schedule['index']
+    agent_states = json.loads(agent_states.to_json(orient='split'))
+    del agent_states['index']
+
     # can be empty, if there are no transmission events in the simulation
     try:
-        rep_transmission_events = rep_transmission_events\
-            .to_json(orient='records')
+        rep_transmission_events = json.loads(rep_transmission_events\
+            .to_json(orient='split'))
+        del rep_transmission_events['index']
     except AttributeError:
         pass
-    network = nx.node_link_data(network, attrs=None)
+
+
     
     data = {'school_type':school_type,
             'classes':classes,
@@ -324,11 +345,10 @@ def dump_JSON(path, school,
             'screen_frequency_student':screen_frequency_student,
             'mask':mask,
             'half_classes':half_classes,
-            'network':network,
             'node_list':node_list,
             'schedule':schedule,
-            'observables':observables,
-            'rep_trans_events':rep_transmission_events}
+            'rep_trans_events':rep_transmission_events,
+            'agent_states':agent_states}
     
     with open(join(path, 'test-{}_'.format(ttype) + \
                    'turnover-{}_index-{}_tf-{}_'
