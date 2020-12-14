@@ -169,7 +169,6 @@ def generate_class(G, class_size, student_counter, class_counter, floors, \
         G[student_nodes[i+1]][n]['contact_type'] ='intermediate'
     # add the contacts for the last student separately, since this would
     # exceed the list indexing otherwise
-    #G[student_nodes[i-2]][student_nodes[-1]]['contact_type'] ='intermediate'
     G[student_nodes[0]][student_nodes[-1]]['contact_type'] ='intermediate'
 
 
