@@ -457,14 +457,15 @@ class SEIRX(Model):
                         else:
                             epi_params[param_name] = round(weibull_two_param(param[0], param[1]))
 
-                    if epi_params['infection_duration'] >= \
-                       epi_params['exposure_duration'] and\
+                    if epi_params['exposure_duration'] > 0 and \
                        epi_params['time_until_symptoms'] >= \
+                       epi_params['exposure_duration'] and\
+                       epi_params['infection_duration'] > \
                        epi_params['exposure_duration']:
                        break
                     else:
                         self.param_rerolls += 1
-                        if verbosity > 0:
+                        if verbosity > 1:
                             print('pathological epi-param case found!')
                             print(epi_params)
 
