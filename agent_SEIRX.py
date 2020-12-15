@@ -28,6 +28,22 @@ class agent_SEIRX(Agent):
         # number of days agents stay infectuous
         self.infection_duration = infection_duration
 
+
+        ## agent-group wide parameters that are stored in the model class
+        self.index_probability = self.model.index_probabilities[self.type]
+        self.symptom_probability = self.model.age_symptom_discount['intercept']
+        self.transmission_risk = self.model.transmission_risks[self.type]
+        self.reception_risk = self.model.reception_risks[self.type]
+        self.mask = model.masks[self.type]
+
+
+        # modulate transmission and reception risk based mask wearing
+        self.transmission_risk = self.mask_adjust_transmission(\
+            self.transmission_risk, self.mask)
+        self.reception_risk = self.mask_adjust_reception(\
+            self.reception_risk, self.mask)
+
+
         ## infection states
         self.exposed = False
         self.infectious = False
@@ -51,6 +67,22 @@ class agent_SEIRX(Agent):
         self.days_since_tested = 0
         self.transmissions = 0
         self.transmission_targets = {}
+
+
+
+
+    def mask_adjust_transmission(self, risk, mask):
+        if mask:
+            risk *= 0.5
+        return risk
+
+
+    # generic helper functions that are inherited by other agent classes
+    def mask_adjust_reception(self, risk, mask):
+        if mask:
+            risk *= 0.7
+        return risk
+
 
     # generic helper functions that are inherited by other agent classes
     def get_contacts(self, agent_group):
@@ -205,7 +237,7 @@ class agent_SEIRX(Agent):
         # I.e. agents that will become symptomatic down the road might
         # already be more infectious before they show any symptoms than
         # agents that stay asymptomatic
-        if self.random.random() <= self.model.symptom_probabilities[self.type]:
+        if self.random.random() <= self.symptom_probability:
             self.symptomatic_course = True
             if self.verbose > 0:
                 print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
