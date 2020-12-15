@@ -322,10 +322,11 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught)
 
     # add family members
-    family_counter = 1
-    students = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
-    for s in students:
-        G, family_counter = generate_family(G, s, family_counter, family_sizes)
+    if family_sizes != None:
+        family_counter = 1
+        students = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
+        for s in students:
+            G, family_counter = generate_family(G, s, family_counter, family_sizes)
 
     # create inter-class contacts
     if cross_class_contacts > 0:
