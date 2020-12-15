@@ -119,7 +119,7 @@ def get_age_distribution(school_type, age_brackets, N_classes):
 
 
 def generate_class(G, class_size, student_counter, class_counter, floors, \
-                   age_bracket_map):
+                   age_bracket_map, time_period):
     
     '''
     Generate the nodes for students in a class and contacts between all students
@@ -155,21 +155,34 @@ def generate_class(G, class_size, student_counter, class_counter, floors, \
         {s:{'type':'student', 'unit':'class_{}'.format(class_counter), 
             'floor':class_floor, 'age':student_age} for s in student_nodes})
 
-    # add contacts of type "far" between all students (complete graph)
-    for s1 in student_nodes:
-        for s2 in student_nodes:
-            if s1 != s2:
-                G.add_edge(s1, s2, link_type='student_student',
-                           contact_type='far')
+
+    if time_period == 'calibration':
+        # add contacts of type "intermediate" between all students (complete graph)
+        for s1 in student_nodes:
+            for s2 in student_nodes:
+                if s1 != s2:
+                    G.add_edge(s1, s2, link_type='student_student',
+                               contact_type='intermediate')
+
+    elif time_period == 'post_lockdown':
+        # add contacts of type "far" between all students (complete graph)
+        for s1 in student_nodes:
+            for s2 in student_nodes:
+                if s1 != s2:
+                    G.add_edge(s1, s2, link_type='student_student',
+                               contact_type='far')
 
 
-    # generate intermediate contacts in a ring
-    for i, n in enumerate(student_nodes[0:-1]):
-        G[student_nodes[i-1]][n]['contact_type'] ='intermediate'
-        G[student_nodes[i+1]][n]['contact_type'] ='intermediate'
-    # add the contacts for the last student separately, since this would
-    # exceed the list indexing otherwise
-    G[student_nodes[0]][student_nodes[-1]]['contact_type'] ='intermediate'
+        # generate intermediate contacts in a ring
+        for i, n in enumerate(student_nodes[0:-1]):
+            G[student_nodes[i-1]][n]['contact_type'] ='intermediate'
+            G[student_nodes[i+1]][n]['contact_type'] ='intermediate'
+        # add the contacts for the last student separately, since this would
+        # exceed the list indexing otherwise
+        G[student_nodes[0]][student_nodes[-1]]['contact_type'] ='intermediate'
+
+    else:
+        print('unknown time period!')
 
 
     return G, student_counter + class_size, class_counter + 1
@@ -296,7 +309,7 @@ def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbour
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_brackets, family_sizes, N_hours, cross_class_contacts):
+		age_brackets, family_sizes, N_hours, cross_class_contacts, time_period):
     # number of teachers in a school
     N_teachers = N_classes * 2
     # number of classes a teacher is in contact with
@@ -316,7 +329,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     student_counter = 1
     for c in range(1, N_classes + 1):
         G, student_counter, class_counter = generate_class(G, class_size, \
-                                student_counter, c, floors_inv, age_bracket_map)
+                        student_counter, c, floors_inv, age_bracket_map, time_period)
 
     # add teachers
     G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught)
