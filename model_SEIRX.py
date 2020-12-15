@@ -124,6 +124,14 @@ def check_index_case(var, agent_types):
 	return var
 
 
+def check_discount(var):
+    assert var['slope'] < 0, 'slope needs to be negative'
+    assert np.abs(var['slope']) < 1, 'absolute value of slope needs to be <= 1'
+    assert var['intercept'], 'intercept needs to be positive'
+    assert var['intercept'], 'intercept needs to be <= 1'
+    return var
+
+
 def get_weibull_shape(k, mu, var):
     '''
     Calculates the shape parameter of a Weibull distribution, given its mean
@@ -295,7 +303,8 @@ class SEIRX(Model):
         K1_contact_types, diagnostic_test_type,
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
-        index_case, agent_types, seed=None):
+        index_case, agent_types, age_transmission_risk_discount,
+        age_symptom_discount, seed=None):
 
         # mesa models already implement fixed seeds through their own random
         # number generations. Sadly, we need to use the Weibull distribution
@@ -354,6 +363,13 @@ class SEIRX(Model):
         # modifiers for the infection risk, depending on contact type
         self.infection_risk_contact_type_weights = infection_risk_contact_type_weights
 
+        # discounts for age-dependent transmission and reception risks and
+        # symptom probabilities
+        self.age_transmission_risk_discount = \
+            check_discount(age_transmission_risk_discount)
+        self.age_symptom_discount = \
+            check_discount(age_symptom_discount)
+
         ## agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
@@ -369,7 +385,7 @@ class SEIRX(Model):
         ## set agent characteristics for all agent groups
         # list of agent characteristics
         params = ['screening_interval','index_probability','transmission_risk',
-                'reception_risk', 'symptom_probability', 'mask']
+                'reception_risk', 'mask']
 
         # default values that are used in case a characteristic is not specified
         # for an agent group
@@ -377,28 +393,25 @@ class SEIRX(Model):
                     'index_probability':0,
                     'transmission_risk':0.01,
                     'reception_risk':1,
-                    'symptom_probability':0.6,
                     'mask':False}
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
         check_funcs = [check_positive_int, check_probability, check_probability,
-                       check_probability, check_probability, check_bool]
+                       check_probability, check_bool]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.transmission_risks = {}
         self.reception_risks = {}
-        self.symptom_probabilities = {}
         self.masks = {}
         param_dicts = [self.screening_intervals, self.index_probabilities, 
-                       self.transmission_risks, self.reception_risks, 
-                       self.symptom_probabilities, self.masks]
+                    self.transmission_risks, self.reception_risks, self.masks]
 
         # iterate over all possible agent parameters and agent groups: set the
         # respective value to the value passed through the constructor or to 
-        # the default value otherwise
+        # the default value if no value has been passed
         for param,param_dict,check_func in zip(params,param_dicts,check_funcs):
             for at in self.agent_types:
                 try:
@@ -437,11 +450,11 @@ class SEIRX(Model):
             IDs = [x for x,y in G.nodes(data=True) if y['type'] == agent_type]
             self.num_agents.update({agent_type:len(IDs)})
 
-            # get the agent locations from the graph node attributes
+            # get the agent locations (units) from the graph node attributes
             units = [self.G.nodes[ID]['unit'] for ID in IDs]
             for ID, unit in zip(IDs, units):
 
-                epi_params = {}
+                tmp_epi_params = {}
                 # for each of the three epidemiological parameters, check if
                 # the parameter is an integer (if yes, pass it directly to the
                 # agent constructor), or if it is specified by the shape and 
@@ -452,27 +465,29 @@ class SEIRX(Model):
                 while True:
                     for param_name, param in self.epi_params.items():
                         if isinstance(param, int):
-                            epi_params[param_name] = param
+                            tmp_epi_params[param_name] = param
 
                         else:
-                            epi_params[param_name] = round(weibull_two_param(param[0], param[1]))
+                            tmp_epi_params[param_name] = \
+                                round(weibull_two_param(param[0], param[1]))
 
-                    if epi_params['exposure_duration'] > 0 and \
-                       epi_params['time_until_symptoms'] >= \
-                       epi_params['exposure_duration'] and\
-                       epi_params['infection_duration'] > \
-                       epi_params['exposure_duration']:
+                    if tmp_epi_params['exposure_duration'] > 0 and \
+                       tmp_epi_params['time_until_symptoms'] >= \
+                       tmp_epi_params['exposure_duration'] and\
+                       tmp_epi_params['infection_duration'] > \
+                       tmp_epi_params['exposure_duration']:
                        break
                     else:
                         self.param_rerolls += 1
                         if verbosity > 1:
                             print('pathological epi-param case found!')
-                            print(epi_params)
+                            print(tmp_epi_params)
 
                 a = agent_classes[agent_type](ID, unit, self, 
-                    epi_params['exposure_duration'], 
-                    epi_params['time_until_symptoms'], 
-                    epi_params['infection_duration'], verbosity)
+                    tmp_epi_params['exposure_duration'], 
+                    tmp_epi_params['time_until_symptoms'], 
+                    tmp_epi_params['infection_duration'], 
+                    verbosity)
                 self.schedule.add(a)
 
 		# infect the first agent in single index case mode
@@ -551,6 +566,17 @@ class SEIRX(Model):
             	'infection_state': get_infection_state,
                 'quarantine_state': get_quarantine_state
                 })
+
+
+    def get_risk_age_modifier(self, age):
+        '''linear function such that at age 18 the risk is that of an adult (=1).
+        The slope of the line needs to be calibrated.
+        '''
+        max_age = 18
+        modifier = self.age_transmission_risk_discount['slope']*np.abs(age-max_age)\
+                 + self.age_transmission_risk_discount['intercept']
+        return modifier
+
 
     def test_agent(self, a, test_type):
         a.tested = True
