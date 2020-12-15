@@ -564,13 +564,13 @@ class SEIRX(Model):
             # tests that happen in the period of time in which the agent is
             # exposed but not yet infectious
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable']:
-                if self.verbosity > 0:
+                if self.verbosity > 1:
                     print('{} {} sent positive sample (even though not infectious yet)'
                     .format(a.type, a.ID))
                 a.sample = 'positive'
                 self.predetected_infections += 1
             else:
-                if self.verbosity > 0: print('{} {} sent negative sample'
+                if self.verbosity > 1: print('{} {} sent negative sample'
                     .format(a.type, a.ID))
                 a.sample = 'negative'
 
@@ -579,21 +579,21 @@ class SEIRX(Model):
             # infectious and the infection is detectable by a given test
             if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable'] and \
                a.days_since_exposure <= self.Testing.tests[test_type]['time_testable']:
-                if self.verbosity > 0:
+                if self.verbosity > 1:
                     print('{} {} sent positive sample'.format(a.type, a.ID))
                 a.sample = 'positive'
 
             # track the undetected infections to assess how important they are
             # for infection spread
             else:
-                if self.verbosity > 0:
+                if self.verbosity > 1:
                     print('{} {} sent negative sample (even though infectious)'
                     .format(a.type, a.ID))
                 a.sample = 'negative'
                 self.undetected_infections += 1
 
         else:
-            if self.verbosity > 0: print('{} {} sent negative sample'
+            if self.verbosity > 1: print('{} {} sent negative sample'
                 .format(a.type, a.ID))
             a.sample = 'negative'
 
@@ -639,6 +639,8 @@ class SEIRX(Model):
     def trace_contacts(self, a):
         if a.quarantined == False:
             a.quarantined = True
+            a.quarantine_start = self.Nstep
+
             if self.verbosity > 0:
                 print('qurantined {} {}'.format(a.type, a.ID))
 
@@ -654,6 +656,7 @@ class SEIRX(Model):
                 print('quarantined {} {} (K1 contact of {} {})'
                     .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
             K1_contact.quarantined = True
+            K1_contact.quarantine_start = self.Nstep
 
     def test_symptomatic_agents(self):
         # find symptomatic agents that have not been tested yet and are not
@@ -666,6 +669,8 @@ class SEIRX(Model):
             if self.verbosity > 0:
                 print('quarantined: {} {}'.format(a.type, a.ID))
             a.quarantined = True
+            a.quarantine_start = self.Nstep
+
             self.test_agent(a, self.Testing.diagnostic_test_type)
 
     def quarantine_contacts(self):
