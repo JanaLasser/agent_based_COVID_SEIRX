@@ -9,42 +9,27 @@ class student(agent_SEIRX):
         exposure_duration, time_until_symptoms, infection_duration,
         verbosity):
 
+        self.type = 'student'
+
         super().__init__(unique_id, unit, model, 
             exposure_duration, time_until_symptoms, infection_duration,
             verbosity)
 
-        self.type = 'student'
-        self.index_probability = self.model.index_probabilities[self.type]
-
         self.age = model.G.nodes(data=True)[self.unique_id]['age']
-        self.mask = model.masks[self.type]
-        self.transmission_risk = self.model.transmission_risks[self.type]
-        self.reception_risk = self.model.reception_risks[self.type]
+        
+
+        ## age adjustments
+        # adjust symptom probability based on age
+        self.symptom_probability = \
+                        self.age * self.model.age_symptom_discount['slope'] + \
+                        self.symptom_probability
 
         # modulate transmission and reception risk based on age 
-        age_modifier = model.get_age_modifier(self.age)
+        age_modifier = model.get_risk_age_modifier(self.age)
         self.transmission_risk = self.transmission_risk * age_modifier
         self.reception_risk = self.reception_risk * age_modifier
 
-        # modulate transmission and reception risk based on mask-wearing
-        self.transmission_risk = self.mask_adjust_transmission(\
-            self.transmission_risk, self.mask)
-        self.reception_risk = self.mask_adjust_reception(\
-            self.reception_risk, self.mask)
             
-
-    def mask_adjust_transmission(self, risk, mask):
-        if mask:
-            risk *= 0.5
-        return risk
-
-
-    # generic helper functions that are inherited by other agent classes
-    def mask_adjust_reception(self, risk, mask):
-        if mask:
-            risk *= 0.7
-        return risk
-
 
     def step(self):
         '''
