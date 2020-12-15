@@ -152,7 +152,7 @@ def get_agent_states(model, tm_events):
     # add it to the state table. We set all state changes to hour = 0 by default
     # since most of them happen at the beginning of the day (becoming infectious,
     # changing quarantine state or recovering). 
-    state_data['hour'] = 0
+    state_data['hour'] = 1
     exp = state_data[(state_data['infection_state'] == 'exposed')]\
         .sort_values(by='day')
 
