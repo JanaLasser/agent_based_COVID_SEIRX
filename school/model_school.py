@@ -188,9 +188,22 @@ data_collection_functions = \
     }
 
 
+def check_discount(var):
+    assert var < 0, 'needs to be negative'
+    assert np.abs(var) < 1, 'absolute value needs to be < 1'
+    return var
 
 
 class SEIRX_school(SEIRX):
+    '''
+    Model specific parameters:
+        age_risk_discount: discount factor that lowers the transmission and 
+        reception risk of agents based on age for children. This is only applied
+        to student agents as all other agents are assumed to be adults. This 
+        parameter needs to be calibrated against data.
+
+    See documentation of model_SEIRX for the description of other parameters.
+    '''
 
     def __init__(self, G, verbosity=0, testing=True,
         exposure_duration=4, time_until_symptoms=6,infection_duration=11, 
@@ -206,8 +219,10 @@ class SEIRX_school(SEIRX):
                               'transmission_risk': 0.015,
                               'reception_risk': 0.015,
                               'symptom_probability': 0.6}},
-        seed=None):
+        age_risk_discount=-0.05, seed=None):
 
+        self.age_risk_discount = check_discount(age_risk_discount)
+        
         super().__init__(G, verbosity, testing, exposure_duration, 
             time_until_symptoms, infection_duration, quarantine_duration,
             subclinical_modifier, infection_risk_contact_type_weights,
@@ -215,7 +230,7 @@ class SEIRX_school(SEIRX):
             preventive_screening_test_type, follow_up_testing_interval,
             liberating_testing, index_case, agent_types, seed)
 
-
+        
         
         # data collectors to save population counts and agent states every
         # time step
@@ -252,6 +267,15 @@ class SEIRX_school(SEIRX):
         self.datacollector = DataCollector(
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
+
+
+    def get_age_modifier(self, age):
+        '''linear function such that at age 18 the risk is that of an adult (=1).
+        The slope of the line needs to be calibrated.
+        '''
+        max_age = 18
+        modifier = self.age_risk_discount * np.abs(age - max_age) + 1
+        return modifier
 
 
     def step(self):
