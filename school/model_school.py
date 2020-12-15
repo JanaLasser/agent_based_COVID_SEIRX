@@ -188,11 +188,6 @@ data_collection_functions = \
     }
 
 
-def check_discount(var):
-    assert var < 0, 'needs to be negative'
-    assert np.abs(var) < 1, 'absolute value needs to be < 1'
-    return var
-
 
 class SEIRX_school(SEIRX):
     '''
@@ -217,18 +212,21 @@ class SEIRX_school(SEIRX):
         agent_types={'type1': {'screening_interval': None,
                               'index_probability': None,
                               'transmission_risk': 0.015,
-                              'reception_risk': 0.015,
-                              'symptom_probability': 0.6}},
-        age_risk_discount=-0.05, seed=None):
+                              'reception_risk': 0.015}},
+        age_transmission_risk_discount = {'slope':-0.05, 'intercept':1},
+        age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
+        seed=None):
 
-        self.age_risk_discount = check_discount(age_risk_discount)
-        
-        super().__init__(G, verbosity, testing, exposure_duration, 
-            time_until_symptoms, infection_duration, quarantine_duration,
-            subclinical_modifier, infection_risk_contact_type_weights,
-            K1_contact_types, diagnostic_test_type, 
-            preventive_screening_test_type, follow_up_testing_interval,
-            liberating_testing, index_case, agent_types, seed)
+
+        super().__init__(G, verbosity, testing,
+            exposure_duration, time_until_symptoms, infection_duration,
+            quarantine_duration, subclinical_modifier,
+            infection_risk_contact_type_weights,
+            K1_contact_types, diagnostic_test_type,
+            preventive_screening_test_type,
+            follow_up_testing_interval, liberating_testing,
+            index_case, agent_types, age_transmission_risk_discount,
+            age_symptom_discount, seed)
 
         
         
@@ -274,7 +272,7 @@ class SEIRX_school(SEIRX):
         The slope of the line needs to be calibrated.
         '''
         max_age = 18
-        modifier = self.age_risk_discount * np.abs(age - max_age) + 1
+        modifier = self.age_transmission_risk_discount*np.abs(age - max_age) + 1
         return modifier
 
 
