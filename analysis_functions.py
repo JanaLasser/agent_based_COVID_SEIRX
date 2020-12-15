@@ -121,19 +121,61 @@ def get_statistics(df, col):
         '{}_std'.format(col):df[col].std(),
     }
 
-def get_agent_states(model):
+def get_agent_states(model, tm_events):
+    # all agent states in all simulation steps. Agent states include the
+    # "infection state" ["susceptible", "exposed", "infectious", "recovered"]
+    # as well as the "quarantine state" [True, False]
     state_data = model.datacollector.get_agent_vars_dataframe()
-    state_data = state_data[(state_data['quarantine_state'] == False) &\
-                            (state_data['infection_state'] != 'susceptible')]
+    # remove susceptible states: these are the majority of states and since we
+    # want to reduce the amoung of data stored, we will assume all agents that
+    # do not have an explicit "exposed", "infectious" or "recovered" state, 
+    # are susceptible.
+    state_data = state_data[state_data['infection_state'] != 'susceptible']
 
+    # we only care about state changes here, that's why we only keep the first
+    # new entry in the state data table for each (agent, infection_state,
+    # quarantine_state) triple. We need to reset the index once before we can
+    # apply the drop_duplicates() operation, since "step" and "AgentID" are in
+    # the index
     state_data = state_data.reset_index()
     state_data = state_data.drop_duplicates(subset=['AgentID',\
         'infection_state', 'quarantine_state'])
 
+    # cleanup of index and column names to match other data output formats
     state_data = state_data.rename(columns={'AgentID':'node_ID',
                                             'Step':'day'})
+    state_data = state_data.reset_index(drop=True)
+
+    # for the visualization we need more fine-grained information (hours) on when 
+    # exactly a transmission happened. This information is already stored in the
+    # transmission events table (tm_events) and we can take it from there and
+    # add it to the state table. We set all state changes to hour = 0 by default
+    # since most of them happen at the beginning of the day (becoming infectious,
+    # changing quarantine state or recovering). 
+    state_data['hour'] = 0
+    exp = state_data[(state_data['infection_state'] == 'exposed')]\
+        .sort_values(by='day')
+
+    # we iterate over all state changes that correspond to an exposure, ignoring
+    # the first agent, since that one is the index case, whose exposure happens
+    # in hour 0. We only add the hour information for the transmission events. 
+    # For these events, we also subtract one from the event "day", to account 
+    # for the fact that agents have to appear "exposed" in the visualization 
+    # from the point in time they had contact with an infectious agent onwards. 
+    for ID in exp['node_ID'][1:]:
+        ID_data = exp[exp['node_ID'] == ID]
+        idx = ID_data.index[0]
+        hour = tm_events[tm_events['target_ID'] == ID]['hour'].values[0]
+        state_data.loc[idx, 'hour'] = hour
+        state_data.loc[idx, 'day'] -= 1
+
+    # re-order columns to a more sensible order and fix data types
+    state_data['hour'] = state_data['hour'].astype(int)
+    state_data = state_data[['day', 'hour', 'node_ID', 'infection_state',
+                                'quarantine_state']]
 
     return state_data
+
 
 def get_transmission_chain(model, schedule):
     tm_events = pd.DataFrame()
