@@ -128,7 +128,7 @@ class agent_SEIRX(Agent):
                 self.model.newly_positive_agents.append(self)
                 self.known_positive = True
 
-                if self.model.verbosity > 0:
+                if self.model.verbosity > 1:
                     print('{} {} returned a positive test (true positive)'
                         .format(self.type, self.ID))
 
@@ -139,7 +139,7 @@ class agent_SEIRX(Agent):
 
             # false negative
             else:
-                if self.model.verbosity > 0:
+                if self.model.verbosity > 1:
                     print('{} {} returned a negative test (false negative)'\
                         .format(self.type, self.ID))
                 self.known_positive = False
@@ -161,7 +161,7 @@ class agent_SEIRX(Agent):
                 self.model.newly_positive_agents.append(self)
                 self.known_positive = True
 
-                if self.model.verbosity > 0:
+                if self.model.verbosity > 1:
                     print('{} {} returned a positive test (false positive)'\
                         .format(self.type, self.ID))
 
@@ -172,7 +172,7 @@ class agent_SEIRX(Agent):
 
             # true negative
             else:
-                if self.model.verbosity > 0:
+                if self.model.verbosity > 1:
                     print('{} {} returned a negative test (true negative)'\
                         .format(self.type, self.ID))
                 self.known_positive = False
