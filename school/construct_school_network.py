@@ -234,8 +234,8 @@ def generate_family(G, student_ID, family_counter, family_sizes):
         
 def generate_teachers(G, N_teachers, N_classes, N_classes_taught):
     '''
-    Generate a number of teachers which each have contact of 'intermediate'
-    strength to all other teachers and contact of 'intermediate' strength to all
+    Generate a number of teachers which each have contact of 'far'
+    strength to all other teachers and contact of 'far' strength to all
     students in the classes they teach. Node IDs of teachers are of the form 
     'ti', where i is an incrementing gounter of teachers. Nodes get additional
     attributes:
@@ -244,7 +244,7 @@ def generate_teachers(G, N_teachers, N_classes, N_classes_taught):
 
     Edges also get additional attributes indicating contact type and strength:
         'link_type': 'teacher_teacher' or 'student_teacher', depending on relation
-        'contact_type': 'intermediate'
+        'contact_type': 'far'
 
     Returns the graph with added teachers, as well as the teacher schedule 
  	'''
@@ -258,7 +258,7 @@ def generate_teachers(G, N_teachers, N_classes, N_classes_taught):
         for t2 in teacher_nodes:
             if t1 != t2:
                 G.add_edge(t1, t2, link_type='teacher_teacher', 
-                           contact_type='intermediate')
+                           contact_type='far')
     
     # assign each teacher to a number of classes corresponding to the number of
     # classes taught by each teacher (N_classes_taught). 
@@ -278,7 +278,7 @@ def generate_teachers(G, N_teachers, N_classes, N_classes_taught):
             
             for s in students_in_class:
                 G.add_edge(t, s, link_type='student_teacher', 
-                           contact_type='intermediate')
+                           contact_type='far')
                 
     return G, schedule
 
