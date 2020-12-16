@@ -201,7 +201,7 @@ class SEIRX_school(SEIRX):
     '''
 
     def __init__(self, G, verbosity=0, testing=True,
-        exposure_duration=4, time_until_symptoms=6,infection_duration=11, 
+        exposure_duration=4, time_until_symptoms=6, infection_duration=11, 
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
             'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
@@ -265,15 +265,6 @@ class SEIRX_school(SEIRX):
         self.datacollector = DataCollector(
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
-
-
-    def get_age_modifier(self, age):
-        '''linear function such that at age 18 the risk is that of an adult (=1).
-        The slope of the line needs to be calibrated.
-        '''
-        max_age = 18
-        modifier = self.age_transmission_risk_discount*np.abs(age - max_age) + 1
-        return modifier
 
 
     def step(self):
