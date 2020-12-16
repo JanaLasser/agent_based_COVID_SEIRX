@@ -125,8 +125,9 @@ def check_index_case(var, agent_types):
 
 
 def check_discount(var):
-    assert var['slope'] < 0, 'slope needs to be negative'
-    assert np.abs(var['slope']) < 1, 'absolute value of slope needs to be <= 1'
+    if var['slope'] != None:
+        assert var['slope'] <= 0, 'slope needs to be <= 0 or None'
+        assert np.abs(var['slope']) <= 1, 'absolute value of slope needs to be <= 1'
     assert var['intercept'], 'intercept needs to be positive'
     assert var['intercept'], 'intercept needs to be <= 1'
     return var
