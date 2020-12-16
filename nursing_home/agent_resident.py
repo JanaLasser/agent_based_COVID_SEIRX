@@ -11,15 +11,11 @@ class resident(agent_SEIRX):
             exposure_duration, time_until_symptoms, infection_duration,
             verbosity):
 
+        self.type = 'resident'
+
         super().__init__(unique_id, unit, model, 
             exposure_duration, time_until_symptoms, infection_duration,
             verbosity)
-
-        self.type = 'resident'
-        self.index_probability = self.model.index_probabilities[self.type]
-
-        self.transmission_risk = self.model.transmission_risks[self.type]
-        self.reception_risk = self.model.reception_risks[self.type]
         
 
     def step(self):
