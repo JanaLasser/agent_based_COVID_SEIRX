@@ -122,6 +122,8 @@ def get_statistics(df, col):
     }
 
 def get_agent_states(model, tm_events):
+    if type(tm_events) == type(None):
+        return None
     # all agent states in all simulation steps. Agent states include the
     # "infection state" ["susceptible", "exposed", "infectious", "recovered"]
     # as well as the "quarantine state" [True, False]
@@ -293,6 +295,9 @@ def get_transmission_chain(model, schedule):
 
 def get_ensemble_observables_school(model, run):
     R0, _ = calculate_finite_size_R0(model)
+    N_school_agents = len([a for a in model.schedule.agents if \
+        a.type == 'teacher' or a.type == 'student'])
+    N_family_members = len([a for a in model.schedule.agents if a.type == 'family_member'])
     infected_students = count_infected(model, 'student')
     infected_teachers = count_infected(model, 'teacher')
     infected_family_members = count_infected(model, 'family_member')
@@ -315,9 +320,14 @@ def get_ensemble_observables_school(model, run):
     undetected_infections = data['undetected_infections'].max()
     predetected_infections = data['predetected_infections'].max()
     duration = len(data)
+    diagnostic_tests_per_day_per_agent = N_diagnostic_tests / duration / N_school_agents
+    preventive_tests_per_day_per_agent = N_preventive_screening_tests / duration / N_school_agents
+    tests_per_day_per_agent = (N_diagnostic_tests + N_preventive_screening_tests) / duration / N_school_agents
 
     row = {'run':run, 
           'R0':R0,
+          'N_school_agents':N_school_agents,
+          'N_family_members':N_family_members,
           'infected_students':infected_students,
           'infected_teachers':infected_teachers,
           'infected_family_members':infected_family_members,
@@ -338,7 +348,10 @@ def get_ensemble_observables_school(model, run):
           'pending_test_infections':pending_test_infections,
           'undetected_infections':undetected_infections,
           'predetected_infections':predetected_infections,
-          'duration':duration}
+          'duration':duration,
+          'diagnostic_tests_per_day_per_agent':diagnostic_tests_per_day_per_agent,
+          'preventive_tests_per_day_per_agent':preventive_tests_per_day_per_agent,
+          'tests_per_day_per_agent':tests_per_day_per_agent}
 
     return row
 
@@ -376,17 +389,16 @@ def dump_JSON(path, school,
     del node_list['index']
     schedule = json.loads(schedule.to_json(orient='split'))
     del schedule['index']
-    state_data = json.loads(state_data.to_json(orient='split'))
-    del state_data['index']
 
     # can be empty, if there are no transmission events in the simulation
     try:
         rep_transmission_events = json.loads(rep_transmission_events\
             .to_json(orient='split'))
         del rep_transmission_events['index']
+        state_data = json.loads(state_data.to_json(orient='split'))
+        del state_data['index']
     except AttributeError:
         pass
-
 
     
     data = {'school_type':school_type,
