@@ -212,7 +212,8 @@ class SEIRX_school(SEIRX):
         agent_types={'type1': {'screening_interval': None,
                               'index_probability': None,
                               'transmission_risk': 0.015,
-                              'reception_risk': 0.015}},
+                              'reception_risk':1,
+                              'mask':False}},
         age_transmission_risk_discount = {'slope':-0.05, 'intercept':1},
         age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
         seed=None):
