@@ -84,7 +84,8 @@ def get_age_distribution(school_type, age_brackets, N_classes):
     N_age_brackets = len(age_brackets)
     classes_per_age_bracket = int(N_classes / N_age_brackets)
     
-    assert N_age_brackets <= N_classes, 'not enough classes to accommodate all age brackets in this school type!'
+    assert N_age_brackets <= N_classes, \
+    'not enough classes to accommodate all age brackets in this school type!'
     
     age_bracket_map = {i:[] for i in age_brackets}
     
@@ -267,55 +268,84 @@ def generate_schedule_primary(N_classes):
 	    for hour, c in enumerate(schedule[t]):
 	        schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
 
+	schedule_df = schedule_df.drop(columns=['teacher'])
+
 	return schedule_df
 
 
-def generate_schedule_primary_daycare(N_classes):
+def generate_schedule_primary_daycare(N_classes, class_size):
+
+	## teacher schedule
 	N_teachers = N_classes * 2
 	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
 
-	schedule = {t:[] for t in teacher_nodes}
+	teacher_schedule = {t:[] for t in teacher_nodes}
 
 	# the first two hours are taught by teachers 1 to N_classes:
 	for i in range(1, N_classes + 1):
-		schedule['t{}'.format(i)].extend([i] * 2)
+		teacher_schedule['t{}'.format(i)].extend([i] * 2)
 	for i in range(N_classes + 1, N_classes * 2 + 1):
-		schedule['t{}'.format(i)].extend([pd.NA] * 2)
+		teacher_schedule['t{}'.format(i)].extend([pd.NA] * 2)
 	# the third hour is also taught by teachers 1 to N_classes, but classes
 	# are shifted:
 	for i in range(1, N_classes + 1):
-		schedule['t{}'.format(i)].append(i % N_classes + 1)
+		teacher_schedule['t{}'.format(i)].append(i % N_classes + 1)
 	for i in range(N_classes + 1, N_classes * 2 + 1):
-		schedule['t{}'.format(i)].append(pd.NA)
+		teacher_schedule['t{}'.format(i)].append(pd.NA)
 	    
 	# the fourth hour is taught by teachers N_classes + 1 to N_classes * 2
 	for i, j in enumerate(range(N_classes + 1, N_classes * 2 + 1)):
-		schedule['t{}'.format(j)].append(i + 1)
+		teacher_schedule['t{}'.format(j)].append(i + 1)
 	for i in range(1, N_classes + 1):
-		schedule['t{}'.format(i)].append(pd.NA)
+		teacher_schedule['t{}'.format(i)].append(pd.NA)
 	    
 	# the afternoon supervision is done by teachers N_classes + 1 to N_classes * 2
 	# and every two teachers supervise a group
 	for i, j in enumerate(range(N_classes + 1, N_classes * 2 + 1)):
-		schedule['t{}'.format(j)].append(int(i / 2 + 1))
+		teacher_schedule['t{}'.format(j)].append(int(i / 2 + 1))
 	for i in range(1, N_classes + 1):
-		schedule['t{}'.format(i)].append(pd.NA)
+		teacher_schedule['t{}'.format(i)].append(pd.NA)
 	    
-	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, 5)])
-	schedule_df['teacher'] = teacher_nodes
-	schedule_df.index = teacher_nodes
+	teacher_schedule_df = pd.DataFrame(columns=['teacher'] + \
+								['hour_{}'.format(i) for i in range(1, 5)])
+	teacher_schedule_df['teacher'] = teacher_nodes
+	teacher_schedule_df.index = teacher_nodes
 	for t in teacher_nodes:
-		for hour, c in enumerate(schedule[t]):
-			schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
+		for hour, c in enumerate(teacher_schedule[t]):
+			teacher_schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
 	        
-	schedule_df = schedule_df.rename(columns={'hour_5':'afternoon'})
+	teacher_schedule_df = teacher_schedule_df.rename(columns={'hour_5':'afternoon'})
+	teacher_schedule_df = teacher_schedule_df.drop(columns=['teacher'])
 
-	return schedule_df
+	## student schedule
+	# pick half of the students at random to participate in full daycare
+	student_nodes = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
+	full_day_care_students = np.random.choice(student_nodes, \
+	                            int((N_classes * class_size) / 2), replace=False)
+	non_day_care_students = [s for s in student_nodes if s not in full_day_care_students]
+
+	student_schedule = {s:[] for s in student_nodes}
+	daycare_counter = 0
+	for i, s in enumerate(student_nodes):
+		student_schedule[s].append(int(i/class_size) + 1)
+	for i, s in enumerate(full_day_care_students):
+		student_schedule[s].append(int(i/class_size) + 1)
+	for s in non_day_care_students:
+		student_schedule[s].append(pd.NA)
+
+	student_schedule_df = pd.DataFrame(columns=['student', 'morning', 'afternoon'])
+	student_schedule_df['student'] = student_nodes
+	student_schedule_df.index = student_nodes
+	for s in student_nodes:
+	    for i, daytime in enumerate(['morning', 'afternoon']):
+	        student_schedule_df.loc[s, daytime] = student_schedule[s][i]
+
+	return teacher_schedule_df, student_schedule_df
 
 
 def generate_schedule_lower_secondary(N_classes):
 	pass
-def generate_schedule_lower_secondary_daycare(N_classes):
+def generate_schedule_lower_secondary_daycare(N_classes, class_size):
 	pass
 def generate_schedule_upper_secondary(N_classes):
 	pass
@@ -323,7 +353,19 @@ def generate_schedule_secondary(N_classes):
 	pass
 
 
-def set_teacher_student_contacts(G, school_type):
+def get_N_teachers(school_type, N_classes):
+	teachers = {
+	'primary':N_classes + int(N_classes / 2),
+	'primary_dc':N_classes * 2,
+	'lower_secondary':N_classes * 2,
+	'lower_secondary_dc':N_classes * 2,
+	'upper_secondary':N_classes * 2,
+	'secondary':N_classes * 2
+	}
+	return teachers[school_type]
+
+
+def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 	schedulers = {
 		'primary':generate_schedule_primary,
 		'primary_dc':generate_schedule_primary_daycare,
@@ -333,27 +375,50 @@ def set_teacher_student_contacts(G, school_type):
 		'secondary':generate_schedule_secondary
 	}
 
-	# assign each teacher to a number of classes corresponding to the number of
-	# classes taught by each teacher (N_classes_taught). 
-	schedule = {t:[] for t in teacher_nodes}
-	circular_class_list = list(range(1, N_classes + 1)) * 2
-	for i, t in enumerate(teacher_nodes):
-		schedule[t] = circular_class_list[i % N_classes:\
-	                                      i % N_classes + N_classes_taught]
-	    
-	# generate the contact network between the teachers and the students in the
-	# classes they teach
-	for t in teacher_nodes:
-		for c in schedule[t]:
-			students_in_class = [x for x,y in G.nodes(data=True) if \
-	                            (y['type'] == 'student') and \
-	                             y['unit'] == 'class_{}'.format(c)]
-	        
-			for s in students_in_class:
-				G.add_edge(t, s, link_type='student_teacher', 
-	                       contact_type='far')
-	            
-	return G, schedule
+	N_teachers = get_N_teachers(school_type, N_classes)
+	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+
+	# school types with daycare are handled separately, because they need an
+	# additional schedule for students in the afternoon
+	if school_type.endswith('_dc'):
+		teacher_schedule_df, student_schedule_df = \
+			schedulers[school_type](N_teachers, class_size)
+
+		# morning classes: create links between the teachers and all students
+		# in the classes taught by the teachers
+		for t in teacher_nodes:
+			classes_taught = teacher_schedule_df\
+				.drop(columns=['afternoon'])\
+				.loc[t]\
+				.dropna()\
+				.unique()
+			for c in classes_taught:
+				students_in_class = [x for x,y in G.nodes(data=True) if \
+		                            (y['type'] == 'student') and \
+		                             y['unit'] == 'class_{}'.format(c)]
+				for s in students_in_class:
+					G.add_edge(t, s, link_type='student_teacher', 
+		                       contact_type='far')
+
+		# afternoon supervision: create links between the teachers supervising
+		# the afternoon groups and all students in the afternoon groups. Note:
+		# the information about which students are in which afternoon group are
+		# taken from the student schedule, because students are assigned to
+		# afternoon groups at random.
+		for t in teacher_nodes:
+			supervised_group = teacher_schedule_df.loc[t, 'afternoon']
+			if not pd.isna(supervised_group):
+				students_in_group = [s for s in student_schedule_df.index if \
+	    			not pd.isna(student_schedule_df.loc[s, 'afternoon']) and \
+	                student_schedule_df.loc[s, 'afternoon'] == supervised_group]
+
+				for s in students_in_group:
+					G.add_edge(t, s, link_type='student_teacher',contact_type='far')
+
+		return teacher_schedule_df, student_schedule_df
+
+	else:    
+		return teacher_schedule_df
 
 
 	
@@ -361,55 +426,59 @@ def set_teacher_student_contacts(G, school_type):
         
 def generate_teachers(G, N_classes, school_type, N_teacher_contacts_far, 
     N_teacher_contacts_intermediate):
-    '''
-    Generate a number of teachers which each have contact of intensity 'far'
-    to N_teacher_contacts_far other teachers and contact of intensity 
-    'intermediate' to N_teacher_contacts_intermediate other teachers. Node IDs 
-    of teachers are of the form  'ti', where i is an incrementing gounter of 
-    teachers. Nodes get additional attributes:
-        'type': 'teacher'
-        'unit': 'faculty_room'
+	'''
+	Generate a number of teachers which each have contact of intensity 'far'
+	to N_teacher_contacts_far other teachers and contact of intensity 
+	'intermediate' to N_teacher_contacts_intermediate other teachers. Node IDs 
+	of teachers are of the form  'ti', where i is an incrementing gounter of 
+	teachers. Nodes get additional attributes:
+	    'type': 'teacher'
+	    'unit': 'faculty_room'
 
-    Edges also get additional attributes indicating contact type and strength:
-        'link_type': 'teacher_teacher'
-        'contact_strength': 'far' or 'intermediate'
+	Edges also get additional attributes indicating contact type and strength:
+	    'link_type': 'teacher_teacher'
+	    'contact_strength': 'far' or 'intermediate'
 
-    Returns the graph with added teachers
- 	'''
-    teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
-    G.add_nodes_from(teacher_nodes)
-    nx.set_node_attributes(G, \
-        {t:{'type':'teacher', 'unit':'faculty_room'} for t in teacher_nodes})
+	Returns the graph with added teachers
+	'''
+	N_teachers = get_N_teachers(school_type, N_classes)
+	assert N_teachers > N_teacher_contacts_far + N_teacher_contacts_intermediate,\
+	'total number of teachers needs to be larger than the total number of contacts every teacher has to other teachers'
 
-    # total number of unique far contacts that will be generated
-    N_teacher_contacts_far = (N_teacher_contacts_far * N_teachers) / 2
-    contacts_created = 0
-    while contacts_created < N_teacher_contacts_far:
-        t1 = np.random.choice(teacher_nodes)
-        t2 = np.random.choice(teacher_nodes)
-        if t1 == t2:
-            continue
+	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+	G.add_nodes_from(teacher_nodes)
+	nx.set_node_attributes(G, \
+	    {t:{'type':'teacher', 'unit':'faculty_room'} for t in teacher_nodes})
 
-        if not G.has_edge(t1, t2):
-            G.add_edge(t1, t2, link_type='teacher_teacher', 
-                           contact_type='far')
-            contacts_created += 1
+	# total number of unique far contacts that will be generated
+	N_teacher_contacts_far = (N_teacher_contacts_far * N_teachers) / 2
+	contacts_created = 0
+	while contacts_created < N_teacher_contacts_far:
+		t1 = np.random.choice(teacher_nodes)
+		t2 = np.random.choice(teacher_nodes)
+		if t1 == t2:
+			continue
 
-    # total number of unique intermediate contacts that will be generated
-    N_teacher_contacts_intermediate = ( N_teacher_contacts_intermediate * N_teachers) / 2
-    contacts_created = 0
-    while contacts_created < N_teacher_contacts_intermediate:
-        t1 = np.random.choice(teacher_nodes)
-        t2 = np.random.choice(teacher_nodes)
-        if t1 == t2:
-            continue
+		if not G.has_edge(t1, t2):
+			G.add_edge(t1, t2, link_type='teacher_teacher', 
+			               contact_type='far')
+			contacts_created += 1
 
-        if not G.has_edge(t1, t2):
-            G.add_edge(t1, t2, link_type='teacher_teacher', 
-                           contact_type='intermediate')
-            contacts_created += 1    
+	# total number of unique intermediate contacts that will be generated
+	N_teacher_contacts_intermediate = ( N_teacher_contacts_intermediate * N_teachers) / 2
+	contacts_created = 0
+	while contacts_created < N_teacher_contacts_intermediate:
+		t1 = np.random.choice(teacher_nodes)
+		t2 = np.random.choice(teacher_nodes)
+		if t1 == t2:
+			continue
 
-    return G
+		if not G.has_edge(t1, t2):
+			G.add_edge(t1, t2, link_type='teacher_teacher', 
+		                   contact_type='intermediate')
+			contacts_created += 1    
+
+	return G
     
 
     
