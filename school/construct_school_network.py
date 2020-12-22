@@ -231,59 +231,191 @@ def generate_family(G, student_ID, family_counter, family_sizes):
         
     return G, family_counter + N_family_members
 
+
+def generate_schedule_primary(N_classes):
+
+	assert N_classes % 2 == 0, 'number of classes must be even'
+	N_teachers = N_classes + int(N_classes / 2)
+	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+
+	schedule = {t:[] for t in teacher_nodes}
+
+	# the first two hours are taught by teachers 1 to N_classes:
+	for i in range(1, N_classes + 1):
+	    schedule['t{}'.format(i)].extend([i] * 2)
+	# the rest of the teachers take a break in the faculty room
+	for i in range(N_classes + 1, N_teachers + 1):
+	    schedule['t{}'.format(i)].extend([pd.NA] * 2)
+	# the next two hours are shared between the teachers of the primary subjects
+	# and additional teachers for the secondary subject, such that every teacher
+	# sees a total of two different classes every day
+	for i, j in enumerate(range(N_classes + 1, N_teachers + 1)):
+	    schedule['t{}'.format(j)].append(i + 1)
+	    schedule['t{}'.format(j)].append(i + int(N_classes / 2) + 1)
+	for i,j in enumerate(range(1, int(N_classes / 2) + 1)):
+	    schedule['t{}'.format(j)].append(i + int(N_classes / 2) + 1)
+	    schedule['t{}'.format(j)].append(pd.NA)
+	for i,j in enumerate(range(int(N_classes / 2) + 1, N_classes + 1)):
+	    schedule['t{}'.format(j)].append(pd.NA)
+	    schedule['t{}'.format(j)].append(i + 1)
+
+	# convert the schedule to a data frame
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, 5)])
+	schedule_df['teacher'] = teacher_nodes
+	schedule_df.index = teacher_nodes
+	for t in teacher_nodes:
+	    for hour, c in enumerate(schedule[t]):
+	        schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
+
+	return schedule_df
+
+
+def generate_schedule_primary_daycare(N_classes):
+	N_teachers = N_classes * 2
+	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+
+	schedule = {t:[] for t in teacher_nodes}
+
+	# the first two hours are taught by teachers 1 to N_classes:
+	for i in range(1, N_classes + 1):
+		schedule['t{}'.format(i)].extend([i] * 2)
+	for i in range(N_classes + 1, N_classes * 2 + 1):
+		schedule['t{}'.format(i)].extend([pd.NA] * 2)
+	# the third hour is also taught by teachers 1 to N_classes, but classes
+	# are shifted:
+	for i in range(1, N_classes + 1):
+		schedule['t{}'.format(i)].append(i % N_classes + 1)
+	for i in range(N_classes + 1, N_classes * 2 + 1):
+		schedule['t{}'.format(i)].append(pd.NA)
+	    
+	# the fourth hour is taught by teachers N_classes + 1 to N_classes * 2
+	for i, j in enumerate(range(N_classes + 1, N_classes * 2 + 1)):
+		schedule['t{}'.format(j)].append(i + 1)
+	for i in range(1, N_classes + 1):
+		schedule['t{}'.format(i)].append(pd.NA)
+	    
+	# the afternoon supervision is done by teachers N_classes + 1 to N_classes * 2
+	# and every two teachers supervise a group
+	for i, j in enumerate(range(N_classes + 1, N_classes * 2 + 1)):
+		schedule['t{}'.format(j)].append(int(i / 2 + 1))
+	for i in range(1, N_classes + 1):
+		schedule['t{}'.format(i)].append(pd.NA)
+	    
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, 5)])
+	schedule_df['teacher'] = teacher_nodes
+	schedule_df.index = teacher_nodes
+	for t in teacher_nodes:
+		for hour, c in enumerate(schedule[t]):
+			schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
+	        
+	schedule_df = schedule_df.rename(columns={'hour_5':'afternoon'})
+
+	return schedule_df
+
+
+def generate_schedule_lower_secondary(N_classes):
+	pass
+def generate_schedule_lower_secondary_daycare(N_classes):
+	pass
+def generate_schedule_upper_secondary(N_classes):
+	pass
+def generate_schedule_secondary(N_classes):
+	pass
+
+
+def set_teacher_student_contacts(G, school_type):
+	schedulers = {
+		'primary':generate_schedule_primary,
+		'primary_dc':generate_schedule_primary_daycare,
+		'lower_secondary':generate_schedule_lower_secondary,
+		'lower_secondary_dc':generate_schedule_lower_secondary_daycare,
+		'upper_secondary':generate_schedule_upper_secondary,
+		'secondary':generate_schedule_secondary
+	}
+
+	# assign each teacher to a number of classes corresponding to the number of
+	# classes taught by each teacher (N_classes_taught). 
+	schedule = {t:[] for t in teacher_nodes}
+	circular_class_list = list(range(1, N_classes + 1)) * 2
+	for i, t in enumerate(teacher_nodes):
+		schedule[t] = circular_class_list[i % N_classes:\
+	                                      i % N_classes + N_classes_taught]
+	    
+	# generate the contact network between the teachers and the students in the
+	# classes they teach
+	for t in teacher_nodes:
+		for c in schedule[t]:
+			students_in_class = [x for x,y in G.nodes(data=True) if \
+	                            (y['type'] == 'student') and \
+	                             y['unit'] == 'class_{}'.format(c)]
+	        
+			for s in students_in_class:
+				G.add_edge(t, s, link_type='student_teacher', 
+	                       contact_type='far')
+	            
+	return G, schedule
+
+
+	
+
         
-def generate_teachers(G, N_teachers, N_classes, N_classes_taught):
+def generate_teachers(G, N_classes, school_type, N_teacher_contacts_far, 
+    N_teacher_contacts_intermediate):
     '''
-    Generate a number of teachers which each have contact of 'far'
-    strength to all other teachers and contact of 'far' strength to all
-    students in the classes they teach. Node IDs of teachers are of the form 
-    'ti', where i is an incrementing gounter of teachers. Nodes get additional
-    attributes:
+    Generate a number of teachers which each have contact of intensity 'far'
+    to N_teacher_contacts_far other teachers and contact of intensity 
+    'intermediate' to N_teacher_contacts_intermediate other teachers. Node IDs 
+    of teachers are of the form  'ti', where i is an incrementing gounter of 
+    teachers. Nodes get additional attributes:
         'type': 'teacher'
         'unit': 'faculty_room'
 
     Edges also get additional attributes indicating contact type and strength:
-        'link_type': 'teacher_teacher' or 'student_teacher', depending on relation
-        'contact_type': 'far'
+        'link_type': 'teacher_teacher'
+        'contact_strength': 'far' or 'intermediate'
 
-    Returns the graph with added teachers, as well as the teacher schedule 
+    Returns the graph with added teachers
  	'''
     teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
     G.add_nodes_from(teacher_nodes)
     nx.set_node_attributes(G, \
         {t:{'type':'teacher', 'unit':'faculty_room'} for t in teacher_nodes})
-    
-    # all teachers have contact to each other
-    for t1 in teacher_nodes:
-        for t2 in teacher_nodes:
-            if t1 != t2:
-                G.add_edge(t1, t2, link_type='teacher_teacher', 
+
+    # total number of unique far contacts that will be generated
+    N_teacher_contacts_far = (N_teacher_contacts_far * N_teachers) / 2
+    contacts_created = 0
+    while contacts_created < N_teacher_contacts_far:
+        t1 = np.random.choice(teacher_nodes)
+        t2 = np.random.choice(teacher_nodes)
+        if t1 == t2:
+            continue
+
+        if not G.has_edge(t1, t2):
+            G.add_edge(t1, t2, link_type='teacher_teacher', 
                            contact_type='far')
+            contacts_created += 1
+
+    # total number of unique intermediate contacts that will be generated
+    N_teacher_contacts_intermediate = ( N_teacher_contacts_intermediate * N_teachers) / 2
+    contacts_created = 0
+    while contacts_created < N_teacher_contacts_intermediate:
+        t1 = np.random.choice(teacher_nodes)
+        t2 = np.random.choice(teacher_nodes)
+        if t1 == t2:
+            continue
+
+        if not G.has_edge(t1, t2):
+            G.add_edge(t1, t2, link_type='teacher_teacher', 
+                           contact_type='intermediate')
+            contacts_created += 1    
+
+    return G
     
-    # assign each teacher to a number of classes corresponding to the number of
-    # classes taught by each teacher (N_classes_taught). 
-    schedule = {t:[] for t in teacher_nodes}
-    circular_class_list = list(range(1, N_classes + 1)) * 2
-    for i, t in enumerate(teacher_nodes):
-        schedule[t] = circular_class_list[i % N_classes:\
-                                          i % N_classes + N_classes_taught]
-        
-    # generate the contact network between the teachers and the students in the
-    # classes they teach
-    for t in teacher_nodes:
-        for c in schedule[t]:
-            students_in_class = [x for x,y in G.nodes(data=True) if \
-                                (y['type'] == 'student') and \
-                                 y['unit'] == 'class_{}'.format(c)]
-            
-            for s in students_in_class:
-                G.add_edge(t, s, link_type='student_teacher', 
-                           contact_type='far')
-                
-    return G, schedule
+
+    
 
 # add a number of random contacs between students of neighboring classes
-def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbours):
+def add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours):
     
     for c in range(1, N_classes + 1):
         students_in_class = [x for x,y in G.nodes(data=True) if \
@@ -296,11 +428,11 @@ def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbour
                      y['unit'] == 'class_{}'.format(neighbour_class)]
 
             neighbour_contacts = np.random.choice(students_in_neighbour_class,
-                                        cross_class_contacts, replace=False)
+                                        N_cross_class_contacts, replace=False)
             class_contacts = np.random.choice(students_in_class, 
-                                        cross_class_contacts, replace=False)
+                                        N_cross_class_contacts, replace=False)
 
-            for i in range(cross_class_contacts):
+            for i in range(N_cross_class_contacts):
                 if not G.has_edge(neighbour_contacts[i], class_contacts[i]):
                     G.add_edge(neighbour_contacts[i], class_contacts[i], 
                            link_type='student_student', contact_type='far')
@@ -309,7 +441,8 @@ def add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbour
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_brackets, family_sizes, N_hours, cross_class_contacts, time_period):
+		age_brackets, family_sizes, N_hours, N_cross_class_contacts, 
+        N_teacher_contacts_far, N_teacher_contacts_intermediate, time_period):
     # number of teachers in a school
     N_teachers = N_classes * 2
     # number of classes a teacher is in contact with
@@ -332,7 +465,8 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
                         student_counter, c, floors_inv, age_bracket_map, time_period)
 
     # add teachers
-    G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught)
+    G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught,
+        N_teacher_contacts_far, N_teacher_contacts_intermediate)
 
     # add family members
     if family_sizes != None:
@@ -342,9 +476,9 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
             G, family_counter = generate_family(G, s, family_counter, family_sizes)
 
     # create inter-class contacts
-    if cross_class_contacts > 0:
+    if N_cross_class_contacts > 0:
         class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
-        G = add_cross_class_contacts(G, N_classes, cross_class_contacts, class_neighbours)
+        G = add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours)
     
     return G, schedule
 
@@ -365,31 +499,4 @@ def get_node_list(G):
 
 	return node_list
 
-def get_schedule(schedule):
-	teachers = list(schedule.keys())
-	N_teachers = len(teachers)
-	classes = list(set([i for val in schedule.values() for i in val]))
-	classes.sort()
-	cols = ['teacher']
-	cols.extend(['class_{}'.format(i) for i in classes])
-	schedule_df = pd.DataFrame(columns=cols)
-	schedule_df['teacher'] = teachers
-	schedule_df.index = schedule_df['teacher']
-	schedule_df = schedule_df.drop(columns=['teacher'])
 
-	# every teacher teachers a class every second hour. The first half of teachers
-	# starts in the first hour, the second half of teachers starts in the second hour
-	for t in teachers[0:int(N_teachers/2)]:
-	    for i in range(0, 4):
-	        schedule_df.loc[t, 'class_{}'.format(schedule[t][i])] = i * 2 + 1
-	        
-	for t in teachers[int(N_teachers/2):]:
-	    for i in range(0, 4):
-	        schedule_df.loc[t, 'class_{}'.format(schedule[t][i])] = i * 2 + 2
-
-	# increment all hours after 4 by one to make room for the lunch break in the 
-	# 5th hour
-	for c in schedule_df.columns:
-	    schedule_df[c] = schedule_df[c].apply(lambda x: x + 1 if x > 4 else x)
-
-	return schedule_df
