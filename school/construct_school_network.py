@@ -74,33 +74,34 @@ def get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes):
     return class_neighbours
 
 
-def get_age_distribution(school_type, age_brackets, N_classes):
+def get_age_distribution(school_type, age_bracket, N_classes):
     '''
     Given a school type (that sets the age-range of the students in the school),
     distributes the available age-brackets evenly over the number of classes.
     Returns a dictionary of the form {class:age}
 	'''
+
     classes = list(range(1, N_classes + 1))
-    N_age_brackets = len(age_brackets)
-    classes_per_age_bracket = int(N_classes / N_age_brackets)
+    N_age_bracket = len(age_bracket)
+    classes_per_age_bracket = int(N_classes / N_age_bracket)
     
-    assert N_age_brackets <= N_classes, \
+    assert N_age_bracket <= N_classes, \
     'not enough classes to accommodate all age brackets in this school type!'
     
-    age_bracket_map = {i:[] for i in age_brackets}
+    age_bracket_map = {i:[] for i in age_bracket}
     
     # easiest case: the number of classes is divisible by the number of floors
-    if N_classes % N_age_brackets == 0:
-        for i, age_bracket in enumerate(age_brackets):
+    if N_classes % N_age_bracket == 0:
+        for i, age_bracket in enumerate(age_bracket):
             age_bracket_map[age_bracket] = classes[i * classes_per_age_bracket: \
                                     i * classes_per_age_bracket + classes_per_age_bracket]
         
     # if there are leftover classes: assign them one-by-one to the existing 
     # age brackets, starting with the lowest
     else:
-        leftover_classes = N_classes % N_age_brackets
+        leftover_classes = N_classes % N_age_bracket
         classes_per_age_bracket += 1
-        for i, age_bracket in enumerate(age_brackets):
+        for i, age_bracket in enumerate(age_bracket):
             if i < leftover_classes:
                 age_bracket_map[age_bracket] = classes[i * classes_per_age_bracket: \
                                         i * classes_per_age_bracket + classes_per_age_bracket]
@@ -421,8 +422,6 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		return teacher_schedule_df
 
 
-	
-
         
 def generate_teachers(G, N_classes, school_type, N_teacher_contacts_far, 
     N_teacher_contacts_intermediate):
@@ -510,7 +509,7 @@ def add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbo
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_brackets, family_sizes, N_hours, N_cross_class_contacts, 
+		age_bracket, family_sizes, N_hours, N_cross_class_contacts, 
         N_teacher_contacts_far, N_teacher_contacts_intermediate, time_period):
     # number of teachers in a school
     N_teachers = N_classes * 2
@@ -522,7 +521,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     # distribution of classes over the available floors and neighborhood 
     # relations of classes based on spatial proximity
     floors, floors_inv = get_floor_distribution(N_floors, N_classes)
-    age_bracket_map = get_age_distribution(school_type, age_brackets, N_classes)
+    age_bracket_map = get_age_distribution(school_type, age_bracket, N_classes)
     
     # compose the graph
     G = nx.Graph()
