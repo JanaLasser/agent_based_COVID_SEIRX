@@ -43,37 +43,6 @@ def get_floor_distribution(N_floors, N_classes):
     return floors, floors_inv
 
 
-def get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes):
-    '''
-    Given the distribution of classes over floors, for every class pick 
-    N_close_classes classes that are considered "neighbours" of that class.
-    Returns a dictionary of the form {class:[neighbour_1, ..., neighbour_N]}
-	'''
-    classes = list(range(1, N_classes + 1))
-    N_floors = len(floors)
-    classes_per_floor = int(N_classes / N_floors) 
-    assert N_close_classes <= classes_per_floor - 1, \
-     'not enough classes per floor to satisfy number of neighbouring classes!'
-    
-    # pick the neighbouring classes from the list of classes on the same floor
-    # NOTE: this does NOT lead to a uniform distribution of neighbouring classes
-    # for every class. There are more central classes that will have more 
-    # neighbours than other classes
-    class_neighbours = {i:[] for i in classes}
-    for floor in floors.keys():
-        circular_class_list = floors[floor] * 2
-        # iterate over all classes on a given floor
-        for i,c in enumerate(floors[floor]):
-            neighbours = []
-            for j in range(1, int(N_close_classes / 2) + 1):
-                neighbours.append(circular_class_list[i - j])
-                neighbours.append(circular_class_list[i + j])
-            neighbours.sort()
-            class_neighbours[c] = neighbours
-            
-    return class_neighbours
-
-
 def get_age_distribution(school_type, age_bracket, N_classes):
     '''
     Given a school type (that sets the age-range of the students in the school),
@@ -120,118 +89,324 @@ def get_age_distribution(school_type, age_bracket, N_classes):
 
 
 
-def generate_class(G, class_size, student_counter, class_counter, floors, \
-                   age_bracket_map, time_period):
+def generate_student_family(age_bracket, p_children, p_parents):
+    '''
+    Generates families with sizes approximating the Austrian household statistics
+    2019 for families with at least one child for the purpose of creating families
+    of pupils in schools generated for pandemic spread simulations.
+    Families that have no children that are eligible to go to the school
+    type that is being created (age_bracket) are discarded until a family with 
+    at least one child with a suitable age is created. Ages of children are 
+    drawn from a uniform distribution between 0 and 18 years. 
     
+    Parameters:   * age_bracket (list) list of ages present in the school to be 
+                    generated.
+                  * p_children (dictionary) probabilities for the number of 
+                    children in a family household, given that there is at least 
+                    one child.
+                  * p_parents (dictionary) given the number of children, 
+                    probability that the family has 1 or 2 parents.
+                     
+    returns:      * ages (list), ages of the children in the generated family
+                  * N_parents (integer), number of parents (1 or 2) in the family
     '''
-    Generate the nodes for students in a class and contacts between all students
-    (complete graph), given the class size. Node IDs are of the form 'si', where
-    i is an incrementing global counter of students. Students have contacts of 
-    'far' (low risk) strength to all other students, except for their two 
-    closest neighbours, with whom they have 'intermediate' contacts (high risk).
-    Therefore, the student network is a superposition of a ring with intermediate
-    contacts and a complete graph with far contacts.
+    N_children = np.random.choice(list(p_children.keys()), p=list(p_children.values()))
+    N_parents = np.random.choice(list(p_parents[N_children].keys()),
+                                p=list(p_parents[N_children].values()))
 
-    Nodes get additional attributes:
-        'type': is set to 'student'
-        'unit': is set to the class, using the incrementing class_counter
-        'floor': is the floor the class is situated on
-        'age': is the age of the student
+    while True:
+        # random ages of children from uniform distribution
+        ages = np.random.randint(0, 17, N_children)
+        # does at least one child qualify to go to the school?
+        if len(set(age_bracket).intersection(set(ages))) > 0:
+            return ages, N_parents
 
-    Edges also get additional attributes indicating contact type and strength
-        'link_type': 'student_student'
-        'contact_type': intermediate
 
-    Returns a graph object containing the class sub-graphs as well as the
-    incremented student and class counters
+
+def generate_teacher_family(p_adults, p_children):
     '''
-
-    student_age = age_bracket_map[class_counter]
-    class_floor = floors[class_counter]
+    Generates families with sizes approximating the Austrian household statistics
+    2019 for the purpose of generating families of teachers in schools generated
+    for pandemic spread simulations. Ages of children are drawn from a uniform 
+    distribution between 0 and 18 years. 
     
-    student_nodes = ['s{}'.format(i) for i in range(student_counter, \
-                                student_counter + class_size )]
-
-    G.add_nodes_from(student_nodes)
-    nx.set_node_attributes(G, \
-        {s:{'type':'student', 'unit':'class_{}'.format(class_counter), 
-            'floor':class_floor, 'age':student_age} for s in student_nodes})
-
-
-    if time_period == 'calibration':
-        # add contacts of type "intermediate" between all students (complete graph)
-        for s1 in student_nodes:
-            for s2 in student_nodes:
-                if s1 != s2:
-                    G.add_edge(s1, s2, link_type='student_student',
-                               contact_type='intermediate')
-
-    elif time_period == 'post_lockdown':
-        # add contacts of type "far" between all students (complete graph)
-        for s1 in student_nodes:
-            for s2 in student_nodes:
-                if s1 != s2:
-                    G.add_edge(s1, s2, link_type='student_student',
-                               contact_type='far')
-
-
-        # generate intermediate contacts in a ring
-        for i, n in enumerate(student_nodes[0:-1]):
-            G[student_nodes[i-1]][n]['contact_type'] ='intermediate'
-            G[student_nodes[i+1]][n]['contact_type'] ='intermediate'
-        # add the contacts for the last student separately, since this would
-        # exceed the list indexing otherwise
-        G[student_nodes[0]][student_nodes[-1]]['contact_type'] ='intermediate'
-
-    else:
-        print('unknown time period!')
-
-
-    return G, student_counter + class_size, class_counter + 1
-
-
-
-def generate_family(G, student_ID, family_counter, family_sizes):
+    Parameters:   * p_adults (dictionary) probabilities for the number of 
+                    adults in a family household.
+                  * p_children (dictionary) given the number of adults, 
+                    probability that the family has 1, 2 or 3 children.
+                     
+    returns:      * ages (list), ages of the children in the generated family
+                  * N_adults (integer), number of adults (1, 2 and 3) in the family
     '''
-    Generate a random number of family members for every student, based on 
-    household size distributions family_sizes. All family members have close 
-    contacts to each other and the student. Node IDs of family members are of
-    the form 'fi', where i is an incrementing global counter of family members.
-    Nodes get additional attributes:
-        'type': is set to 'family_member'
-        'unit': is set to 'family'
+    N_adults = np.random.choice(list(p_adults.keys()), p=list(p_adults.values()))
+    N_children = np.random.choice(list(p_children[N_adults].keys()),
+                                p=list(p_children[N_adults].values()))
+    
+    ages = np.random.randint(0, 17, N_children)
+    return ages, N_adults
 
-    Edges also get additional attributes indicating contact type and strength:
-        'link_type': 'family_family' or 'family_student', depending on relation
-        'contact_type': 'close'
 
-    Returns the graph with added family members for every student, as well as
-    the incremented family member counter.
+def generate_students(G, school_type, age_bracket, N_classes, class_size,\
+                      p_children, p_parents):
+
+    '''
+    Generates students and their families and adds them and their household
+    connections to the graph. 
+    
+    Parameters:   * G (networkx graph) graph with all agents (nodes) and 
+                    contacts between agents (edges).
+                  * school_type (str) type of the school for which students
+                    will be generated.
+                  * age_bracket (list) list of ages that are taught in the given
+                    school type
+                  * N_classes (int) number of classes in the school
+                  * class_size (int) number of students per class
+                  * p_children (dictionary), probabilities for families to have
+                    a number of children, given they have at least one.
+                  * p_parents (dictionary), probabilities for families to have
+                    one or two parents, given the number of children.
+                    
+    returns:      * family_member_counter (int), counter of family members 
+                    generated.
+                  * family_counter (int), counter of families created
     '''
 
-    # draw random number of family members
-    N_family_members = np.random.choice(list(family_sizes.keys()), 1,
-              p=[family_sizes[s] for s in family_sizes.keys()])[0]
+    # mapping of classes to ages
+    age_bracket_map = get_age_distribution(school_type, age_bracket, N_classes)
+
+    # number of students of every age group required to fill all classes of the school
+    N_target_students = {age:0 for age in age_bracket_map.values()}
+    for age in age_bracket_map.values():
+        N_target_students[age] += class_size 
+
+    N_current_students = {i:0 for i in age_bracket}
+    student_counter = 1
+    family_counter = 1
+    family_member_counter = 1
+
+    while (np.asarray([N_target_students[age] for age in age_bracket]) - \
+          np.asarray([N_current_students[age] for age in age_bracket])).sum() > 0:
+
+
+        ages, N_parents = generate_student_family(age_bracket, p_children, p_parents)
+        # children
+        # set a flat if at least one of the children fits into the school. Else the
+        # family has to be discarded and a new one created
+        fits_in_school = []
+        doesnt_fit = []
+        student_nodes = []
+        family_nodes = []
+        for age in ages:
+            # there is room for a student with the given age in the school ->
+            # add the node to the graph as student
+            if age in age_bracket and N_current_students[age] < N_target_students[age]:
+                student_ID = 'S{}'.format(student_counter)
+                G.add_node(student_ID)
+                nx.set_node_attributes(G, \
+                        {student_ID:{'type':'student',
+                                     'age':age,
+                                     'family':family_counter}})
+                student_counter += 1
+                fits_in_school.append(age)
+                student_nodes.append(student_ID)
+                N_current_students[age] += 1
+            else:
+                doesnt_fit.append(age)
+
+        # at least one of the children did fit into the school:
+        if len(fits_in_school) > 0:
+            # add the students that didn't fit into the school as family members
+            for age in doesnt_fit:
+                family_member_ID = 'f{}'.format(family_member_counter)
+                G.add_node(family_member_ID)
+                nx.set_node_attributes(G, \
+                        {family_member_ID:{'type':'family_member',
+                                           'age':age,
+                                           'family':family_counter}})
+                family_nodes.append(family_member_ID)
+                family_member_counter += 1
+
+            # parents
+            for parent in range(N_parents):
+                family_member_ID = 'f{}'.format(family_member_counter)
+                G.add_node(family_member_ID)
+                nx.set_node_attributes(G, \
+                        {family_member_ID:{'type':'family_member',
+                                           'family':family_counter}})
+                family_member_counter += 1
+                family_nodes.append(family_member_ID)
+
+            # increase the family counter by one
+            family_counter += 1
+
+        # add intra-family contacts (network connections)
+        all_nodes = []
+        all_nodes.extend(student_nodes)
+        all_nodes.extend(family_nodes)
+
+        for n1 in all_nodes:
+            for n2 in all_nodes:
+                if n1 != n2:
+                    G.add_edge(n1, n2, link_type='household')
+                    
+    return family_member_counter, family_counter
+
+
+
+def generate_classes(G, age_bracket, class_size, floor_map):
     
-    # create family nodes and add them to the graph, subtract 1 from the 
-    # household size to account for the student
-    family_nodes = ['f{}'.format(i) for i in \
-                range(family_counter, family_counter + N_family_members - 1)]
-    G.add_nodes_from(family_nodes)
-    nx.set_node_attributes(G, \
-        {f:{'type':'family_member', 'unit':'family'} for f in family_nodes})
+    '''
+    Assigns students to classes based on their age. 
     
-    # all family members have contact to each other
-    for f1 in family_nodes:
-        for f2 in family_nodes: 
-            if f1 != f2:
-                G.add_edge(f1, f2, link_type='family_family', 
-                           contact_type='close')
-        # all family members also have contact to the student they belong to
-        G.add_edge(f1, student_ID, link_type ='student_family',
-                   contact_type='close')
+    Parameters:   * G (networkx graph) graph with all agents (nodes) and 
+                    contacts between agents (edges).
+                  * age_bracket (list) list of ages that are taught in the given
+                    school type
+                  * class_size (int) number of students per class
+                  * floor_map (dictionary), mapping of classes to floors in the
+                    school building.
+    '''
+
+    all_students = {age:[] for age in age_bracket}
+    class_counter = 1
+    sequential_students = []
+
+    for age in age_bracket:
+        # get all student nodes with one age
+        all_students[age] = [n[0] for n in G.nodes(data=True) if \
+                             n[1]['type'] == 'student' and n[1]['age'] == age]
+        sequential_students.extend(all_students[age])
+
+        # split the students of the same ages into classes of size class_size
+        for i in range(int(len(all_students[age]) / class_size)):
+            students_in_class = all_students[age][i * class_size: (i + 1) * class_size]
+
+            for s1 in students_in_class:
+                # add class information to student node in graph
+                nx.set_node_attributes(G, {s1:{
+                                'unit':'class_{}'.format(class_counter),
+                                'floor':floor_map[class_counter]}})
+
+                # add intra_class links between all students in the same class
+                for s2 in students_in_class:
+                    if s1 != s2:
+                        G.add_edge(s1, s2, link_type='student_student_intra_class')
+
+            # add table neighbour relations to students in a ring
+            for i, n in enumerate(students_in_class[0:-1]):
+                G[students_in_class[i - 1]][n]['link_type'] = \
+                                'student_student_table_neighbour'
+                G[students_in_class[i + 1]][n]['link_type'] = \
+                                'student_student_table_neighbour'
+            # add the contacts for the last student separately, since this would
+            # exceed the list indexing otherwise
+            G[students_in_class[0]][students_in_class[-1]]['link_type'] = \
+                            'student_student_table_neighbour'
+
+            class_counter += 1
+
+    # relabel nodes, making sure the student node label increases sequentially
+    # from class 1 to class N
+    new_student_IDs = {s:'s{}'.format(i + 1) for i, s in enumerate(sequential_students)}
+    nx.relabel_nodes(G, new_student_IDs, copy=False)
+
+
+
+def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
+					  teacher_p_adults, teacher_p_children):
+    
+    '''
+    Generates a family for every teacher and adds the family nodes and household
+    connections to the graph. NOTE: we do not use the children of teacher's 
+    families as pupils for the school we create. This has two reasons: 
+    (a) teachers are discouraged to send their own children to the same school
+    they work at, to prevent a conflict of interest. (b) the simulation becomes
+    a little less complex this way.
+    
+    Parameters:   * G (networkx graph) school contact network
+                  * teacher_nodes (list of strings), labels of the teacher nodes
+                  * family_member_counter (int) counter for the number of family 
+                    members already in the graph. Used to create unique labels
+                    for family members.
+                  * family_counter (int) counter for the number of families in
+                    the graph. Used to create a unique label for every family.
+                  * teacher_p_adults (dictionary) probabilites of a teacher
+                    household having a number of adults
+                  * teacher_p_children (dictionary) probabilities of a teacher
+                    household having a number of children given the numebr of
+                    adults.
+                     
+    returns:      * family_member_counter (int), updated counter of family members
+                  * family counter (int), updated counter of families
+    '''
+    G.add_nodes_from(teacher_nodes)
+    
+    for t in teacher_nodes:
+        family_nodes = [t]
+        # draw a random number of children and adults for the family
+        ages, N_adults = generate_teacher_family(teacher_p_adults, teacher_p_children)
         
-    return G, family_counter + N_family_members
+        ages = list(ages)
+        for adult in range(N_adults - 1):
+            ages.append(30) # default age for adults
+        
+        # add the family member nodes and their attributes to the graph
+        for age in ages:
+            family_member_ID = 'f{}'.format(family_member_counter)
+            family_nodes.append(family_member_ID)
+            G.add_node(family_member_ID)
+            family_member_counter += 1
+            nx.set_node_attributes(G, \
+                        {family_member_ID:{'type':'family_member',
+                                           'age':age,
+                                           'family':family_counter}})
+
+        # create household connections between all family members
+        for f1 in family_nodes:
+            for f2 in family_nodes:
+                if f1 != f2:
+                    G.add_edge(f1, f2, link_type='household')
+                    
+        # finally, also set the teacher's node attributes
+        nx.set_node_attributes(G, \
+                    {t:{'type':'teacher', 
+                        'age':30,
+                        'unit':'faculty_room',
+                        'family':family_counter}})
+        family_counter += 1
+        
+    return family_member_counter, family_counter
+
+
+
+def generate_teacher_contacts(G, teacher_nodes, N_teacher_contacts_far, \
+                              N_teacher_contacts_intermediate):
+    # total number of unique far contacts that will be generated
+    N_teachers = len(teacher_nodes)
+    N_teacher_contacts_far = (N_teacher_contacts_far * N_teachers) / 2
+    contacts_created = 0
+    while contacts_created < N_teacher_contacts_far:
+        t1 = np.random.choice(teacher_nodes)
+        t2 = np.random.choice(teacher_nodes)
+        if t1 == t2:
+            continue
+
+        if not G.has_edge(t1, t2):
+            G.add_edge(t1, t2, link_type='teacher_teacher_short')
+            contacts_created += 1
+    
+    # total number of unique intermediate contacts that will be generated
+    N_teacher_contacts_intermediate = ( N_teacher_contacts_intermediate * N_teachers) / 2
+    contacts_created = 0
+    while contacts_created < N_teacher_contacts_intermediate:
+        t1 = np.random.choice(teacher_nodes)
+        t2 = np.random.choice(teacher_nodes)
+        if t1 == t2:
+            continue
+
+        if not G.has_edge(t1, t2):
+            G.add_edge(t1, t2, link_type='teacher_teacher_long')
+            contacts_created += 1
 
 
 def generate_schedule_primary(N_classes):
@@ -422,8 +597,176 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		return teacher_schedule_df
 
 
+def compose_school_graph(school_type, N_classes, class_size, N_floors, 
+		age_bracket, family_sizes, N_hours, N_cross_class_contacts, 
+        N_teacher_contacts_far, N_teacher_contacts_intermediate, time_period):
+    # number of teachers in a school
+    N_teachers = N_classes * 2
+    # number of classes a teacher is in contact with
+    N_classes_taught = int(N_hours / 2)
+    # number of neighbouring classes for each class
+    N_close_classes = 2 # needs to be even
+    
+    # distribution of classes over the available floors and neighborhood 
+    # relations of classes based on spatial proximity
+    floors, floors_inv = get_floor_distribution(N_floors, N_classes)
+    age_bracket_map = get_age_distribution(school_type, age_bracket, N_classes)
+    
+    # compose the graph
+    G = nx.Graph()
+    
+    # add students
+    student_counter = 1
+    for c in range(1, N_classes + 1):
+        G, student_counter, class_counter = generate_class(G, class_size, \
+                        student_counter, c, floors_inv, age_bracket_map, time_period)
+
+    # add teachers
+    G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught,
+        N_teacher_contacts_far, N_teacher_contacts_intermediate)
+
+    # add family members
+    if family_sizes != None:
+        family_counter = 1
+        students = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
+        for s in students:
+            G, family_counter = generate_family(G, s, family_counter, family_sizes)
+
+    # create inter-class contacts
+    if N_cross_class_contacts > 0:
+        class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
+        G = add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours)
+    
+    return G, schedule
+
+def get_node_list(G):
+	node_list = pd.DataFrame()
+	for n in G.nodes(data=True):
+	    if n[1]['type'] == 'student':
+	        l = n[1]['unit']
+	        f = n[1]['family']
+
+	    elif n[1]['type'] == 'teacher':
+	        l = 'faculty_room'
+	        f = n[1]['family']
+	    else:
+	        l = 'home'
+	        f = n[1]['family']
+	    node_list = node_list.append({'ID':n[0],
+	                                  'type':n[1]['type'],
+	                                  'location':l,
+	                                  'family':f}, ignore_index=True)
+
+	node_list['family'] = node_list['family'].astype(int)
+
+	return node_list
+
+
+
+### deprecated
+def generate_family(G, student_ID, family_counter, family_sizes):
+    '''
+    Generate a random number of family members for every student, based on 
+    household size distributions family_sizes. All family members have close 
+    contacts to each other and the student. Node IDs of family members are of
+    the form 'fi', where i is an incrementing global counter of family members.
+    Nodes get additional attributes:
+        'type': is set to 'family_member'
+        'unit': is set to 'family'
+
+    Edges also get additional attributes indicating contact type and strength:
+        'link_type': 'family_family' or 'family_student', depending on relation
+        'contact_type': 'close'
+
+    Returns the graph with added family members for every student, as well as
+    the incremented family member counter.
+    '''
+
+    # draw random number of family members
+    N_family_members = np.random.choice(list(family_sizes.keys()), 1,
+              p=[family_sizes[s] for s in family_sizes.keys()])[0]
+    
+    # create family nodes and add them to the graph, subtract 1 from the 
+    # household size to account for the student
+    family_nodes = ['f{}'.format(i) for i in \
+                range(family_counter, family_counter + N_family_members - 1)]
+    G.add_nodes_from(family_nodes)
+    nx.set_node_attributes(G, \
+        {f:{'type':'family_member', 'unit':'family'} for f in family_nodes})
+    
+    # all family members have contact to each other
+    for f1 in family_nodes:
+        for f2 in family_nodes: 
+            if f1 != f2:
+                G.add_edge(f1, f2, link_type='family_family', 
+                           contact_type='close')
+        # all family members also have contact to the student they belong to
+        G.add_edge(f1, student_ID, link_type ='student_family',
+                   contact_type='close')
         
-def generate_teachers(G, N_classes, school_type, N_teacher_contacts_far, 
+    return G, family_counter + N_family_members
+
+
+
+
+def get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes):
+    '''
+    Given the distribution of classes over floors, for every class pick 
+    N_close_classes classes that are considered "neighbours" of that class.
+    Returns a dictionary of the form {class:[neighbour_1, ..., neighbour_N]}
+	'''
+    classes = list(range(1, N_classes + 1))
+    N_floors = len(floors)
+    classes_per_floor = int(N_classes / N_floors) 
+    assert N_close_classes <= classes_per_floor - 1, \
+     'not enough classes per floor to satisfy number of neighbouring classes!'
+    
+    # pick the neighbouring classes from the list of classes on the same floor
+    # NOTE: this does NOT lead to a uniform distribution of neighbouring classes
+    # for every class. There are more central classes that will have more 
+    # neighbours than other classes
+    class_neighbours = {i:[] for i in classes}
+    for floor in floors.keys():
+        circular_class_list = floors[floor] * 2
+        # iterate over all classes on a given floor
+        for i,c in enumerate(floors[floor]):
+            neighbours = []
+            for j in range(1, int(N_close_classes / 2) + 1):
+                neighbours.append(circular_class_list[i - j])
+                neighbours.append(circular_class_list[i + j])
+            neighbours.sort()
+            class_neighbours[c] = neighbours
+            
+    return class_neighbours
+
+
+# add a number of random contacs between students of neighboring classes
+def add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours):
+    
+    for c in range(1, N_classes + 1):
+        students_in_class = [x for x,y in G.nodes(data=True) if \
+                    (y['type'] == 'student') \
+                             and y['unit'] == 'class_{}'.format(c)]
+        
+        for neighbour_class in class_neighbours[c]:
+            students_in_neighbour_class = [x for x,y in G.nodes(data=True) if \
+                    (y['type'] == 'student') and \
+                     y['unit'] == 'class_{}'.format(neighbour_class)]
+
+            neighbour_contacts = np.random.choice(students_in_neighbour_class,
+                                        N_cross_class_contacts, replace=False)
+            class_contacts = np.random.choice(students_in_class, 
+                                        N_cross_class_contacts, replace=False)
+
+            for i in range(N_cross_class_contacts):
+                if not G.has_edge(neighbour_contacts[i], class_contacts[i]):
+                    G.add_edge(neighbour_contacts[i], class_contacts[i], 
+                           link_type='student_student', contact_type='far')
+            
+    return G
+
+
+def generate_teachers_(G, N_classes, school_type, N_teacher_contacts_far, 
     N_teacher_contacts_intermediate):
 	'''
 	Generate a number of teachers which each have contact of intensity 'far'
@@ -479,92 +822,3 @@ def generate_teachers(G, N_classes, school_type, N_teacher_contacts_far,
 
 	return G
     
-
-    
-
-# add a number of random contacs between students of neighboring classes
-def add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours):
-    
-    for c in range(1, N_classes + 1):
-        students_in_class = [x for x,y in G.nodes(data=True) if \
-                    (y['type'] == 'student') \
-                             and y['unit'] == 'class_{}'.format(c)]
-        
-        for neighbour_class in class_neighbours[c]:
-            students_in_neighbour_class = [x for x,y in G.nodes(data=True) if \
-                    (y['type'] == 'student') and \
-                     y['unit'] == 'class_{}'.format(neighbour_class)]
-
-            neighbour_contacts = np.random.choice(students_in_neighbour_class,
-                                        N_cross_class_contacts, replace=False)
-            class_contacts = np.random.choice(students_in_class, 
-                                        N_cross_class_contacts, replace=False)
-
-            for i in range(N_cross_class_contacts):
-                if not G.has_edge(neighbour_contacts[i], class_contacts[i]):
-                    G.add_edge(neighbour_contacts[i], class_contacts[i], 
-                           link_type='student_student', contact_type='far')
-            
-    return G
-
-
-def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_bracket, family_sizes, N_hours, N_cross_class_contacts, 
-        N_teacher_contacts_far, N_teacher_contacts_intermediate, time_period):
-    # number of teachers in a school
-    N_teachers = N_classes * 2
-    # number of classes a teacher is in contact with
-    N_classes_taught = int(N_hours / 2)
-    # number of neighbouring classes for each class
-    N_close_classes = 2 # needs to be even
-    
-    # distribution of classes over the available floors and neighborhood 
-    # relations of classes based on spatial proximity
-    floors, floors_inv = get_floor_distribution(N_floors, N_classes)
-    age_bracket_map = get_age_distribution(school_type, age_bracket, N_classes)
-    
-    # compose the graph
-    G = nx.Graph()
-    
-    # add students
-    student_counter = 1
-    for c in range(1, N_classes + 1):
-        G, student_counter, class_counter = generate_class(G, class_size, \
-                        student_counter, c, floors_inv, age_bracket_map, time_period)
-
-    # add teachers
-    G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught,
-        N_teacher_contacts_far, N_teacher_contacts_intermediate)
-
-    # add family members
-    if family_sizes != None:
-        family_counter = 1
-        students = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
-        for s in students:
-            G, family_counter = generate_family(G, s, family_counter, family_sizes)
-
-    # create inter-class contacts
-    if N_cross_class_contacts > 0:
-        class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
-        G = add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours)
-    
-    return G, schedule
-
-def get_node_list(G):
-	node_list = pd.DataFrame()
-	for n in G.nodes(data=True):
-	    if n[1]['type'] == 'student':
-	        location = n[1]['unit']
-	    elif n[1]['type'] == 'teacher':
-	        location = 'faculty_room'
-	    else:
-	        student = [item for sublist in G.edges(n[0]) for item in sublist \
-	                   if item.startswith('s')][0]
-	        location = 'home_{}'.format(student)
-	    node_list = node_list.append({'ID':n[0],
-	                                  'type':n[1]['type'],
-	                                  'location':location}, ignore_index=True)
-
-	return node_list
-
-
