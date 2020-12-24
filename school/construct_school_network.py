@@ -633,7 +633,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     return G, schedules
 
 
-def map_contacts(G, contact_map):
+def map_contacts(G, student_mask, teacher_mask, contact_map):
 	'''
     Maps the different link types between agents to contact types None, far, 
     intermediate and close, depending on link type and mask wearing. Contact
@@ -641,6 +641,8 @@ def map_contacts(G, contact_map):
     types.
 
     Parameters:   * G (networkx graph) school contact network
+    			  * student_mask (bool) indicator if students are wearing masks
+    			  * teacher_mask (bool) indicator if teachers are wearing masks
                   * contact_map (dict of dicts) dictionary that contains a
                     dictionary with two entries (mask, no mask) for every link
                     type, specifying the contact type in the given link type + 
@@ -648,10 +650,14 @@ def map_contacts(G, contact_map):
                      
     '''
 
-    student_mask = False
-    teacher_mask = True
+    # links for which purely student mask wearing is important to determine the
+    # contact type
     student_links = [c for c in contact_map.keys() if c.startswith('student_')]
+    # links for which purely teacher mask wearing is important to determine the
+    # contact type
     teacher_links = [c for c in contact_map.keys() if c.startswith('teacher_')]
+    # links for which mask wearing behavuour of both students and teachers is
+    # important to determine the contact type
     student_teacher_links = ['teaching_teacher_student', 'supervision_teacher_student']
 
     for n1, n2 in G.edges():
@@ -660,6 +666,8 @@ def map_contacts(G, contact_map):
             mask = student_mask
         elif link_type in teacher_links:
             mask = teacher_mask
+        # only if BOTH students and teachers are wearing masks, the contact type
+        # is considered to be less close
         elif link_type in student_teacher_links:
             if student_mask and teacher_mask:
                 mask = True
