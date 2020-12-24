@@ -232,6 +232,7 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 G.add_node(family_member_ID)
                 nx.set_node_attributes(G, \
                         {family_member_ID:{'type':'family_member',
+                         				   'age':30,
                                            'family':family_counter}})
                 family_member_counter += 1
                 family_nodes.append(family_member_ID)
@@ -247,7 +248,7 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
         for n1 in all_nodes:
             for n2 in all_nodes:
                 if n1 != n2:
-                    G.add_edge(n1, n2, link_type='household')
+                    G.add_edge(n1, n2, link_type='student_household')
                     
     return family_member_counter, family_counter
 
@@ -336,8 +337,6 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
                     household having a number of children given the numebr of
                     adults.
                      
-    returns:      * family_member_counter (int), updated counter of family members
-                  * family counter (int), updated counter of families
     '''
     G.add_nodes_from(teacher_nodes)
     
@@ -365,7 +364,7 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
         for f1 in family_nodes:
             for f2 in family_nodes:
                 if f1 != f2:
-                    G.add_edge(f1, f2, link_type='household')
+                    G.add_edge(f1, f2, link_type='teacher_household')
                     
         # finally, also set the teacher's node attributes
         nx.set_node_attributes(G, \
@@ -374,8 +373,6 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
                         'unit':'faculty_room',
                         'family':family_counter}})
         family_counter += 1
-        
-    return family_member_counter, family_counter
 
 
 
@@ -573,8 +570,7 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		                            (y['type'] == 'student') and \
 		                             y['unit'] == 'class_{}'.format(c)]
 				for s in students_in_class:
-					G.add_edge(t, s, link_type='student_teacher', 
-		                       contact_type='far')
+					G.add_edge(t, s, link_type='teaching_teacher_student')
 
 		# afternoon supervision: create links between the teachers supervising
 		# the afternoon groups and all students in the afternoon groups. Note:
@@ -589,7 +585,7 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 	                student_schedule_df.loc[s, 'afternoon'] == supervised_group]
 
 				for s in students_in_group:
-					G.add_edge(t, s, link_type='student_teacher',contact_type='far')
+					G.add_edge(t, s, link_type='supervision_teacher_student')
 
 		return teacher_schedule_df, student_schedule_df
 
@@ -598,14 +594,11 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_bracket, family_sizes, N_hours, N_cross_class_contacts, 
-        N_teacher_contacts_far, N_teacher_contacts_intermediate, time_period):
+		age_bracket, student_p_children, student_p_parents,
+		teacher_p_adults, teacher_p_children, 
+        N_teacher_contacts_far, N_teacher_contacts_intermediate):
     # number of teachers in a school
-    N_teachers = N_classes * 2
-    # number of classes a teacher is in contact with
-    N_classes_taught = int(N_hours / 2)
-    # number of neighbouring classes for each class
-    N_close_classes = 2 # needs to be even
+    N_teachers = get_N_teachers(school_type, N_classes)
     
     # distribution of classes over the available floors and neighborhood 
     # relations of classes based on spatial proximity
@@ -614,30 +607,70 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     
     # compose the graph
     G = nx.Graph()
+
+    # add students, their families and household contacts in student families
+    family_member_counter, family_counter = generate_students(G, school_type, 
+	                    age_bracket, N_classes, class_size, student_p_children, 
+	                    student_p_parents)
     
-    # add students
-    student_counter = 1
-    for c in range(1, N_classes + 1):
-        G, student_counter, class_counter = generate_class(G, class_size, \
-                        student_counter, c, floors_inv, age_bracket_map, time_period)
+    # assign students to classes and generate intra-class contacts
+    generate_classes(G, age_bracket, class_size, floors_inv)
 
-    # add teachers
-    G, schedule = generate_teachers(G, N_teachers, N_classes, N_classes_taught,
-        N_teacher_contacts_far, N_teacher_contacts_intermediate)
+    # add teachers, teacher families and household contacts in teacher families
+    teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+    generate_teachers(G, teacher_nodes, family_member_counter, family_counter, 
+    					teacher_p_adults, teacher_p_children)
 
-    # add family members
-    if family_sizes != None:
-        family_counter = 1
-        students = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
-        for s in students:
-            G, family_counter = generate_family(G, s, family_counter, family_sizes)
+    # add contacts between teachers and other teachers
+    schedules = generate_teacher_contacts(G, teacher_nodes, N_teacher_contacts_far,
+                         N_teacher_contacts_intermediate)
 
-    # create inter-class contacts
-    if N_cross_class_contacts > 0:
-        class_neighbours = get_neighbour_classes(N_classes, floors, floors_inv, N_close_classes)
-        G = add_cross_class_contacts(G, N_classes, N_cross_class_contacts, class_neighbours)
+    # add contacts between teachers and students
+    set_teacher_student_contacts(G, school_type, N_classes, class_size)
+
+
     
-    return G, schedule
+    return G, schedules
+
+
+def map_contacts(G, contact_map):
+	'''
+    Maps the different link types between agents to contact types None, far, 
+    intermediate and close, depending on link type and mask wearing. Contact
+    types are added to the graph as additional edge attributes, next to link
+    types.
+
+    Parameters:   * G (networkx graph) school contact network
+                  * contact_map (dict of dicts) dictionary that contains a
+                    dictionary with two entries (mask, no mask) for every link
+                    type, specifying the contact type in the given link type + 
+                    mask wearing scenario.
+                     
+    '''
+
+    student_mask = False
+    teacher_mask = True
+    student_links = [c for c in contact_map.keys() if c.startswith('student_')]
+    teacher_links = [c for c in contact_map.keys() if c.startswith('teacher_')]
+    student_teacher_links = ['teaching_teacher_student', 'supervision_teacher_student']
+
+    for n1, n2 in G.edges():
+        link_type = G[n1][n2]['link_type']
+        if link_type in student_links:
+            mask = student_mask
+        elif link_type in teacher_links:
+            mask = teacher_mask
+        elif link_type in student_teacher_links:
+            if student_mask and teacher_mask:
+                mask = True
+            else:
+                mask = False
+        else:
+            print('unknown link type')
+            
+        G[n1][n2]['contact_type'] = contact_map[link_type][mask]
+
+
 
 def get_node_list(G):
 	node_list = pd.DataFrame()
@@ -652,6 +685,7 @@ def get_node_list(G):
 	    else:
 	        l = 'home'
 	        f = n[1]['family']
+
 	    node_list = node_list.append({'ID':n[0],
 	                                  'type':n[1]['type'],
 	                                  'location':l,
