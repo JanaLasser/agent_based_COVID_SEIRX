@@ -222,7 +222,8 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 nx.set_node_attributes(G, \
                         {family_member_ID:{'type':'family_member',
                                            'age':age,
-                                           'family':family_counter}})
+                                           'family':family_counter,
+                                           'unit':'family'}})
                 family_nodes.append(family_member_ID)
                 family_member_counter += 1
 
@@ -233,7 +234,8 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 nx.set_node_attributes(G, \
                         {family_member_ID:{'type':'family_member',
                          				   'age':30,
-                                           'family':family_counter}})
+                                           'family':family_counter,
+                                           'unit':'family'}})
                 family_member_counter += 1
                 family_nodes.append(family_member_ID)
 
@@ -358,7 +360,8 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
             nx.set_node_attributes(G, \
                         {family_member_ID:{'type':'family_member',
                                            'age':age,
-                                           'family':family_counter}})
+                                           'family':family_counter,
+                                           'unit':'family'}})
 
         # create household connections between all family members
         for f1 in family_nodes:
@@ -406,10 +409,36 @@ def generate_teacher_contacts(G, teacher_nodes, N_teacher_contacts_far, \
             contacts_created += 1
 
 
+
+def generate_student_daycare_contacts(G, student_schedule):
+    '''
+    Generates contact patterns between students based on their assignment to
+    afternoon daycare groups.
+    
+    Parameters:
+    -----------
+    G : (networkx graph) graph in which contacts between agents in the simulation
+    are stored.
+    
+    student_schedule : (pandas DataFrame) table in which student locations for
+    morning and afternoon (in terms of classrooms) are stored
+    '''
+
+    afternoon_groups = student_schedule['afternoon'].dropna().unique()
+    for group in afternoon_groups:
+        students_in_group = student_schedule[\
+                        student_schedule['afternoon'] == group]['student'].values
+        for s1 in students_in_group:
+            for s2 in students_in_group:
+                if s1 != s2:
+                    G.add_edge(s1, s2, link_type='student_student_daycare')
+
+
+
 def generate_schedule_primary(N_classes):
 
 	assert N_classes % 2 == 0, 'number of classes must be even'
-	N_teachers = N_classes + int(N_classes / 2)
+	N_teachers = get_N_teachers('primary', N_classes)
 	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
 
 	schedule = {t:[] for t in teacher_nodes}
@@ -443,13 +472,13 @@ def generate_schedule_primary(N_classes):
 
 	schedule_df = schedule_df.drop(columns=['teacher'])
 
-	return schedule_df
+	return [schedule_df]
 
 
 def generate_schedule_primary_daycare(N_classes, class_size):
 
 	## teacher schedule
-	N_teachers = N_classes * 2
+	N_teachers = get_N_teachers('primary_dc', N_classes)
 	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
 
 	teacher_schedule = {t:[] for t in teacher_nodes}
@@ -488,7 +517,6 @@ def generate_schedule_primary_daycare(N_classes, class_size):
 			teacher_schedule_df.loc[t, 'hour_{}'.format(hour + 1)] = c
 	        
 	teacher_schedule_df = teacher_schedule_df.rename(columns={'hour_5':'afternoon'})
-	teacher_schedule_df = teacher_schedule_df.drop(columns=['teacher'])
 
 	## student schedule
 	# pick half of the students at random to participate in full daycare
@@ -513,7 +541,7 @@ def generate_schedule_primary_daycare(N_classes, class_size):
 	    for i, daytime in enumerate(['morning', 'afternoon']):
 	        student_schedule_df.loc[s, daytime] = student_schedule[s][i]
 
-	return teacher_schedule_df, student_schedule_df
+	return [teacher_schedule_df, student_schedule_df]
 
 
 def generate_schedule_lower_secondary(N_classes):
@@ -555,7 +583,7 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 	# additional schedule for students in the afternoon
 	if school_type.endswith('_dc'):
 		teacher_schedule_df, student_schedule_df = \
-			schedulers[school_type](N_teachers, class_size)
+			schedulers[school_type](N_classes, class_size)
 
 		# morning classes: create links between the teachers and all students
 		# in the classes taught by the teachers
@@ -624,15 +652,22 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     					teacher_p_adults, teacher_p_children)
 
     # add contacts between teachers and other teachers
-    schedules = generate_teacher_contacts(G, teacher_nodes, N_teacher_contacts_far,
+    generate_teacher_contacts(G, teacher_nodes, N_teacher_contacts_far,
                          N_teacher_contacts_intermediate)
 
     # add contacts between teachers and students
-    set_teacher_student_contacts(G, school_type, N_classes, class_size)
+    teacher_schedule, student_schedule = \
+    	set_teacher_student_contacts(G, school_type, N_classes, class_size)
+
+
+    # for the school types with afternoon daycare, add student contacts based
+    # on the groups they belong to druing the afternoon daycare
+    if school_type.endswith('_dc'):
+    	generate_student_daycare_contacts(G, student_schedule)
 
 
     
-    return G, schedules
+    return G, teacher_schedule, student_schedule
 
 
 def map_contacts(G, student_mask, teacher_mask, contact_map):
