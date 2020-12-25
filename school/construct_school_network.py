@@ -596,9 +596,11 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
 		age_bracket, student_p_children, student_p_parents,
 		teacher_p_adults, teacher_p_children, 
-        N_teacher_contacts_far, N_teacher_contacts_intermediate):
+        r_teacher_conversation, r_teacher_friend):
     # number of teachers in a school
     N_teachers = get_N_teachers(school_type, N_classes)
+    N_teacher_contacts_far = round(N_teachers * r_teacher_conversation)
+    N_teacher_contacts_intermediate = round(N_teachers * r_teacher_friend)
     
     # distribution of classes over the available floors and neighborhood 
     # relations of classes based on spatial proximity
@@ -634,7 +636,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 
 
 def map_contacts(G, student_mask, teacher_mask, contact_map):
-	'''
+    '''
     Maps the different link types between agents to contact types None, far, 
     intermediate and close, depending on link type and mask wearing. Contact
     types are added to the graph as additional edge attributes, next to link
