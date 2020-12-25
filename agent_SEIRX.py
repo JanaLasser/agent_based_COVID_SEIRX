@@ -34,14 +34,6 @@ class agent_SEIRX(Agent):
         self.symptom_probability = self.model.age_symptom_discount['intercept']
         self.transmission_risk = self.model.transmission_risks[self.type]
         self.reception_risk = self.model.reception_risks[self.type]
-        self.mask = model.masks[self.type]
-
-
-        # modulate transmission and reception risk based mask wearing
-        self.transmission_risk = self.mask_adjust_transmission(\
-            self.transmission_risk, self.mask)
-        self.reception_risk = self.mask_adjust_reception(\
-            self.reception_risk, self.mask)
 
 
         ## infection states
@@ -68,20 +60,6 @@ class agent_SEIRX(Agent):
         self.transmissions = 0
         self.transmission_targets = {}
 
-
-
-
-    def mask_adjust_transmission(self, risk, mask):
-        if mask:
-            risk *= 0.5
-        return risk
-
-
-    # generic helper functions that are inherited by other agent classes
-    def mask_adjust_reception(self, risk, mask):
-        if mask:
-            risk *= 0.7
-        return risk
 
 
     # generic helper functions that are inherited by other agent classes
