@@ -179,14 +179,17 @@ def get_agent_states(model, tm_events):
     return state_data
 
 
-def get_transmission_chain(model, schedule):
+def get_transmission_chain(model, teacher_schedule, student_schedule):
+
+    teaching_hours = [int(c.split('_')[1]) for c in teacher_schedule.columns if c.startswith('hour')]
+    # if there is afternoon teaching, remove the fifth hour from the list of
+    # teaching hours, since that's the break
+    try:
+        teaching_hours.remove(5)
+    except ValueError:
+        pass
+
     tm_events = pd.DataFrame()
-    location_types = {'student_student_same_class':'class',
-                      'student_student_other_class':'hallway',
-                      'student_teacher':'class',
-                      'teacher_teacher':'faculty_room',
-                      'student_family':'home',
-                      'family_family':'home'}
 
     for a in model.schedule.agents:
         if a.transmissions > 0:
@@ -202,27 +205,34 @@ def get_transmission_chain(model, schedule):
                     student_class = model.G.nodes(data=True)[a.ID]['unit']
                     
                     if target.type == 'student':
-                        target_class = model.G.nodes(data=True)[target.ID]['unit']
-                        
-                        # transmission between students in the same class
-                        if student_class == target_class:
-                            location = 'class_{}'.format(student_class)
-                            # pick an hour in which the students are in the same
-                            # room at random
-                            hour = np.random.choice([1, 2, 3, 4, 6, 7, 8, 9], 1)[0]
-                            
-                        # transmission between students in different classes:
-                        # transmission occurs in the hallway during lunch
+                        # transmussions during daycare
+                        if model.G[a.ID][target.ID]['link_type'] == 'student_student_daycare':
+                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'afternoon'])
+                            hour = 'afternoon'
+                        # transmission during morning teaching
+                        elif model.G[a.ID][target.ID]['link_type'] in \
+                            ['student_student_intra_class', 'student_student_table_neighbours']:
+                            hour = np.random.choice(teaching_hours, 1)[0]
+                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'morning'])                        
                         else:
-                            location = 'hallway'
-                            hour = 5
+                            print('unknown student <-> student link type')
                         
-                    # transmissions from students to teachers occur in the student's
+                    # transmissions between students and teachers occur in the student's
                     # classroom at a time when the teacher is in that classroom
                     # according to the schedule
                     elif target.type == 'teacher':
-                        location = 'class_{}'.format(student_class)
-                        hour = schedule.loc[target.ID, '{}'.format(student_class)]
+                        # transmissions during daycare
+                        if model.G[a.ID][target.ID]['link_type'] == 'supervision_teacher_student':
+                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'afternoon'])
+                            hour = 'afternoon'
+                        elif model.G[a.ID][target.ID]['link_type'] == 'teaching_teacher_student':
+                            classroom = student_schedule.loc[a.ID, 'morning']
+                            location = 'class_{}'.format(classroom)
+                            # get the hour in which the teacher is teaching in the given location
+                            hour = int(teacher_schedule.loc[target.ID][teacher_schedule.loc[target.ID] == classroom]\
+                                .index[0].split('_')[1])                          
+                        else:
+                            print('unknown student <-> teacher link type')
                     
                     # transmissions to family members occur at home after schoole
                     elif target.type == 'family_member':
@@ -238,9 +248,18 @@ def get_transmission_chain(model, schedule):
                     # classroom at a time when the teacher is in that classroom
                     # according to the schedule
                     if target.type == 'student':
-                        student_class = model.G.nodes(data=True)[target.ID]['unit']
-                        location = 'class_{}'.format(student_class)
-                        hour = schedule.loc[a.ID, '{}'.format(student_class)]
+                        # transmissions during daycare
+                        if model.G[a.ID][target.ID]['link_type'] == 'supervision_teacher_student':
+                            location = 'class_{}'.format(student_schedule.loc[target.ID, 'afternoon'])
+                            hour = 'afternoon'
+                        elif model.G[a.ID][target.ID]['link_type'] == 'teaching_teacher_student':
+                            classroom = student_schedule.loc[target.ID, 'morning']
+                            location = 'class_{}'.format(classroom)
+                            # get the hour in which the teacher is teaching in the given location
+                            hour = int(teacher_schedule.loc[a.ID][teacher_schedule.loc[a.ID] == classroom]\
+                                .index[0].split('_')[1])     
+                        else:
+                            print('unknown teacher <-> student link type')
                         
                     # transmissions between teachers occur during the lunch break
                     # in the faculty room
@@ -249,7 +268,8 @@ def get_transmission_chain(model, schedule):
                         hour = 5
                         
                     elif target.type == 'family_member':
-                        print('this should not happen!')
+                        location = 'home'
+                        hour = 10
                         
                     else:
                         print('agent type not supported')
@@ -257,7 +277,8 @@ def get_transmission_chain(model, schedule):
                 # transmissions from family members to other family members
                 elif a.type == 'family_member':
                     if target.type == 'student':
-                        print('this should not happen!')
+                        location = 'home'
+                        hour = 10
                         
                     elif target.type == 'teacher':
                         print('this should not happen!')
@@ -371,8 +392,8 @@ def get_representative_run(N_infected, path):
 
 def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
-              screen_frequency_teacher, mask, half_classes,
-              node_list, schedule, rep_transmission_events,
+              screen_frequency_teacher, teacher_mask, student_mask, half_classes,
+              node_list, teacher_schedule, student_schedule, rep_transmission_events,
               state_data):
 
     school_type = school['type']
@@ -387,8 +408,10 @@ def dump_JSON(path, school,
     
     node_list = json.loads(node_list.to_json(orient='split'))
     del node_list['index']
-    schedule = json.loads(schedule.to_json(orient='split'))
-    del schedule['index']
+    teacher_schedule = json.loads(teacher_schedule.to_json(orient='split'))
+    del teacher_schedule['index']
+    student_schedule = json.loads(student_schedule.to_json(orient='split'))
+    del student_schedule['index']
 
     # can be empty, if there are no transmission events in the simulation
     try:
@@ -410,18 +433,20 @@ def dump_JSON(path, school,
             'indexcase':index_case,
             'screen_frequency_teacher':screen_frequency_teacher,
             'screen_frequency_student':screen_frequency_student,
-            'mask':mask,
+            'teacher_mask':teacher_mask,
+            'student_mask':student_mask,
             'half_classes':half_classes,
             'node_list':node_list,
-            'schedule':schedule,
+            'teacher_schedule':teacher_schedule,
+            'student_schedule':student_schedule,
             'rep_trans_events':rep_transmission_events,
             'agent_states':state_data}
     
     with open(join(path, 'test-{}_'.format(ttype) + \
                    'turnover-{}_index-{}_tf-{}_'
                    .format(turnover, index_case[0], screen_frequency_teacher) +\
-                   'sf-{}_mask-{}_half-{}.txt'\
-                   .format(screen_frequency_student, bool_dict[mask],\
-                    bool_dict[half_classes])),'w')\
+                   'sf-{}_tmask-{}_smask-{}_half-{}.txt'\
+                   .format(screen_frequency_student, bool_dict[teacher_mask],\
+                    bool_dict[student_mask], bool_dict[half_classes])),'w')\
                    as outfile:
         json.dump(data, outfile)
