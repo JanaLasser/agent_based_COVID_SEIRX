@@ -386,29 +386,27 @@ class SEIRX(Model):
         ## set agent characteristics for all agent groups
         # list of agent characteristics
         params = ['screening_interval','index_probability','transmission_risk',
-                'reception_risk', 'mask']
+                'reception_risk']
 
         # default values that are used in case a characteristic is not specified
         # for an agent group
         defaults = {'screening_interval':None,
                     'index_probability':0,
                     'transmission_risk':0.01,
-                    'reception_risk':1,
-                    'mask':False}
+                    'reception_risk':1}
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
         check_funcs = [check_positive_int, check_probability, check_probability,
-                       check_probability, check_bool]
+                       check_probability]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.transmission_risks = {}
         self.reception_risks = {}
-        self.masks = {}
         param_dicts = [self.screening_intervals, self.index_probabilities, 
-                    self.transmission_risks, self.reception_risks, self.masks]
+                    self.transmission_risks, self.reception_risks]
 
         # iterate over all possible agent parameters and agent groups: set the
         # respective value to the value passed through the constructor or to 
