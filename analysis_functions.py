@@ -211,11 +211,12 @@ def get_transmission_chain(model, teacher_schedule, student_schedule):
                             hour = 'afternoon'
                         # transmission during morning teaching
                         elif model.G[a.ID][target.ID]['link_type'] in \
-                            ['student_student_intra_class', 'student_student_table_neighbours']:
+                            ['student_student_intra_class', 'student_student_table_neighbour']:
                             hour = np.random.choice(teaching_hours, 1)[0]
                             location = 'class_{}'.format(student_schedule.loc[a.ID, 'morning'])                        
                         else:
-                            print('unknown student <-> student link type')
+                            print('unknown student <-> student link type ',\
+                             model.G[a.ID][target.ID]['link_type'])
                         
                     # transmissions between students and teachers occur in the student's
                     # classroom at a time when the teacher is in that classroom
@@ -232,7 +233,8 @@ def get_transmission_chain(model, teacher_schedule, student_schedule):
                             hour = int(teacher_schedule.loc[target.ID][teacher_schedule.loc[target.ID] == classroom]\
                                 .index[0].split('_')[1])                          
                         else:
-                            print('unknown student <-> teacher link type')
+                            print('unknown student <-> teacher link type', \
+                                model.G[a.ID][target.ID]['link_type'])
                     
                     # transmissions to family members occur at home after schoole
                     elif target.type == 'family_member':
