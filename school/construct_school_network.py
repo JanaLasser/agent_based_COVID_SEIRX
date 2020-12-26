@@ -847,6 +847,9 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 		age_bracket, student_p_children, student_p_parents,
 		teacher_p_adults, teacher_p_children, 
         r_teacher_conversation, r_teacher_friend):
+
+    assert N_classes % 2 == 0, 'number of classes needs to be even'
+
     # number of teachers in a school
     N_teachers = get_N_teachers(school_type, N_classes)
     N_teacher_contacts_far = round(N_teachers * r_teacher_conversation)
@@ -888,7 +891,8 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
     	generate_student_daycare_contacts(G, student_schedule)
 
 
-    
+    teacher_schedule = teacher_schedule.reset_index().rename(columns={'index':'teacher'})
+    student_schedule = student_schedule.reset_index().rename(columns={'index':'student'})    
     return G, teacher_schedule, student_schedule
 
 
