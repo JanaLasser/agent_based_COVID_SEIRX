@@ -522,7 +522,7 @@ def generate_schedule_primary_daycare(N_classes, class_size):
 
 
 
-def generate_student_schedule(N_classes, class_size, daycare):
+def generate_student_schedule(N_classes, class_size, daycare, daycare_ratio):
 	student_nodes = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
 	student_schedule = {s:[] for s in student_nodes}
 	student_schedule_df = pd.DataFrame(columns=['student', 'morning', 'afternoon'])
@@ -530,9 +530,9 @@ def generate_student_schedule(N_classes, class_size, daycare):
 	student_schedule_df.index = student_nodes
 
 	if daycare:
-		# pick half of the students at random to participate in full daycare
+		# pick a number of students at random to participate in full daycare
 		full_day_care_students = np.random.choice(student_nodes, \
-                            int((N_classes * class_size) / 2), replace=False)
+                   int((N_classes * class_size) * daycare_ratio), replace=False)
 		non_day_care_students = [s for s in student_nodes if s not in full_day_care_students]
 	else:
 		full_day_care_students = []
@@ -818,11 +818,20 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		'upper_secondary':generate_schedule_upper_secondary,
 		'secondary':generate_schedule_secondary
 	}
+	daycare_ratios = {
+		'primary':0,
+		'primary_dc':0.5,
+		'lower_secondary':0,
+		'lower_secondary_dc':0.38,
+		'upper_secondary':0,
+		'secondary':0
+	}
 
 	N_teachers = get_N_teachers(school_type, N_classes)
 	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
 
 	daycare = False
+	daycare_ratio = daycare_ratios[school_type]
 	if school_type.endswith('_dc'):
 		daycare = True
 
@@ -837,7 +846,7 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		teacher_schedule_df = schedulers[school_type](N_classes, class_size)
 
 	student_schedule_df = generate_student_schedule(N_classes, class_size, \
-												    daycare)
+												    daycare, daycare_ratio)
 
 	# morning classes: create links between the teachers and all students
 	# in the classes taught by the teachers
