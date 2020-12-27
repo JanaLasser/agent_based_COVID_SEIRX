@@ -2,6 +2,16 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+# different age structures in Austrian school types
+age_brackets = {'primary':[6, 7, 8, 9],
+                'primary_dc':[6, 7, 8, 9],
+                'lower_secondary':[10, 11, 12, 13],
+                'lower_secondary_dc':[10, 11, 12, 13],
+                'upper_secondary':[14, 15, 16, 17],
+                'secondary':[10, 11, 12, 13, 14, 15, 16, 17],
+                'secondary_dc':[10, 11, 12, 13, 14, 15, 16, 17]
+               }
+
 def get_floor_distribution(N_floors, N_classes):
     '''
     Distribute the number of classes evenly over the number of available floors.
@@ -522,8 +532,10 @@ def generate_schedule_primary_daycare(N_classes, class_size):
 
 
 
-def generate_student_schedule(N_classes, class_size, daycare, daycare_ratio):
-	student_nodes = ['s{}'.format(i) for i in range(1, N_classes * class_size + 1)]
+def generate_student_schedule(N_classes, class_size, daycare, daycare_ratio, \
+		student_counter = 0):
+	student_nodes = ['s{}'.format(i) for i in range(1 + student_counter,
+			 N_classes * class_size + 1 + student_counter)]
 	student_schedule = {s:[] for s in student_nodes}
 	student_schedule_df = pd.DataFrame(columns=['student', 'morning', 'afternoon'])
 	student_schedule_df['student'] = student_nodes
@@ -544,7 +556,7 @@ def generate_student_schedule(N_classes, class_size, daycare, daycare_ratio):
 			student_schedule[s].append(int(i/class_size) + 1)	
 	# students in daycare are distributed evenly to the newly formed daycare
 	# group. Since these students (and their order) are randomly picked, the
-	# daycare group also create new contacts between students, which are later
+	# daycare groups also create new contacts between students, which are later
 	# set by the function generate_student_daycare_contacts
 	for i, s in enumerate(full_day_care_students):
 		student_schedule[s].append(int(i/class_size) + 1)
@@ -591,7 +603,8 @@ def set_teacher_team_teaching_contacts(G, teacher_schedule):
 
 
 
-def set_teacher_daycare_supervision_contacts(G, teacher_schedule):
+def set_teacher_teacher_daycare_supervision_contacts(G, teacher_schedule, dc_times,
+		dc_groups):
 	'''
 	In school types with daycare, afternoon supervision groups are also super-
 	vised by two teachers. These teachers have an additional long contact.
@@ -603,20 +616,61 @@ def set_teacher_daycare_supervision_contacts(G, teacher_schedule):
 	teacher_schedule: (pandas DataFrame) table of form N_teachers X N_hours,
 	where entries are the class that is taught by a given teacher during a given
 	hours.
+	dc_times : (list) column names in the teacher schedule during which daycare
+	supervision happens
+	dc_groups : (list) list of classes in which daycare supervision takes place
 
 	'''
-	# get the number of daycare groups from the table
-	dc_groups = teacher_schedule['afternoon'].dropna().unique()
-	for group in dc_groups:
-		# get the number of teachers supervising a given group (can be more than
-		# two in theory)
-		supervising_teachers = teacher_schedule[\
-		teacher_schedule['afternoon'] == group].index.values
-		# set the contacts (double loop in case it's more than two teachers)
-		for t1 in supervising_teachers:
-			for t2 in supervising_teachers:
-				if t1 != t2:
-					G.add_edge(t1, t2, link_type='teacher_teacher_daycare_supervision')
+	for hour_col in dc_times:
+		for dc_group in dc_groups:
+			supervising_teachers = teacher_schedule[\
+				teacher_schedule[hour_col] == dc_group].index
+	        
+			if len(supervising_teachers) != 0:
+				for t1 in supervising_teachers:
+					for t2 in supervising_teachers:
+						if t1 != t2:
+							G.add_edge(t1, t2,\
+							   link_type='teacher_teacher_daycare_supervision')
+
+
+
+def set_teacher_student_daycare_supervision_contacts(G, teacher_schedule,
+	student_schedule, dc_times, dc_groups):
+	'''
+	Sets the contacts between the students in afternoon daycare supervision 
+	groups and the teachers supervising these groups.
+
+	Parameters:
+	-----------
+	G : (networkx graph) graph that stores the contacts between agents
+	teacher_schedule : (pandas DataFrame) table of form N_teachers X N_hours,
+	where entries are the class that is taught by a given teacher during a given
+	hours.
+	student_schedule : (pandas DataFrame) table of form N_students X 
+	[morning, afternoon], holding information about the daycare supervision 
+	group a student belongs to in the afternoon
+	dc_times : (list) column names in the teacher schedule during which daycare
+	supervision happens. This is important since in schools where not all 
+	classes participate in daycare (secondary_dc), daycare hours are not 
+	flagged as "afternoon" but rather appear as regular teaching hours
+	dc_groups : (list) list of classes in which daycare supervision takes place
+	this information is important, since for some school types (secondary), not
+	all classes are eligible to participate in daycare
+
+	'''
+	for hour_col in dc_times:
+		for dc_group in dc_groups:
+			supervising_teachers = teacher_schedule[\
+				teacher_schedule[hour_col] == dc_group].index
+	        
+			students_in_group = [s for s in student_schedule.index if \
+		    			not pd.isna(student_schedule.loc[s, 'afternoon']) and \
+		                student_schedule.loc[s, 'afternoon'] == dc_group]
+	        
+			for t in supervising_teachers:
+				for s in students_in_group:
+					G.add_edge(t, s, link_type='daycare_supervision_teacher_student')
 
 
 
@@ -758,7 +812,9 @@ def generate_schedule_lower_secondary_daycare(N_classes, class_size):
 
 def generate_schedule_upper_secondary(N_classes, class_size=None):
 	N_hours = 8
-	N_teachers = get_N_teachers('upper_secondary', N_classes)
+	all_teachers = get_N_teachers('upper_secondary', N_classes)
+	N_teachers = int(N_classes * 2.5)
+	N_additional_teachers = all_teachers - N_teachers # for team teaching
 
 	teacher_list = list(range(1, int(N_teachers * 2/3) + 1))
 	teacher_list.extend(list(range(1, int(N_teachers * 2/3) + 1)))
@@ -794,7 +850,6 @@ def generate_schedule_upper_secondary(N_classes, class_size=None):
 
 
 	## team-teaching
-	N_additional_teachers = int(N_classes * 2.85) - N_teachers
 	# Note: this has a small chance that the same teacher team-teaches twice in the
 	# same hour, effectiely reducing the number of team-taught lessons
 	all_hours = [(hour, c) for hour in range(1, N_hours + 1) for c in range(1, N_classes + 1)]
@@ -808,9 +863,60 @@ def generate_schedule_upper_secondary(N_classes, class_size=None):
 	return teacher_schedule
 
 
-def generate_schedule_secondary(N_classes):
-	pass
+def generate_schedule_secondary(N_classes, class_size=None):
+	N_hours = 8
+	N_teachers = get_N_teachers('secondary', N_classes)
 
+	teacher_list = list(range(1, int(N_teachers * 2/3) + 1))
+	teacher_list.extend(list(range(1, int(N_teachers * 2/3) + 1)))
+	teacher_list.extend(list(range(1, N_teachers + 1)))
+	teacher_list.extend(list(range(1, int(N_teachers * 1/3) + 1)))
+	teacher_list.extend(list(range(int(N_teachers * 2/3), N_teachers + 1)))
+	tmp_list = list(range(1, int(N_teachers * (1/3))))
+	tmp_list.reverse()
+	teacher_list.extend(tmp_list)
+
+	teacher_list = np.asarray(teacher_list)
+	teacher_array = teacher_list[0: N_hours * N_classes].reshape((N_hours, N_classes))
+
+
+	first_teacher_schedule = pd.DataFrame(columns=['hour'] + ['class_{}'.format(i) for i in range(1, N_classes + 1)])
+	first_teacher_schedule['hour'] = [i for i in range(1, N_hours + 1)]
+	for i in range(0, N_classes):
+	    first_teacher_schedule['class_{}'.format(i + 1)] = teacher_array[0:,i]
+
+	first_teacher_schedule.index = first_teacher_schedule['hour']
+	first_teacher_schedule = first_teacher_schedule.drop(columns = ['hour'])
+
+
+	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, N_hours + 1)])
+	teacher_schedule['teacher'] = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+	teacher_schedule.index = teacher_schedule['teacher']
+	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+
+	for c in range(1, N_classes + 1):
+	    for hour in range(1, N_hours + 1):
+	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+	        teacher_schedule.loc['t{}'.format(t1), 'hour_{}'.format(hour)] = c
+
+	return teacher_schedule
+
+
+def generate_schedule_secondary_daycare(N_classes, class_size):
+	daycare_hours = [7, 8]
+	dc_cols = ['hour_{}'.format(h) for h in daycare_hours]
+
+	teacher_schedule = generate_schedule_secondary(N_classes)
+	age_bracket = age_brackets['secondary']
+	age_bracket_map = get_age_distribution('secondary', age_bracket, N_classes)
+	lower_secondary_classes = [c for c, age in age_bracket_map.items() if age < 14]
+	N_daycare_groups = int(len(lower_secondary_classes) / 2)
+	empty_dc_classes = lower_secondary_classes[N_daycare_groups:]
+	full_dc_classes = lower_secondary_classes[0:N_daycare_groups]
+	dc_class_mapping = {empty:full for empty, full in zip(empty_dc_classes, full_dc_classes)}
+	teacher_schedule[dc_cols] = teacher_schedule[dc_cols].replace(dc_class_mapping)
+
+	return teacher_schedule
 
 def get_N_teachers(school_type, N_classes):
 	teachers = {
@@ -819,7 +925,8 @@ def get_N_teachers(school_type, N_classes):
 	'lower_secondary':int(N_classes * 2.5),
 	'lower_secondary_dc':N_classes * 3,
 	'upper_secondary':int(N_classes * 2.85),
-	'secondary':N_classes * 2
+	'secondary':int(N_classes * 2.5),
+	'secondary_dc':int(N_classes * 2.5)
 	}
 	return teachers[school_type]
 
@@ -831,7 +938,8 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		'lower_secondary':generate_schedule_lower_secondary,
 		'lower_secondary_dc':generate_schedule_lower_secondary_daycare,
 		'upper_secondary':generate_schedule_upper_secondary,
-		'secondary':generate_schedule_secondary
+		'secondary':generate_schedule_secondary,
+		'secondary_dc':generate_schedule_secondary_daycare,
 	}
 	daycare_ratios = {
 		'primary':0,
@@ -839,11 +947,14 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 		'lower_secondary':0,
 		'lower_secondary_dc':0.38,
 		'upper_secondary':0,
-		'secondary':0
+		'secondary':0,
+		'secondary_dc':0.36
 	}
 
 	N_teachers = get_N_teachers(school_type, N_classes)
 	teacher_nodes = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+	age_bracket = age_brackets['secondary']
+	age_bracket_map = get_age_distribution('secondary', age_bracket, N_classes)
 
 	daycare = False
 	daycare_ratio = daycare_ratios[school_type]
@@ -857,7 +968,25 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 	if school_type in ['lower_secondary_dc', 'lower_secondary', 'upper_secondary']:
 		set_teacher_team_teaching_contacts(G, teacher_schedule_df)
 
-	student_schedule_df = generate_student_schedule(N_classes, class_size, \
+	# for secondary schools with daycare that have both lower secondary students 
+	# and upper secondary students, only the lower secondary students go to 
+	# daycare. We therefore create the student schedules for the lower secondary
+	# and upper secondary sutdents separately 
+	if school_type == 'secondary_dc':
+		dc_classes = [c for c, age in age_bracket_map.items() if age < 14]
+
+		student_schedule_df_lower_secondary = generate_student_schedule(\
+			len(dc_classes), class_size, daycare, daycare_ratio)
+		student_counter = student_schedule_df_lower_secondary.shape[0]
+		student_schedule_df_upper_secondary = generate_student_schedule(\
+				N_classes - len(dc_classes), class_size, False, daycare_ratio,
+				student_counter)
+
+		student_schedule_df = pd.concat([student_schedule_df_lower_secondary,
+									  student_schedule_df_upper_secondary])
+
+	else:
+		student_schedule_df = generate_student_schedule(N_classes, class_size, \
 												    daycare, daycare_ratio)
 
 	# morning classes: create links between the teachers and all students
@@ -876,23 +1005,28 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 			for s in students_in_class:
 				G.add_edge(t, s, link_type='teaching_teacher_student')
 
+	## afternoon supervision
 	if daycare:
-		# afternoon supervision: create links between the teachers supervising
-		# the afternoon groups and all students in the afternoon groups. Note:
-		# the information about which students are in which afternoon group are
-		# taken from the student schedule, because students are assigned to
-		# afternoon groups at random.
-		for t in teacher_nodes:
-			supervised_group = teacher_schedule_df.loc[t, 'afternoon']
-			if not pd.isna(supervised_group):
-				students_in_group = [s for s in student_schedule_df.index if \
-	    			not pd.isna(student_schedule_df.loc[s, 'afternoon']) and \
-	                student_schedule_df.loc[s, 'afternoon'] == supervised_group]
+		if school_type == 'secondary_dc':
+			dc_times = ['hour_7', 'hour_8']
+			dc_groups = range(1, int(len(dc_classes) / 2)  + 1)
+		else:
+			dc_times = ['afternoon']
+			dc_classes = list(age_bracket_map.keys())
+			dc_groups = range(1, int(len(dc_classes) / 2)  + 1)
+			
+		# generate links between teachers that supervise groups during daycare
+		# together
+		set_teacher_teacher_daycare_supervision_contacts(G, teacher_schedule_df, \
+				dc_times, dc_groups)
 
-				for s in students_in_group:
-					G.add_edge(t, s, link_type='daycare_supervision_teacher_student')
+		# create links between the teachers supervising the afternoon groups and
+		# all students in the afternoon groups. Note: the information about 
+		# which students are in which afternoon group are taken from the student
+		# schedule, because students are assigned to afternoon groups at random.
+		set_teacher_student_daycare_supervision_contacts(G, teacher_schedule_df,
+			student_schedule_df, dc_times, dc_groups)
 
-		set_teacher_daycare_supervision_contacts(G, teacher_schedule_df)
 
 
 	return teacher_schedule_df, student_schedule_df
@@ -902,11 +1036,13 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 
 
 def compose_school_graph(school_type, N_classes, class_size, N_floors, 
-		age_bracket, student_p_children, student_p_parents,
+		student_p_children, student_p_parents,
 		teacher_p_adults, teacher_p_children, 
         r_teacher_conversation, r_teacher_friend):
 
     assert N_classes % 2 == 0, 'number of classes needs to be even'
+
+    age_bracket = age_brackets[school_type]
 
     # number of teachers in a school
     N_teachers = get_N_teachers(school_type, N_classes)
