@@ -116,7 +116,7 @@ def generate_student_family(age_bracket, p_children, p_parents):
 
     while True:
         # random ages of children from uniform distribution
-        ages = np.random.randint(0, 17, N_children)
+        ages = np.random.randint(0, 18, N_children)
         # does at least one child qualify to go to the school?
         if len(set(age_bracket).intersection(set(ages))) > 0:
             return ages, N_parents
@@ -559,33 +559,35 @@ def generate_student_schedule(N_classes, class_size, daycare, daycare_ratio):
 	return student_schedule_df
 
 
-def set_teacher_team_teaching_contacts(G, first_teacher_schedule,
-	second_teacher_schedule):
+def set_teacher_team_teaching_contacts(G, teacher_schedule):
 	'''
 	For the "Mittelschule" (lower secondary school), team teaching is by now
 	the norm for most of the schools and most of the lessons taught in these
-	schools. During team teaching, two teachers supervise the same lesson. 
-	We model these teachers as having a "long" contact to each other, if they
-	teach together. This function sets their contacts according to the teaching
-	schedule.
+	schools. For upper secondary schools, we also assume a small extent of team
+	teaching due to the high number of teachers / class.
+	During team teaching, two teachers supervise the same lesson. We model these
+	teachers as having a "long" contact to each other, if they teach together. 
+	This function sets their contacts according to the teaching schedule.
 
 	Parameters:
 	-----------
 	G : (networkx graph) graph that stores the contacts between agents
-	first_teacher_schedule : (pandas DataFrame) table of form N_hours X
-		N_classes, where entries are the teacher supervising the lesson in a 
-		given class during a given hour
-	second_teacher_schedule: (pandas DataFrame) table of form 
-		N_team_teaching_hours X N_classes, where entries are the additional
-		teachers supervising a lesson in a given class during a given hour
+	teacher_schedule : (pandas DataFrame) table of form N_teachers X N_hours,
+	where entries are the class a given teacher is teaching during a given hour.
 	'''
-	team_teaching_hours, N_classes = second_teacher_schedule.shape
-	for hour in range(1, team_teaching_hours + 1):
-		for c in range(1, N_classes + 1):
-        	# teachers that are in the same class at the same time get a link
-			t1 = 't{}'.format(first_teacher_schedule.loc[hour, 'class_{}'.format(c)])
-			t2 = 't{}'.format(second_teacher_schedule.loc[hour, 'class_{}'.format(c)])
-	G.add_edge(t1, t2, link_type='teacher_teacher_team_teaching')
+	for hour_col in teacher_schedule.columns:
+		team_taught_classes = teacher_schedule[hour_col].value_counts()[\
+	                        teacher_schedule[hour_col].value_counts() > 1].index
+
+		for team_class in team_taught_classes:
+			team_teachers = teacher_schedule[\
+				teacher_schedule[hour_col] == team_class][hour_col].index
+
+			assert len(team_teachers == 2), 'team teaching messup!'
+
+			t1 = team_teachers[0]
+			t2 = team_teachers[1]
+			G.add_edge(t1, t2, link_type='teacher_teacher_team_teaching')
 
 
 
@@ -661,7 +663,7 @@ def generate_schedule_lower_secondary(N_classes, class_size):
 	        except KeyError:
 	            pass
 
-	return teacher_schedule, first_teacher_schedule, second_teacher_schedule
+	return teacher_schedule
 
 
 def generate_schedule_lower_secondary_daycare(N_classes, class_size):
@@ -750,7 +752,7 @@ def generate_schedule_lower_secondary_daycare(N_classes, class_size):
 	    for t in daycare_teacher_list[0:, dc_group]:
 	        teacher_schedule.loc['t{}'.format(t), 'afternoon'] = dc_group + 1
 
-	return teacher_schedule, first_teacher_schedule, second_teacher_schedule
+	return teacher_schedule
         
 
 
@@ -790,6 +792,19 @@ def generate_schedule_upper_secondary(N_classes, class_size=None):
 	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
 	        teacher_schedule.loc['t{}'.format(t1), 'hour_{}'.format(hour)] = c
 
+
+	## team-teaching
+	N_additional_teachers = int(N_classes * 2.85) - N_teachers
+	# Note: this has a small chance that the same teacher team-teaches twice in the
+	# same hour, effectiely reducing the number of team-taught lessons
+	all_hours = [(hour, c) for hour in range(1, N_hours + 1) for c in range(1, N_classes + 1)]
+	N_team_hours = 3
+	team_idx = np.random.choice(range(len(all_hours)), N_additional_teachers * N_team_hours, replace=False)
+	for t in range(1, N_additional_teachers + 1):
+		for idx in team_idx[(t - 1) * N_team_hours: t * N_team_hours]:
+			hour, c = all_hours[idx]
+			teacher_schedule.loc['t{}'.format(N_teachers + t), 'hour_{}'.format(hour)] = c
+
 	return teacher_schedule
 
 
@@ -803,7 +818,7 @@ def get_N_teachers(school_type, N_classes):
 	'primary_dc':N_classes * 2,
 	'lower_secondary':int(N_classes * 2.5),
 	'lower_secondary_dc':N_classes * 3,
-	'upper_secondary':int(N_classes * 2.5),
+	'upper_secondary':int(N_classes * 2.85),
 	'secondary':N_classes * 2
 	}
 	return teachers[school_type]
@@ -835,15 +850,12 @@ def set_teacher_student_contacts(G, school_type, N_classes, class_size):
 	if school_type.endswith('_dc'):
 		daycare = True
 
-	# if the school type is lower_secondary, create teacher links due to team-
-	# teaching
-	if school_type.startswith('lower_secondary'):
-		teacher_schedule_df, first_teacher_schedule, second_teacher_schedule = \
-		schedulers[school_type](N_classes, class_size)
-		set_teacher_team_teaching_contacts(G, first_teacher_schedule, \
-				second_teacher_schedule)
-	else:
-		teacher_schedule_df = schedulers[school_type](N_classes, class_size)
+	
+	teacher_schedule_df = schedulers[school_type](N_classes, class_size)
+	# if the school type is lower_secondary or upper secondary, create teacher 
+	# links due to team- teaching
+	if school_type in ['lower_secondary_dc', 'lower_secondary', 'upper_secondary']:
+		set_teacher_team_teaching_contacts(G, teacher_schedule_df)
 
 	student_schedule_df = generate_student_schedule(N_classes, class_size, \
 												    daycare, daycare_ratio)
