@@ -754,8 +754,45 @@ def generate_schedule_lower_secondary_daycare(N_classes, class_size):
         
 
 
-def generate_schedule_upper_secondary(N_classes):
-	pass
+def generate_schedule_upper_secondary(N_classes, class_size=None):
+	N_hours = 8
+	N_teachers = get_N_teachers('upper_secondary', N_classes)
+
+	teacher_list = list(range(1, int(N_teachers * 2/3) + 1))
+	teacher_list.extend(list(range(1, int(N_teachers * 2/3) + 1)))
+	teacher_list.extend(list(range(1, N_teachers + 1)))
+	teacher_list.extend(list(range(1, int(N_teachers * 1/3) + 1)))
+	teacher_list.extend(list(range(int(N_teachers * 2/3), N_teachers + 1)))
+	tmp_list = list(range(1, int(N_teachers * (1/3))))
+	tmp_list.reverse()
+	teacher_list.extend(tmp_list)
+
+	teacher_list = np.asarray(teacher_list)
+	teacher_array = teacher_list[0: N_hours * N_classes].reshape((N_hours, N_classes))
+
+
+	first_teacher_schedule = pd.DataFrame(columns=['hour'] + ['class_{}'.format(i) for i in range(1, N_classes + 1)])
+	first_teacher_schedule['hour'] = [i for i in range(1, N_hours + 1)]
+	for i in range(0, N_classes):
+	    first_teacher_schedule['class_{}'.format(i + 1)] = teacher_array[0:,i]
+
+	first_teacher_schedule.index = first_teacher_schedule['hour']
+	first_teacher_schedule = first_teacher_schedule.drop(columns = ['hour'])
+
+
+	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, N_hours + 1)])
+	teacher_schedule['teacher'] = ['t{}'.format(i) for i in range(1, N_teachers + 1)]
+	teacher_schedule.index = teacher_schedule['teacher']
+	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+
+	for c in range(1, N_classes + 1):
+	    for hour in range(1, N_hours + 1):
+	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+	        teacher_schedule.loc['t{}'.format(t1), 'hour_{}'.format(hour)] = c
+
+	return teacher_schedule
+
+
 def generate_schedule_secondary(N_classes):
 	pass
 
@@ -766,7 +803,7 @@ def get_N_teachers(school_type, N_classes):
 	'primary_dc':N_classes * 2,
 	'lower_secondary':int(N_classes * 2.5),
 	'lower_secondary_dc':N_classes * 3,
-	'upper_secondary':N_classes * 2,
+	'upper_secondary':int(N_classes * 2.5),
 	'secondary':N_classes * 2
 	}
 	return teachers[school_type]
