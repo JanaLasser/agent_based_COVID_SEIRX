@@ -6,6 +6,10 @@ import json
 import pickle
 from os.path import join
 
+import sys
+sys.path.insert(0,'school')
+import construct_school_network as csn
+
 def get_agent(model, ID):
     for a in model.schedule.agents:
         if a.ID == ID:
@@ -179,25 +183,41 @@ def get_agent_states(model, tm_events):
     return state_data
 
 
-def get_transmission_chain(model, teacher_schedule, student_schedule):
+def get_transmission_chain(model, school_type, teacher_schedule, student_schedule):
 
-    teaching_hours = [int(c.split('_')[1]) for c in teacher_schedule.columns if c.startswith('hour')]
-    # if there is afternoon teaching, remove the fifth hour from the list of
-    # teaching hours, since that's the break
-    try:
-        teaching_hours.remove(5)
-    except ValueError:
-        pass
+    max_hours = 9
+    teaching_hours = csn.get_teaching_hours(school_type)
+    daycare_hours = list(range(teaching_hours + 1, max_hours + 1))
+    teaching_hours = list(range(1, teaching_hours + 1))
 
-    tm_events = pd.DataFrame()
+    weekday_map = {1:'monday', 2:'tuesday', 3:'wednesday', 4:'thursday',
+                   5:'friday', 6:'saturday', 7:'sunday'}
+    
+    if 5 in daycare_hours:
+        daycare_hours.remove(5)
+
+
+    tm_events = pd.DataFrame(columns=['day', 'weekday', 'hour',
+        'source_ID', 'source_type', 'target_ID', 'target_type'])
 
     for a in model.schedule.agents:
         if a.transmissions > 0:
-            for target, day in a.transmission_targets.items():
+            for target, step in a.transmission_targets.items():
                 location = ''
                 hour = np.nan
+                weekday =  (step + model.weekday_shift) % 7 + 1
+                G = model.weekday_connections[weekday]
                 target = get_agent(model, target)
-                
+                n1 = a.ID
+                n2 = target.ID
+                tmp = [n1, n2]
+                tmp.sort()
+                n1, n2 = tmp
+                key = n1 + n2 + 'd{}'.format(weekday)
+
+                s_schedule = student_schedule.loc[weekday]
+                t_schedule = teacher_schedule.loc[weekday]
+
                 ## determine transmission locations and times
                 # transmissions from students to other students, teachers or family
                 # members
@@ -206,35 +226,35 @@ def get_transmission_chain(model, teacher_schedule, student_schedule):
                     
                     if target.type == 'student':
                         # transmussions during daycare
-                        if model.G[a.ID][target.ID]['link_type'] == 'student_student_daycare':
-                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'afternoon'])
-                            hour = 'afternoon'
+                        if G[a.ID][target.ID][key]['link_type'] == 'student_student_daycare':
+                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_8'])
+                            hour = np.random.choice(daycare_hours)
                         # transmission during morning teaching
-                        elif model.G[a.ID][target.ID]['link_type'] in \
+                        elif G[a.ID][target.ID][key]['link_type'] in \
                             ['student_student_intra_class', 'student_student_table_neighbour']:
-                            hour = np.random.choice(teaching_hours, 1)[0]
-                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'morning'])                        
+                            hour = np.random.choice(teaching_hours)
+                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_1'])                        
                         else:
                             print('unknown student <-> student link type ',\
-                             model.G[a.ID][target.ID]['link_type'])
+                            G[a.ID][target.ID][key]['link_type'])
                         
                     # transmissions between students and teachers occur in the student's
                     # classroom at a time when the teacher is in that classroom
                     # according to the schedule
                     elif target.type == 'teacher':
                         # transmissions during daycare
-                        if model.G[a.ID][target.ID]['link_type'] == 'supervision_teacher_student':
-                            location = 'class_{}'.format(student_schedule.loc[a.ID, 'afternoon'])
-                            hour = 'afternoon'
-                        elif model.G[a.ID][target.ID]['link_type'] == 'teaching_teacher_student':
-                            classroom = student_schedule.loc[a.ID, 'morning']
+                        if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
+                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_8'])
+                            hour = np.random.choice(daycare_hours)
+                        elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
+                            classroom = s_schedule.loc[a.ID, 'hour_1']
                             location = 'class_{}'.format(classroom)
                             # get the hour in which the teacher is teaching in the given location
-                            hour = int(teacher_schedule.loc[target.ID][teacher_schedule.loc[target.ID] == classroom]\
+                            hour = int(t_schedule.loc[target.ID][t_schedule.loc[target.ID] == classroom]\
                                 .index[0].split('_')[1])                          
                         else:
                             print('unknown student <-> teacher link type', \
-                                model.G[a.ID][target.ID]['link_type'])
+                                G[a.ID][target.ID][key]['link_type'])
                     
                     # transmissions to family members occur at home after schoole
                     elif target.type == 'family_member':
@@ -251,17 +271,18 @@ def get_transmission_chain(model, teacher_schedule, student_schedule):
                     # according to the schedule
                     if target.type == 'student':
                         # transmissions during daycare
-                        if model.G[a.ID][target.ID]['link_type'] == 'supervision_teacher_student':
-                            location = 'class_{}'.format(student_schedule.loc[target.ID, 'afternoon'])
-                            hour = 'afternoon'
-                        elif model.G[a.ID][target.ID]['link_type'] == 'teaching_teacher_student':
-                            classroom = student_schedule.loc[target.ID, 'morning']
+                        if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
+                            location = 'class_{}'.format(s_schedule.loc[target.ID, 'hour_8'])
+                            hour = np.random.choice(daycare_hours)
+                        elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
+                            classroom = s_schedule.loc[target.ID, 'hour_1']
                             location = 'class_{}'.format(classroom)
                             # get the hour in which the teacher is teaching in the given location
-                            hour = int(teacher_schedule.loc[a.ID][teacher_schedule.loc[a.ID] == classroom]\
+                            hour = int(t_schedule.loc[a.ID][t_schedule.loc[a.ID] == classroom]\
                                 .index[0].split('_')[1])     
                         else:
-                            print('unknown teacher <-> student link type')
+                            print('unknown teacher <-> student link type', \
+                                G[a.ID][target.ID][key]['link_type'])
                         
                     # transmissions between teachers occur during the lunch break
                     # in the faculty room
@@ -299,7 +320,8 @@ def get_transmission_chain(model, teacher_schedule, student_schedule):
                 assert not np.isnan(hour), 'schedule messup!'
                 assert len(location) > 0, 'location messup!'
                 tm_events = tm_events.append({
-                    'day':day,
+                    'day':step,
+                    'weekday':weekday_map[weekday], 
                     'hour':hour,
                     'location':location,
                     'source_ID':a.ID,
