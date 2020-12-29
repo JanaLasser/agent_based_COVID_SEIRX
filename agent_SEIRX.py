@@ -86,8 +86,16 @@ class agent_SEIRX(Agent):
                (c.recovered == False) and (c.contact_to_infected == False):
 
                 # modify the transmission risk based on the contact type
-                modifier = base_modifier * \
-                           self.model.G.get_edge_data(self.ID, c.ID)['weight']
+                n1 = self.ID
+                n2 = c.ID
+                tmp = [n1, n2]
+                tmp.sort()
+                n1, n2 = tmp
+                key = n1 + n2 + 'd{}'.format(self.model.weekday)
+                contact_weight = self.model.G.get_edge_data(\
+                    self.ID, c.ID, key)['weight']
+                modifier = base_modifier * contact_weight
+
                 # modify the transmission risk based on the reception risk of 
                 # the receiving agent
                 modifier *= self.model.reception_risks[c.type]

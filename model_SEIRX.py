@@ -106,7 +106,7 @@ def check_probability(var):
 
 
 def check_graph(var):
-    assert type(var) == nx.Graph, 'not a networkx graph'
+    assert type(var) in [nx.Graph, nx.MultiGraph], 'not a networkx graph'
     assert len(var.nodes) > 0, 'graph has no nodes'
     assert len(var.edges) > 0, 'graph has no edges'
     areas = [e[2]['contact_type'] for e in var.edges(data=True)]
@@ -375,9 +375,15 @@ class SEIRX(Model):
         # interaction graph of agents
         self.G = check_graph(G)
         # add weights as edge attributes so they can be visualised easily
-        for e in G.edges(data=True):
-            G[e[0]][e[1]]['weight'] = self.infection_risk_contact_type_weights\
-            	[G[e[0]][e[1]]['contact_type']]
+        if type(self.G) == nx.MultiGraph:
+            for (u, v, key, contact_type) in self.G.edges(keys=True, 
+                    data='contact_type'):
+                self.G[u][v][key]['weight'] = \
+                    self.infection_risk_contact_type_weights[contact_type]
+        else:
+            for e in G.edges(data=True):
+                G[e[0]][e[1]]['weight'] = self.infection_risk_contact_type_weights\
+                	[G[e[0]][e[1]]['contact_type']]
 
         # extract the different agent types from the contact graph
         self.agent_types = list(agent_types.keys())
