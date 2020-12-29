@@ -229,6 +229,17 @@ class SEIRX_school(SEIRX):
             index_case, agent_types, age_transmission_risk_discount,
             age_symptom_discount, seed)
 
+        # random shift of the weekday at which the simulation starts, to not
+        # always start on Mondays
+        self.weekday_shift = self.random.randint(1, 8)
+        
+        self.MG = G
+        self.weekday_connections = {}
+        all_edges = self.MG.edges(keys=True, data='weekday')
+        N_weekdays = 7
+        for i in range(1, N_weekdays + 1):
+            wd_edges = [(u, v, k) for (u, v, k, wd) in all_edges if wd == i]
+            self.weekday_connections[i] = G.edge_subgraph(wd_edges).copy()
         
         
         # data collectors to save population counts and agent states every
@@ -268,7 +279,11 @@ class SEIRX_school(SEIRX):
             agent_reporters = agent_reporters)
 
 
+
     def step(self):
+        self.weekday = (self.Nstep + self.weekday_shift) % 7 + 1
+        self.G = self.weekday_connections[self.weekday]
+
         if self.testing:
             for agent_type in self.agent_types:
                 for screen_type in ['reactive', 'follow_up', 'preventive']:
