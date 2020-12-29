@@ -51,11 +51,10 @@ class student(agent_SEIRX):
         if self.infectious:
             if not self.quarantined:
 
-                # infectiousness is constant and high during the first 2 days 
-                # (pre-symptomatic) and then decreases monotonically until agents 
-                # are not infectious anymore at the end of the infection_duration 
-                modifier = 1 - max(0, self.days_since_exposure - self.exposure_duration - 1) / \
-                    (self.infection_duration - self.exposure_duration - 1)
+                # infectiousness is constant and high until symptom onset and then
+                # decreases monotonically until agents are not infectious anymore 
+                # at the end of the infection_duration 
+                modifier = self.get_transmission_risk_time_modifier()
 
                 # if infectiousness is modified for asymptomatic cases, multiply
                 # the asymptomatic modifier with the days-infected modifier 

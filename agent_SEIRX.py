@@ -62,7 +62,21 @@ class agent_SEIRX(Agent):
 
 
 
-    # generic helper functions that are inherited by other agent classes
+    ### generic helper functions that are inherited by other agent classes
+
+    # infectiousness is constant and high until symptom onset and then
+    # decreases monotonically until agents are not infectious anymore 
+    # at the end of the infection_duration 
+    def get_transmission_risk_time_modifier(self):
+        asymptomatic_infectious = self.time_until_symptoms - \
+                                  self.exposure_duration
+
+        modifier = 1-max(0,self.days_since_exposure - asymptomatic_infectious)/\
+                        (self.infection_duration - asymptomatic_infectious)
+        return modifier
+
+
+
     def get_contacts(self, agent_group):
         contacts = [a for a in self.model.schedule.agents if
             (a.type == agent_group and self.model.G.has_edge(self.ID, a.ID))]
@@ -104,8 +118,6 @@ class agent_SEIRX(Agent):
 
                 # draw random number for transmission
                 transmission = self.random.random()
-
-                #print(modified_transmission_risk)
 
                 if transmission > modified_transmission_risk:
                     c.contact_to_infected = True
