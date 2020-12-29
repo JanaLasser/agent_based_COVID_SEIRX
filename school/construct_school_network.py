@@ -306,7 +306,10 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 G.add_node(family_member_ID)
                 nx.set_node_attributes(G, \
                         {family_member_ID:{'type':'family_member_student',
-                         				   'age':30,
+                        					# Note: 20.5 is the age at which
+                        					# the symptom and transmission risk
+                        					# is that of an adult
+                         				   'age':20.5,
                                            'family':family_counter,
                                            'unit':'family'}})
                 family_member_counter += 1
@@ -374,7 +377,10 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
         # finally, also set the teacher's node attributes
         nx.set_node_attributes(G, \
                     {t:{'type':'teacher', 
-                        'age':30,
+                        # Note: 20.5 is the age at which
+                        # the symptom and transmission risk
+                        # is that of an adult
+                        'age':20.5,
                         'unit':'faculty_room',
                         'family':family_counter}})
         family_counter += 1
