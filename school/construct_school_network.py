@@ -293,7 +293,7 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 family_member_ID = 'f{:04d}'.format(family_member_counter)
                 G.add_node(family_member_ID)
                 nx.set_node_attributes(G, \
-                        {family_member_ID:{'type':'family_member',
+                        {family_member_ID:{'type':'family_member_student',
                                            'age':age,
                                            'family':family_counter,
                                            'unit':'family'}})
@@ -305,7 +305,7 @@ def generate_students(G, school_type, age_bracket, N_classes, class_size,\
                 family_member_ID = 'f{:04d}'.format(family_member_counter)
                 G.add_node(family_member_ID)
                 nx.set_node_attributes(G, \
-                        {family_member_ID:{'type':'family_member',
+                        {family_member_ID:{'type':'family_member_student',
                          				   'age':30,
                                            'family':family_counter,
                                            'unit':'family'}})
@@ -366,7 +366,7 @@ def generate_teachers(G, teacher_nodes, family_member_counter, family_counter,
             G.add_node(family_member_ID)
             family_member_counter += 1
             nx.set_node_attributes(G, \
-                        {family_member_ID:{'type':'family_member',
+                        {family_member_ID:{'type':'family_member_teacher',
                                            'age':age,
                                            'family':family_counter,
                                            'unit':'family'}})
@@ -528,6 +528,7 @@ def set_teacher_teacher_social_contacts(G, teacher_nodes, N_teacher_contacts_far
     N_teachers = len(teacher_nodes)
     N_teacher_contacts_far = (N_teacher_contacts_far * N_teachers) / 2
     N_weekdays = 7
+    weekend_days = [6, 7]
     contacts_created = 0
     while contacts_created < N_teacher_contacts_far:
         t1 = np.random.choice(teacher_nodes)
@@ -540,7 +541,8 @@ def set_teacher_teacher_social_contacts(G, teacher_nodes, N_teacher_contacts_far
             tmp.sort()
             t1, t2 = tmp
             for wd in range(1, N_weekdays + 1):
-                G.add_edge(t1, t2, link_type='teacher_teacher_short',
+                if not wd in weekend_days:
+                    G.add_edge(t1, t2, link_type='teacher_teacher_short',
             					   weekday = wd,
             					   key = t1 + t2 + 'd{}'.format(wd))
             contacts_created += 1
@@ -555,13 +557,14 @@ def set_teacher_teacher_social_contacts(G, teacher_nodes, N_teacher_contacts_far
             continue
 
         if not G.has_edge(t1, t2):
+            tmp = [t1, t2]
+            tmp.sort()
+            t1, t2 = tmp
             for wd in range(1, N_weekdays + 1):
-                tmp = [t1, t2]
-                tmp.sort()
-                t1, t2 = tmp
-                G.add_edge(t1, t2, link_type = 'teacher_teacher_long',
-            					   weekday = wd,
-            					   key = t1 + t2 + 'd{}'.format(wd))
+                if not wd in weekend_days:
+                    G.add_edge(t1, t2, link_type = 'teacher_teacher_long',
+                					   weekday = wd,
+                					   key = t1 + t2 + 'd{}'.format(wd))
             contacts_created += 1
 
 
@@ -629,10 +632,6 @@ def set_teacher_teacher_teamteaching_contacts(G, school_type, teacher_schedule):
 			team_taught_classes = wd_schedule[hour_col].value_counts()[\
 		                    wd_schedule[hour_col].value_counts() > 1].index
 
-			if len(team_taught_classes) == 0:
-				print('no team-teaching classes')
-				return 
-
 			for team_class in team_taught_classes:
 				team_teachers = wd_schedule[\
 					wd_schedule[hour_col] == team_class][hour_col].index
@@ -684,9 +683,6 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 			supervised_classes = wd_schedule[hour_col].value_counts()[\
 		                    wd_schedule[hour_col].value_counts() > 1].index
 
-			if len(supervised_classes) == 0:
-				print('no classes supervised in daycare on weekday {} {}'\
-					.format(wd, hour_col))
 
 			for c in supervised_classes:
 				supervising_teachers = wd_schedule[\
@@ -1032,9 +1028,15 @@ def generate_teacher_schedule_primary_daycare(N_classes):
 	return schedule_df
 
 
-def generate_teacher_schedule_lower_secondary(N_classes, class_size):
+def generate_teacher_schedule_lower_secondary(N_classes):
 
-	N_hours = teachung_hours['lower_secondary']
+	N_teachers = get_N_teachers('lower_secondary', N_classes)
+	N_hours = get_teaching_hours('lower_secondary')
+	max_hours = 9
+	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
+	N_weekdays = 7
+	weekend_days = [6, 7]
+
 	N_teachers = get_N_teachers('lower_secondary', N_classes)
 
 	teacher_list =list(range(1, N_teachers + 1)) * 2
@@ -1060,27 +1062,55 @@ def generate_teacher_schedule_lower_secondary(N_classes, class_size):
 	second_teacher_schedule.index = second_teacher_schedule['hour']
 	second_teacher_schedule = second_teacher_schedule.drop(columns = ['hour'])
 
-	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, N_hours + 1)])
-	teacher_schedule['teacher'] = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	teacher_schedule.index = teacher_schedule['teacher']
-	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for\
+			 i in range(1, max_hours + 1)])
+	schedule_df['teacher'] = teacher_nodes * N_weekdays
+	iterables = [range(1, N_weekdays + 1), teacher_nodes]
+	index = pd.MultiIndex.from_product(iterables, names=['weekday', 'teacher'])
+	schedule_df.index = index
+	schedule_df = schedule_df.drop(columns = ['teacher'])
 
 	for c in range(1, N_classes + 1):
 	    for hour in range(1, N_hours + 1):
-	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	        teacher_schedule.loc['t{:04d}'.format(t1), 'hour_{}'.format(hour)] = c
-	        try:
-	            t2 = second_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	            teacher_schedule.loc['t{:04d}'.format(t2), 'hour_{}'.format(hour)] = c
-	        except KeyError:
-	            pass
+	    	for wd in range(1, N_weekdays + 1):
+	    		if wd not in weekend_days:
+			        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+			        schedule_df.loc[wd, 't{:04d}'.format(t1)]\
+			        			['hour_{}'.format(hour)] = c
+			        try:
+			            t2 = second_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+			            schedule_df.loc[wd, 't{:04d}'.format(t2)]\
+			            		['hour_{}'.format(hour)] = c
+			        except KeyError:
+			            pass
 
-	return teacher_schedule
+	for t in teacher_nodes:
+		for hour in range(N_hours + 1, max_hours + 1):
+			for wd in range(1, N_weekdays + 1):
+				schedule_df.loc[wd, t]['hour_{}'.format(hour)] = pd.NA
+
+	schedule_df = schedule_df.replace({np.nan:pd.NA})
+	# shift afternoon teaching hours by one to make space for the lunch break
+	# in the fifth hour:
+	schedule_df = schedule_df.rename(columns={'hour_9':'hour_5', 'hour_5':'hour_6',
+											  'hour_6':'hour_7', 'hour_7':'hour_8',
+											  'hour_8':'hour_9'})
+	schedule_df = schedule_df[['hour_{}'.format(i) for i in range(1, max_hours + 1)]]
+
+	return schedule_df
 
 
-def generate_teacher_schedule_lower_secondary_daycare(N_classes, class_size):
+def generate_teacher_schedule_lower_secondary_daycare(N_classes):
 	N_teachers = get_N_teachers('lower_secondary_dc', N_classes)
-	N_hours = teaching_hours['lower_secondary_dc']
+	N_hours = get_teaching_hours('lower_secondary_dc')
+	max_hours = 9
+	daycare_hours = range(N_hours + 1, max_hours)
+	if 5 in daycare_hours:
+		daycare_hours.remove(5)
+	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
+	N_weekdays = 7
+	weekend_days = [6, 7]
+
 	# for lower secondary schools with daycare, there are 3 teachers per class
 	# 5 out of 6 hours / day are taught in team-teaching and daycare supervision of
 	# each group is also done by two teachers. To create the schedule for the teachers,
@@ -1129,24 +1159,34 @@ def generate_teacher_schedule_lower_secondary_daycare(N_classes, class_size):
 	second_teacher_schedule.index = second_teacher_schedule['hour']
 	second_teacher_schedule = second_teacher_schedule.drop(columns = ['hour'])
 
-	# the overall schedule is a table of N_teachers X N_hours, in which the entries
-	# are the class that is taught by a given teacher in a given time. We construct
-	# this table from the first teacher schedule and the second teacher schedule
-	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for \
-	                                    i in range(1, N_hours + 1)] + ['afternoon'])
-	teacher_schedule['teacher'] = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	teacher_schedule.index = teacher_schedule['teacher']
-	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+	
+
+	# the overall schedule is a table of (N_weekdays * N_teachers) X N_hours,
+	# in which the entries are the class that is taught by a given teacher in a
+	# given time. We construct this table from the first teacher schedule and 
+	# the second teacher schedule
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for\
+			 i in range(1, max_hours + 1)])
+	schedule_df['teacher'] = teacher_nodes * N_weekdays
+	iterables = [range(1, N_weekdays + 1), teacher_nodes]
+	index = pd.MultiIndex.from_product(iterables, names=['weekday', 'teacher'])
+	schedule_df.index = index
+	schedule_df = schedule_df.drop(columns = ['teacher'])
+
 	for c in range(1, N_classes + 1):
 	    for hour in range(1, N_hours + 1):
-	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	        teacher_schedule.loc['t{:04d}'.format(t1), 'hour_{}'.format(hour)] = c
-	        # not all hours have a second teacher
-	        try:
-	            t2 = second_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	            teacher_schedule.loc['t{:04d}'.format(t2), 'hour_{}'.format(hour)] = c
-	        except KeyError:
-	            pass
+	    	for wd in range(1, N_weekdays):
+	    		if not wd in weekend_days:
+			        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+			        schedule_df.loc[wd, 't{:04d}'.format(t1)]\
+			        	['hour_{}'.format(hour)] = c
+			        # not all hours have a second teacher
+			        try:
+			            t2 = second_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+			            schedule_df.loc[wd, 't{:04d}'.format(t2)]\
+			            	['hour_{}'.format(hour)] = c
+			        except KeyError:
+			            pass
 
 	# daycare is handled separately: in the afternoon, half of the students go home
 	# and the other half are randomly distributed to a number of groups equal to
@@ -1162,17 +1202,35 @@ def generate_teacher_schedule_lower_secondary_daycare(N_classes, class_size):
 	# add the daycare supervision to the overall teacher schedule
 	for dc_group in range(0, int(N_classes / 2)):
 	    for t in daycare_teacher_list[0:, dc_group]:
-	        teacher_schedule.loc['t{:04d}'.format(t), 'afternoon'] = dc_group + 1
+	    	for wd in range(1, N_weekdays + 1):
+	    		if wd not in weekend_days:
+	    			for hour in daycare_hours:
+		        		schedule_df.loc[wd, 't{:04d}'.format(t)]\
+		        			['hour_{}'.format(hour)] = dc_group + 1
 
-	return teacher_schedule
+
+	schedule_df = schedule_df.replace({np.nan:pd.NA})
+	# shift afternoon teaching hours by one to make space for the lunch break
+	# in the fifth hour:
+	schedule_df = schedule_df.rename(columns={'hour_9':'hour_5', 'hour_5':'hour_6',
+											  'hour_6':'hour_7', 'hour_7':'hour_8',
+											  'hour_8':'hour_9'})
+	schedule_df = schedule_df[['hour_{}'.format(i) for i in range(1, max_hours + 1)]]
+
+
+	return schedule_df
         
 
 
-def generate_teacher_schedule_upper_secondary(N_classes, class_size=None):
-	N_hours = teaching_hours['upper_secondary']
+def generate_teacher_schedule_upper_secondary(N_classes):
+	N_hours = get_teaching_hours('upper_secondary')
 	all_teachers = get_N_teachers('upper_secondary', N_classes)
 	N_teachers = int(N_classes * 2.5)
 	N_additional_teachers = all_teachers - N_teachers # for team teaching
+	N_weekdays = 7
+	max_hours = 9
+	weekend_days = [6, 7]
+	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, all_teachers + 1)]
 
 	teacher_list = list(range(1, int(N_teachers * 2/3) + 1))
 	teacher_list.extend(list(range(1, int(N_teachers * 2/3) + 1)))
@@ -1196,15 +1254,21 @@ def generate_teacher_schedule_upper_secondary(N_classes, class_size=None):
 	first_teacher_schedule = first_teacher_schedule.drop(columns = ['hour'])
 
 
-	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, N_hours + 1)])
-	teacher_schedule['teacher'] = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	teacher_schedule.index = teacher_schedule['teacher']
-	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for\
+			 i in range(1, max_hours + 1)])
+	schedule_df['teacher'] = teacher_nodes * N_weekdays
+	iterables = [range(1, N_weekdays + 1), teacher_nodes]
+	index = pd.MultiIndex.from_product(iterables, names=['weekday', 'teacher'])
+	schedule_df.index = index
+	schedule_df = schedule_df.drop(columns = ['teacher'])
 
 	for c in range(1, N_classes + 1):
-	    for hour in range(1, N_hours + 1):
-	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	        teacher_schedule.loc['t{:04d}'.format(t1), 'hour_{}'.format(hour)] = c
+		for hour in range(1, N_hours + 1):
+			for wd in range(1, N_weekdays + 1):
+				if wd not in weekend_days:
+					t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
+					schedule_df.loc[wd, 't{:04d}'.format(t1)]\
+							['hour_{}'.format(hour)] = c
 
 
 	## team-teaching
@@ -1216,14 +1280,30 @@ def generate_teacher_schedule_upper_secondary(N_classes, class_size=None):
 	for t in range(1, N_additional_teachers + 1):
 		for idx in team_idx[(t - 1) * N_team_hours: t * N_team_hours]:
 			hour, c = all_hours[idx]
-			teacher_schedule.loc['t{:04d}'.format(N_teachers + t), 'hour_{}'.format(hour)] = c
+			for wd in range(1, N_weekdays + 1):
+				if wd not in weekend_days:
+					schedule_df.loc[wd, 't{:04d}'.format(N_teachers + t)]\
+						['hour_{}'.format(hour)] = c
 
-	return teacher_schedule
+	schedule_df = schedule_df.replace({np.nan:pd.NA})
+	# shift afternoon teaching hours by one to make space for the lunch break
+	# in the fifth hour:
+	schedule_df = schedule_df.rename(columns={'hour_9':'hour_5', 'hour_5':'hour_6',
+											  'hour_6':'hour_7', 'hour_7':'hour_8',
+											  'hour_8':'hour_9'})
+	schedule_df = schedule_df[['hour_{}'.format(i) for i in range(1, max_hours + 1)]]
 
 
-def generate_teacher_schedule_secondary(N_classes, class_size=None):
-	N_hours = teaching_hours['secondary']
+	return schedule_df
+
+
+def generate_teacher_schedule_secondary(N_classes):
+	N_hours = get_teaching_hours('secondary')
 	N_teachers = get_N_teachers('secondary', N_classes)
+	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
+	N_weekdays = 7
+	weekend_days = [6, 7]
+	max_hours = 9
 
 	teacher_list = list(range(1, int(N_teachers * 2/3) + 1))
 	teacher_list.extend(list(range(1, int(N_teachers * 2/3) + 1)))
@@ -1247,24 +1327,39 @@ def generate_teacher_schedule_secondary(N_classes, class_size=None):
 	first_teacher_schedule = first_teacher_schedule.drop(columns = ['hour'])
 
 
-	teacher_schedule = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for i in range(1, N_hours + 1)])
-	teacher_schedule['teacher'] = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	teacher_schedule.index = teacher_schedule['teacher']
-	teacher_schedule = teacher_schedule.drop(columns=['teacher'])
+	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for\
+			 i in range(1, max_hours + 1)])
+	schedule_df['teacher'] = teacher_nodes * N_weekdays
+	iterables = [range(1, N_weekdays + 1), teacher_nodes]
+	index = pd.MultiIndex.from_product(iterables, names=['weekday', 'teacher'])
+	schedule_df.index = index
+	schedule_df = schedule_df.drop(columns = ['teacher'])
 
 	for c in range(1, N_classes + 1):
 	    for hour in range(1, N_hours + 1):
 	        t1 = first_teacher_schedule.loc[hour, 'class_{}'.format(c)]
-	        teacher_schedule.loc['t{:04d}'.format(t1), 'hour_{}'.format(hour)] = c
+	        for wd in range(1, N_weekdays + 1):
+	        	if wd not in weekend_days:
+	        		schedule_df.loc[wd, 't{:04d}'.format(t1)]\
+	        			['hour_{}'.format(hour)] = c
 
-	return teacher_schedule
+	schedule_df = schedule_df.replace({np.nan:pd.NA})
+	# shift afternoon teaching hours by one to make space for the lunch break
+	# in the fifth hour:
+	schedule_df = schedule_df.rename(columns={'hour_9':'hour_5', 'hour_5':'hour_6',
+											  'hour_6':'hour_7', 'hour_7':'hour_8',
+											  'hour_8':'hour_9'})
+	schedule_df = schedule_df[['hour_{}'.format(i) for i in range(1, max_hours + 1)]]
+
+	return schedule_df
 
 
-def generate_teacher_schedule_secondary_daycare(N_classes, class_size):
-	daycare_hours = [7, 8]
+def generate_teacher_schedule_secondary_daycare(N_classes):
+	daycare_hours = [8, 9]
 	dc_cols = ['hour_{}'.format(h) for h in daycare_hours]
 
-	teacher_schedule = generate_schedule_secondary(N_classes)
+	teacher_schedule = generate_teacher_schedule_secondary(N_classes)
+	
 	age_bracket = get_age_bracket('secondary')
 	age_bracket_map = get_age_distribution('secondary', age_bracket, N_classes)
 	lower_secondary_classes = [c for c, age in age_bracket_map.items() if age < 14]
@@ -1272,8 +1367,9 @@ def generate_teacher_schedule_secondary_daycare(N_classes, class_size):
 	empty_dc_classes = lower_secondary_classes[N_daycare_groups:]
 	full_dc_classes = lower_secondary_classes[0:N_daycare_groups]
 	dc_class_mapping = {empty:full for empty, full in zip(empty_dc_classes, full_dc_classes)}
+	teacher_schedule[dc_cols] = teacher_schedule[dc_cols].replace({pd.NA:np.nan})
 	teacher_schedule[dc_cols] = teacher_schedule[dc_cols].replace(dc_class_mapping)
-
+	teacher_schedule = teacher_schedule.replace({np.nan:pd.NA})
 	return teacher_schedule
   
 
@@ -1546,7 +1642,7 @@ def generate_family(G, student_ID, family_counter, family_sizes):
 	            range(family_counter, family_counter + N_family_members - 1)]
 	G.add_nodes_from(family_nodes)
 	nx.set_node_attributes(G, \
-	    {f:{'type':'family_member', 'unit':'family'} for f in family_nodes})
+	    {f:{'type':'family_member_student', 'unit':'family'} for f in family_nodes})
 
 	# all family members have contact to each other
 	for f1 in family_nodes:
