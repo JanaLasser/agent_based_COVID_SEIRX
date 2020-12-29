@@ -222,7 +222,7 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                 # transmissions from students to other students, teachers or family
                 # members
                 if a.type == 'student':
-                    student_class = model.G.nodes(data=True)[a.ID]['unit']
+                    student_class = G.nodes(data=True)[a.ID]['unit']
                     
                     if target.type == 'student':
                         # transmussions during daycare
