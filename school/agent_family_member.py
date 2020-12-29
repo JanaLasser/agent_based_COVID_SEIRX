@@ -15,6 +15,20 @@ class family_member(agent_SEIRX):
             exposure_duration, time_until_symptoms, infection_duration,
             verbosity)
 
+        self.age = model.G.nodes(data=True)[self.unique_id]['age']
+        
+
+        ## age adjustments
+        # adjust symptom probability based on age
+        self.symptom_probability = \
+                        self.age * self.model.age_symptom_discount['slope'] + \
+                        self.symptom_probability
+
+        # modulate transmission and reception risk based on age 
+        age_modifier = model.get_risk_age_modifier(self.age)
+        self.transmission_risk = self.transmission_risk * age_modifier
+        self.reception_risk = self.reception_risk * age_modifier
+        
 
     def step(self):
         '''
