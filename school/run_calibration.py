@@ -410,8 +410,10 @@ else:
     samples = np.random.choice(range(len(params)), N_samples, replace=False)
 
 
+samples = samples[0:25]
+
 results = pd.DataFrame()
-for k, sample_index in enumerate(samples[0:25]):
+for k, sample_index in enumerate(samples):
     print('{}: {}/{}'.format(school_type, k, len(samples)))
     # get the values of the calibration parameters
     intermediate_contact_weight, far_contact_weight, age_transmission_discount = \
