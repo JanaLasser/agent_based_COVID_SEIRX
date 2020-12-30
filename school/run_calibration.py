@@ -19,10 +19,6 @@ sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
 import analysis_functions as af
 
-# for progress bars
-from ipywidgets import IntProgress
-from IPython.display import display
-import time
 
 
 target_base_transmission_risk = 0.0737411844049918
@@ -412,10 +408,6 @@ if N_samples == 'all':
 else:
     samples = np.random.choice(range(len(params)), N_samples, replace=False)
 
-# progress bar
-f = IntProgress(min=0, max=len(samples) * N_runs) 
-display(f)
-c = 0
 
 results = pd.DataFrame()
 for k, sample_index in enumerate(samples):
@@ -531,8 +523,6 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-    f.value = c # update the progress bar
-    c += 1
     
 results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}.csv'\
 		.format(school_type, len(samples), N_runs)), index=False)
