@@ -71,8 +71,13 @@ class agent_SEIRX(Agent):
         asymptomatic_infectious = self.time_until_symptoms - \
                                   self.exposure_duration
 
-        modifier = 1-max(0,self.days_since_exposure - asymptomatic_infectious)/\
+        try:
+            modifier = 1-max(0,self.days_since_exposure - asymptomatic_infectious)/\
                         (self.infection_duration - asymptomatic_infectious)
+        # if exposure_duration + time_until_symptoms = infection_duration
+        except ZeroDivisionError:
+            return 1
+        
         return modifier
 
 
