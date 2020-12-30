@@ -334,6 +334,8 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
     if len(tm_events) > 0:            
         tm_events['day'] = tm_events['day'].astype(int)
         tm_events = tm_events.sort_values(by=['day', 'hour']).reset_index(drop=True)
+        tm_events = tm_events[['day', 'hour', 'location', 'source_ID', 'source_type',
+                              'target_ID', 'target_type']]
         return tm_events
     else:
         return None
