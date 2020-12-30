@@ -97,12 +97,15 @@ N_classes = school_characteristics[school_type]['classes']
 class_size = school_characteristics[school_type]['students']
 school_name = '{}_classes-{}_students-{}'.format(school_type,\
             N_classes, class_size)
-age_bracket = age_brackets[school_type]
+age_bracket 
+= age_brackets[school_type]
 N_floors = 1
 
 res_path = join('../data/school/calibration_schools', school_type)
 
 for instance in range(1, instances + 1):
+	if instance % 100 == 0:
+		print('{} {}/{}'.format(school_type, instance, instances))
     instance_name = school_name + '_{}'.format(instance)
     
     G, teacher_schedule, student_schedule = csn.compose_school_graph(\
