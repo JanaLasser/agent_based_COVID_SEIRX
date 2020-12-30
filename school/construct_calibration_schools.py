@@ -103,8 +103,8 @@ N_floors = 1
 res_path = join('../data/school/calibration_schools', school_type)
 
 for instance in range(1, instances + 1):
-	if instance % 100 == 0:
-		print('{} {}/{}'.format(school_type, instance, instances))
+    if instance % 100 == 0:
+        print('{} {}/{}'.format(school_type, instance, instances))
     instance_name = school_name + '_{}'.format(instance)
     
     G, teacher_schedule, student_schedule = csn.compose_school_graph(\
