@@ -523,7 +523,7 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-	results.to_csv(join(dst, 'calibration_results_{}_samples{}_curr.csv'\
+    results.to_csv(join(dst, 'calibration_results_{}_samples{}_curr.csv'\
 		.format(school_type, len(samples), N_runs)), index=False)
     
 results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}.csv'\
