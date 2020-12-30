@@ -97,8 +97,7 @@ N_classes = school_characteristics[school_type]['classes']
 class_size = school_characteristics[school_type]['students']
 school_name = '{}_classes-{}_students-{}'.format(school_type,\
             N_classes, class_size)
-age_bracket 
-= age_brackets[school_type]
+age_bracket = age_brackets[school_type]
 N_floors = 1
 
 res_path = join('../data/school/calibration_schools', school_type)
