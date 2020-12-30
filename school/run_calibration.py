@@ -1,5 +1,5 @@
 import numpy as np
-np.random.seed(42)
+np.random.seed(41)
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -377,7 +377,9 @@ N_steps = 500
 # number of runs per ensemble
 N_runs = int(sys.argv[3])
 # number of points in the parameter grid that will be randomly sampled
-N_samples = int(sys.argv[2])
+N_samples = sys.argv[2]
+if not N_samples == 'all':
+	N_samples = int(N_samples)
 school_type = sys.argv[1]
 
 
@@ -385,20 +387,19 @@ school_type = sys.argv[1]
 # the contact weight is the modifier by which the base transmission risk (for
 # household transmissions) is multiplied for contacts of type "intermediate" 
 # and of type "far"
-intermediate_contact_weights = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-far_contact_weights = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+intermediate_contact_weights = [0.2, 0.4, 0.6, 0.8, 1]
+far_contact_weights = [0.2, 0.4, 0.6, 0.8, 1]
 
 # the age_transmission_discount sets the slope of the age-dependence of the 
 # transmission risk. Transmission risk for adults (age 18+) is always base 
 # transmission risk. For every year an agent is younger than 18 years, the
 # transmission risk is reduced
-age_transmission_discounts = [-0.13, -0.12, -0.11, -0.1, -0.09, -0.08, -0.07,
-                              -0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0]
+age_transmission_discounts = [-0.08,-0.06,-0.04,-0.02,0]
 
 # list of all possible parameter combinations from the grid
 params = [(i, j, k) for i in intermediate_contact_weights \
                     for j in far_contact_weights\
-                    for k in age_transmission_discounts]
+                    for k in age_transmission_discounts if i > j]
 # randomly drawn list of parameter combination indices of size N_samples. For 
 # every parameter combination an ensemble of simulations will be run and 
 # evaluated.
