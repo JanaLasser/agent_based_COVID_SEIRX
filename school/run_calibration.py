@@ -453,8 +453,12 @@ for k, sample_index in enumerate(samples):
         # are random, there are a number of randomly created instances of 
         # calibration schools from which we can chose. We use a different
         # calibration school instance for every run here
-        G = nx.readwrite.gpickle.read_gpickle(join(school_src,\
+        try:
+        	G = nx.readwrite.gpickle.read_gpickle(join(school_src,\
                         '{}_{}.gpickle'.format(school_name, run % 1000)))
+        except FileNotFoundError:
+        	G = nx.readwrite.gpickle.read_gpickle(join(school_src,\
+                        '{}_{}.gpickle'.format(school_name, run % 1000 + 1)))
         
         # pick an index case according to the probabilities for the school type
         index_case = np.random.choice(list(agent_index_ratio.keys()),
