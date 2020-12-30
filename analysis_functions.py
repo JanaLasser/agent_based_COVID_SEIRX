@@ -422,6 +422,9 @@ def dump_JSON(path, school,
               node_list, teacher_schedule, student_schedule, rep_transmission_events,
               state_data):
 
+    student_schedule = student_schedule.reset_index()
+    teacher_schedule = teacher_schedule.reset_index()
+
     school_type = school['type']
     classes = school['classes']
     students = school['students']
