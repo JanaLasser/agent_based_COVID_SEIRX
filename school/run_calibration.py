@@ -411,7 +411,7 @@ else:
 
 
 results = pd.DataFrame()
-for k, sample_index in enumerate(samples):
+for k, sample_index in enumerate(samples[0:25]):
     print('{}: {}/{}'.format(school_type, k, len(samples)))
     # get the values of the calibration parameters
     intermediate_contact_weight, far_contact_weight, age_transmission_discount = \
@@ -524,8 +524,8 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-    results.to_csv(join(dst, 'calibration_results_{}_samples{}_curr.csv'\
+    results.to_csv(join(dst, 'calibration_results_{}_samples{}_firsthalf_curr.csv'\
 		.format(school_type, len(samples), N_runs)), index=False)
     
-results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}.csv'\
+results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_firsthalf.csv'\
 		.format(school_type, len(samples), N_runs)), index=False)
