@@ -1,16 +1,10 @@
 import numpy as np
-np.random.seed(41)
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import networkx as nx
 import pandas as pd
-import scipy as sp
-from scipy.stats import lognorm
-from scipy.optimize import root_scalar
-from scipy.special import gamma
-import numpy as np
+
+
 from os.path import join
+import socket
 
 # agent based model classes & functionality
 import sys
@@ -18,8 +12,6 @@ sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
 import analysis_functions as af
-
-
 
 target_base_transmission_risk = 0.0737411844049918
 
@@ -512,3 +504,8 @@ results.to_csv(join(dst, 'calibration_results-{}_runs-{}_icw-{}_fcw-{}_atd-{}.cs
 
 ensemble_results.to_csv(join(dst, 'ensemble-{}_runs-{}_icw-{}_fcw-{}_atd-{}.csv'\
 		.format(school_type, N_runs, icw, fcw, atd)), index=False)
+
+hostname = socket.gethostname()
+with open('../data/school/calibration_results_cluster/hosts/school_type-{}_icw-{}_fcw-{}_atd-{}_{}.txt'\
+		.format(school_type, icw, fcw, atd, hostname), 'w') as f:
+	print(hostname, file=f)
