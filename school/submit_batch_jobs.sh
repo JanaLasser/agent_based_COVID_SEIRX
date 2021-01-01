@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -J COVID_SEIRX_calibration              ## name
-#SBATCH -N 14                 
+#SBATCH -N 2                 
 #SBATCH --ntasks=32          ## number of tasks per node
 #SBATCH --time=00:00:05      
-#SBATCH --mail-type=BEGIN, END
+#SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
 for school_type in primary primary_dc lower_secondary lower_secondary_dc upper_secondary secondary secondary_dc
