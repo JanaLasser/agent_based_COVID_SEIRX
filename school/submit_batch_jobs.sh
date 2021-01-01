@@ -1,6 +1,8 @@
 #!/bin/bash
 #SBATCH -J COVID_SEIRX_calibration              ## name
 #SBATCH -N 4                 
+#SBATCH -o output
+#SBATCH -e error
 #SBATCH --ntasks=32          ## number of tasks per node
 #SBATCH --time=03:00:00      
 #SBATCH --mail-type=BEGIN,END
