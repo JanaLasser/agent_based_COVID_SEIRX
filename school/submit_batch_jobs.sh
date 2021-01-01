@@ -24,8 +24,7 @@ for school_type in primary
             do
 
             python run_calibration_cluster.py $school_type $N_runs $icw $fcw $atd &
-            echo submitted job $school_type icw $icw fcw $fcw atd $atd &
-            python test_cluster.py $school_type $icw $fcw $atd &
+            hostname &
 
 
 
