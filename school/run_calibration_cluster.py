@@ -1,3 +1,5 @@
+print('in run_calibration_cluster')
+
 import numpy as np
 import networkx as nx
 import pandas as pd
@@ -12,6 +14,7 @@ sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
 import analysis_functions as af
+
 
 target_base_transmission_risk = 0.0737411844049918
 
