@@ -2,7 +2,6 @@
 #SBATCH -J COVID_SEIRX_calibration              ## name
 #SBATCH -N 2                 
 #SBATCH --ntasks=32          ## number of tasks per node
-#SBATCH --partition=adm_test
 #SBATCH --time=00:00:05      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
