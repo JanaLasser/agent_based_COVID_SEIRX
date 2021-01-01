@@ -8,6 +8,7 @@ import sys
 # agent based model classes & functionality
 sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
+sys.path.insert(0,'mesa')
 from model_school import SEIRX_school
 import analysis_functions as af
 

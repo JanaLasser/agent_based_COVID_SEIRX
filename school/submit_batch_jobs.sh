@@ -23,7 +23,7 @@ for school_type in primary
          for atd in -0.04 -0.035 -0.03 -0.025
             do
 
-            python run_calibration_cluster.py $school_type $N_runs $icw $fcw $atd &
+            python3 run_calibration_cluster.py $school_type $N_runs $icw $fcw $atd &
             hostname &
 
 
