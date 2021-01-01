@@ -18,7 +18,8 @@ for school_type in primary primary_dc lower_secondary lower_secondary_dc upper_s
          for atd in -0.04, -0.035, -0.03, -0.025
             do
 
-            python test_cluster.py $school_type $icw $fcw $atd
+            python test_cluster.py $school_type $icw $fcw $atd &
+
          done
 
       done
