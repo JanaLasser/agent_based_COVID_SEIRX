@@ -1,10 +1,9 @@
 import numpy as np
 import networkx as nx
 import pandas as pd
-
-
 from os.path import join
 import socket
+import sys
 
 # agent based model classes & functionality
 sys.path.insert(0,'../school')
@@ -13,7 +12,7 @@ from model_school import SEIRX_school
 import analysis_functions as af
 
 print('in run_calibration_cluster')
-import sys
+
 sys.exit()
 
 
