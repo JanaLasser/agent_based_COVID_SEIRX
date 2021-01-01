@@ -1,4 +1,7 @@
 print('in run_calibration_cluster')
+import sys
+sys.exit()
+
 
 import numpy as np
 import networkx as nx
@@ -9,7 +12,6 @@ from os.path import join
 import socket
 
 # agent based model classes & functionality
-import sys
 sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
