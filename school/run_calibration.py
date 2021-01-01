@@ -382,19 +382,23 @@ if not N_samples == 'all':
 	N_samples = int(N_samples)
 school_type = sys.argv[1]
 
+N_low = int(sys.argv[4])
+N_high = int(sys.argv[5])
+
 
 ## grid of parameters that need to be calibrated
 # the contact weight is the modifier by which the base transmission risk (for
 # household transmissions) is multiplied for contacts of type "intermediate" 
 # and of type "far"
-intermediate_contact_weights = [0.2, 0.4, 0.6, 0.8, 1]
-far_contact_weights = [0.2, 0.4, 0.6, 0.8, 1]
+intermediate_contact_weights = [0.3, 0.35, 0.4, 0.45, 0.5]
+
+far_contact_weights = [0.1, 0.15, 0.2, 0.25, 0.3]
 
 # the age_transmission_discount sets the slope of the age-dependence of the 
 # transmission risk. Transmission risk for adults (age 18+) is always base 
 # transmission risk. For every year an agent is younger than 18 years, the
 # transmission risk is reduced
-age_transmission_discounts = [-0.08,-0.06,-0.04,-0.02,0]
+age_transmission_discounts = [-0.04, -0.035, -0.03, -0.022, -0.02]
 
 # list of all possible parameter combinations from the grid
 params = [(i, j, k) for i in intermediate_contact_weights \
@@ -410,7 +414,11 @@ else:
     samples = np.random.choice(range(len(params)), N_samples, replace=False)
 
 
-samples = samples[25:]
+
+print('indices {} to {}'.format(N_low, N_high))
+samples = samples[N_low:N_high]
+
+#print()
 
 results = pd.DataFrame()
 for k, sample_index in enumerate(samples):
@@ -530,8 +538,8 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-    results.to_csv(join(dst, 'calibration_results_{}_samples{}_secondhalf_curr.csv'\
-		.format(school_type, len(samples), N_runs)), index=False)
+    results.to_csv(join(dst, 'calibration_results_{}_samples{}_fine_curr_{}-{}.csv'\
+		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
     
-results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_secondhalf.csv'\
-		.format(school_type, len(samples), N_runs)), index=False)
+results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_fine_{}-{}.csv'\
+		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
