@@ -11,7 +11,7 @@
 
 N_runs=2000
 
-for school_type in primary primary_dc
+for school_type in primary
    do
    
    for icw in 0.3 0.35 0.4 0.45
@@ -23,9 +23,10 @@ for school_type in primary primary_dc
          for atd in -0.04 -0.035 -0.03 -0.025
             do
 
-            echo submitted job $school_type icw $icw fcw $fcw atd $atd
-            python test_cluster.py $school_type $icw $fcw $atd
             python run_calibration_cluster.py $school_type $N_runs $icw $fcw $atd &
+            echo submitted job $school_type icw $icw fcw $fcw atd $atd &
+            python test_cluster.py $school_type $icw $fcw $atd &
+
 
 
          done
