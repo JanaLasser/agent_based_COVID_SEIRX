@@ -359,7 +359,7 @@ def compose_agents(prevention_measures, transmission_risk, reception_risk):
 
 # paths for data I/O
 src = '../data/school/calibration_schools'
-dst = '../data/school/calibration_results'
+dst = '../data/school/calibration_results_cluster'
 
 
 # set the simulation parameters that are not used in this investigation to
