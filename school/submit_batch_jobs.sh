@@ -24,7 +24,9 @@ for school_type in primary primary_dc
             do
 
             echo submitted job $school_type icw $icw fcw $fcw atd $atd
+            python test_cluster.py $school_type $icw $fcw $atd
             python run_calibration_cluster.py $school_type $N_runs $icw $fcw $atd &
+
 
          done
 

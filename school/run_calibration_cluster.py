@@ -411,6 +411,8 @@ agent_types = compose_agents(measures, target_base_transmission_risk,
 
 # conduct all runs for an ensemble with a given set of parameters
 ensemble_results = pd.DataFrame()
+
+print('within script')
 for run in range(1, N_runs + 1):
     
     # load the contact graph: since households and sibling contacts
