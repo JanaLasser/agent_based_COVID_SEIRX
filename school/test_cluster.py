@@ -1,12 +1,13 @@
 import sys
 import socket
 
-icw = sys.argv[1]
-fcw = sys.argv[2]
-atd = sys.argv[3]
+school_type = sys.argv[1]
+icw = sys.argv[2]
+fcw = sys.argv[3]
+atd = sys.argv[4]
 
 hostname = socket.gethostname()
 
-with open('../data/school/calibration_results_cluster/icw-{}_fcw-{}_atd-{}_{}.txt'\
-		.format(icw, fcw, atd, hostname), 'w') as f:
+with open('../data/school/calibration_results_cluster/school_type-{}_icw-{}_fcw-{}_atd-{}_{}.txt'\
+		.format(school_type, icw, fcw, atd, hostname), 'w') as f:
 	print(hostname, file=f)
