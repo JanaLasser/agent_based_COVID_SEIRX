@@ -373,7 +373,7 @@ subclinical_modifier = 0.6 # sublinical cases are 40% less infectious than sympt
 # number of maximum steps per run. This is a very conservatively chosen value
 # that ensures that an outbreak will always terminate within the allotted time.
 # Most runs are terminated way earlier anyways, as soon as the outbreak is over.
-N_steps = 500 
+N_steps = 1000 
 # number of runs per ensemble
 N_runs = int(sys.argv[3])
 # number of points in the parameter grid that will be randomly sampled
@@ -390,15 +390,15 @@ N_high = int(sys.argv[5])
 # the contact weight is the modifier by which the base transmission risk (for
 # household transmissions) is multiplied for contacts of type "intermediate" 
 # and of type "far"
-intermediate_contact_weights = [0.3, 0.35, 0.4, 0.45, 0.5]
+intermediate_contact_weights = [0.26, 0.27, 0.28, 0.29, 0.31, 0.32, 0.33, 0.34]
 
-far_contact_weights = [0.1, 0.15, 0.2, 0.25, 0.3]
+far_contact_weights = [0.26, 0.27, 0.28, 0.29, 0.31, 0.32, 0.33, 0.34]
 
 # the age_transmission_discount sets the slope of the age-dependence of the 
 # transmission risk. Transmission risk for adults (age 18+) is always base 
 # transmission risk. For every year an agent is younger than 18 years, the
 # transmission risk is reduced
-age_transmission_discounts = [-0.04, -0.035, -0.03, -0.022, -0.02]
+age_transmission_discounts = [-0.04]
 
 # list of all possible parameter combinations from the grid
 params = [(i, j, k) for i in intermediate_contact_weights \
@@ -538,8 +538,8 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-    results.to_csv(join(dst, 'calibration_results_{}_samples{}_fine_curr_{}-{}.csv'\
+    results.to_csv(join(dst, 'calibration_results_{}_samples{}_veryfine_curr_{}-{}.csv'\
 		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
     
-results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_fine_{}-{}.csv'\
+results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_veryfine_{}-{}.csv'\
 		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
