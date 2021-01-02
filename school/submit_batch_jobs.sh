@@ -9,6 +9,7 @@
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
+module purge
 module load python/3.7.4
 module load numpy/1.15.4
 module load scipy/1.3.1
