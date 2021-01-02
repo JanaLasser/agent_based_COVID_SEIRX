@@ -9,6 +9,10 @@ import sys
 sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 sys.path.insert(0,'mesa')
+sys.path.insert(0,'networkx')
+sys.path.insert(0,'pandas')
+
+
 from model_school import SEIRX_school
 import analysis_functions as af
 
