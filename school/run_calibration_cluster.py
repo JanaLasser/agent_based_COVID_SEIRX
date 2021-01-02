@@ -303,23 +303,23 @@ prevention_measures = {
 # NOTE: "students" indicates the number of students per class
 
 school_characteristics = {
-    # Volksschule: Schulen: 3033, Klassen: 18245, Schüler*innen: 339382
+    # Volksschule: Schulen: 3033, Klassen: 18245, Schueler*innen: 339382
     'primary':            {'classes':8, 'students':19},
     'primary_dc':         {'classes':8, 'students':19},
     
-    # Hauptschulen: 47, Klassen 104, Schüler*innen: 1993
-    # Neue Mittelschule: Schulen 1131, Klassen: 10354, Schüler*innen: 205905
-    # Sonderschulen: 292, Klassen: 1626, Schüler*innen: 14815
-    # Gesamt: Schulen: 1470, Klassen: 12084, Schüler*innen: 222713
+    # Hauptschulen: 47, Klassen 104, Schueler*innen: 1993
+    # Neue Mittelschule: Schulen 1131, Klassen: 10354, Schueler*innen: 205905
+    # Sonderschulen: 292, Klassen: 1626, Schueler*innen: 14815
+    # Gesamt: Schulen: 1470, Klassen: 12084, Schueler*innen: 222713
     'lower_secondary':    {'classes':8, 'students':18},
     'lower_secondary_dc': {'classes':8, 'students':18},
     
-    # Oberstufenrealgymnasium: Schulen 114, Klassen 1183, Schüler*innen: 26211
-    # BMHS: schulen 734, Klassen 8042, Schüler*innen 187592
-    # Gesamt: Schulen: 848, Klassen 9225, Schüler*innen: 213803
+    # Oberstufenrealgymnasium: Schulen 114, Klassen 1183, Schueler*innen: 26211
+    # BMHS: schulen 734, Klassen 8042, Schueler*innen 187592
+    # Gesamt: Schulen: 848, Klassen 9225, Schueler*innen: 213803
     'upper_secondary':    {'classes':10, 'students':23}, # rounded down from 10.8 classes
     
-    # AHS Langform: Schulen 281, Klassen 7610, schüler*innen 179633
+    # AHS Langform: Schulen 281, Klassen 7610, schueler*innen 179633
     'secondary':          {'classes':28, 'students':24}, # rounded up from 27.1 classes
     'secondary_dc':       {'classes':28, 'students':24} # rounded up from 27.1 classes
 }
