@@ -512,6 +512,7 @@ ensemble_results.to_csv(join(dst, 'ensemble-{}_runs-{}_icw-{}_fcw-{}_atd-{}.csv'
 		.format(school_type, N_runs, icw, fcw, atd)), index=False)
 
 hostname = socket.gethostname()
-with open(join(dst,'/hosts/school_type-{}_icw-{}_fcw-{}_atd-{}_{}.txt'\
-		.format(school_type, icw, fcw, atd, hostname), 'w')) as f:
-	print(hostname, file=f)
+print(hostname)
+#with open(join(dst,'/hosts/school_type-{}_icw-{}_fcw-{}_atd-{}_{}.txt'\
+#		.format(school_type, icw, fcw, atd, hostname), 'w')) as f:
+#	print(hostname, file=f)
