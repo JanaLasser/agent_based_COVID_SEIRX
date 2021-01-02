@@ -433,6 +433,7 @@ def set_family_contacts(G):
 	families = set(dict(G.nodes(data='family')).values())
 	for family in families:
 		family_members = [n for n, f in G.nodes(data='family') if f==family]
+
 		link_type = None
 		for f in family_members:
 			if f.startswith('t'):
@@ -449,11 +450,11 @@ def set_family_contacts(G):
 					# edges with permuted nodes
 					tmp = [f1, f2]
 					tmp.sort()
-					f1, f2 = tmp
+					n1, n2 = tmp
 					for wd in range(1, N_weekdays + 1):
-						G.add_edge(f1, f2, link_type = link_type,
+						G.add_edge(n1, n2, link_type = link_type,
                 				   	   	   weekday = wd,
-                				   	   	   key = f1 + f2 + 'd{}'.format(wd))
+                				   	   	   key = n1 + n2 + 'd{}'.format(wd))
                     
 
 
@@ -706,11 +707,11 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 							# edges with permuted nodes
 							teachers = [t1, t2]
 							teachers.sort()
-							t1, t2 = teachers
-							G.add_edge(t1, t2,\
+							n1, n2 = teachers
+							G.add_edge(n1, n2,\
 							link_type = 'teacher_teacher_daycare_supervision',
 							weekday = wd,
-							key = t1 + t2 + 'd{}'.format(wd))
+							key = n1 + n2 + 'd{}'.format(wd))
 
 
 def set_teacher_student_daycare_supervision_contacts(G, school_type, 
@@ -815,11 +816,11 @@ def set_student_student_daycare_contacts(G, school_type, student_schedule):
 							# edges with permuted nodes
 							tmp = [s1, s2]
 							tmp.sort()
-							s1, s2 = tmp
+							n1, n2 = tmp
 							G.add_edge(s1, s2, \
 		                    	link_type = 'student_student_daycare',
 		                    	weekday = wd,
-		                    	key = s1 + s2 + 'd{}'.format(wd))
+		                    	key = n1 + n2 + 'd{}'.format(wd))
 
 
 ###########################
@@ -1660,9 +1661,9 @@ def generate_family(G, student_ID, family_counter, family_sizes):
 				# edges with permuted nodes
 				family_members = [f1, f2]
 				family_members.sort()
-				f1, f2 = family_members
+				n1, n2 = family_members
 				for wd in range(1, N_weekdays + 1):
-					G.add_edge(f1, f2, link_type = 'family_family', 
+					G.add_edge(n1, n2, link_type = 'family_family', 
 	                       contact_type = 'close')
 	    # all family members also have contact to the student they belong to
 		G.add_edge(f1, student_ID, link_type ='student_family',
