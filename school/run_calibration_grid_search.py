@@ -536,8 +536,8 @@ for k, sample_index in enumerate(samples):
         'sum_of_squares_total':sum_of_squares_size + sum_of_squares_distro
     }, ignore_index=True)
 
-    results.to_csv(join(dst, 'calibration_results_{}_samples{}_random_{}-{}.csv'\
+    results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs_{}_grid_{}-{}_curr.csv'\
 		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
     
-results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_random_{}-{}.csv'\
+results.to_csv(join(dst, 'calibration_results_{}_samples{}_runs{}_grid_{}-{}.csv'\
 		.format(school_type, len(samples), N_runs, N_low, N_high)), index=False)
