@@ -15,6 +15,8 @@ class teacher(agent_SEIRX):
             exposure_duration, time_until_symptoms, infection_duration,
             verbosity) 
 
+        self.age = 30
+
 
     def step(self):
         '''
@@ -36,27 +38,14 @@ class teacher(agent_SEIRX):
         if self.infectious:
             if not self.quarantined:
 
-                # infectiousness is constant and high until symptom onset and then
-                # decreases monotonically until agents are not infectious anymore 
-                # at the end of the infection_duration 
-                modifier = self.get_transmission_risk_time_modifier()
-
-                # if infectiousness is modified for asymptomatic cases, multiply
-                # the asymptomatic modifier with the days-infected modifier 
-                if self.symptomatic_course == False:
-                    modifier *= self.model.subclinical_modifier
-
-                # TODO: add modification for student age
-
                 # get contacts to other agent groups according to the
-                # interaction network. NOTE: teachers do not directly
-                # interact with family members
+                # interaction network
+                family_members = self.get_contacts('family_member')
                 teachers = self.get_contacts('teacher')
                 students = self.get_contacts('student')
 
                 # code transmission to other agent groups
                 # separately to allow for differences in transmission risk
-                self.transmit_infection(teachers, 
-                    self.transmission_risk, modifier)
-                self.transmit_infection(students, 
-                    self.transmission_risk, modifier)
+                self.transmit_infection(family_members)
+                self.transmit_infection(teachers)
+                self.transmit_infection(students)

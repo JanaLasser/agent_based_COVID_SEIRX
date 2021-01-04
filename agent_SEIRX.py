@@ -32,9 +32,7 @@ class agent_SEIRX(Agent):
         ## agent-group wide parameters that are stored in the model class
         self.index_probability = self.model.index_probabilities[self.type]
         self.symptom_probability = self.model.age_symptom_discount['intercept']
-        self.transmission_risk = self.model.transmission_risks[self.type]
-        self.reception_risk = self.model.reception_risks[self.type]
-
+        self.mask = self.model.masks[self.type]
 
         ## infection states
         self.exposed = False
@@ -64,24 +62,6 @@ class agent_SEIRX(Agent):
 
     ### generic helper functions that are inherited by other agent classes
 
-    # infectiousness is constant and high until symptom onset and then
-    # decreases monotonically until agents are not infectious anymore 
-    # at the end of the infection_duration 
-    def get_transmission_risk_time_modifier(self):
-        asymptomatic_infectious = self.time_until_symptoms - \
-                                  self.exposure_duration
-
-        try:
-            modifier = 1-max(0,self.days_since_exposure - asymptomatic_infectious)/\
-                        (self.infection_duration - asymptomatic_infectious)
-        # if exposure_duration + time_until_symptoms = infection_duration
-        except ZeroDivisionError:
-            return 1
-        
-        return modifier
-
-
-
     def get_contacts(self, agent_group):
         contacts = [a for a in self.model.schedule.agents if
             (a.type == agent_group and self.model.G.has_edge(self.ID, a.ID))]
@@ -99,33 +79,23 @@ class agent_SEIRX(Agent):
                         self.type, self.unique_id))
 
 
-    def transmit_infection(self, contacts, transmission_risk, base_modifier):
-        for c in contacts:
-            if (c.exposed == False) and (c.infectious == False) and \
-               (c.recovered == False) and (c.contact_to_infected == False):
+    def transmit_infection(self, contacts):
+        # the basic transmission risk is that between two members of the 
+        # same household and has been calibrated to reproduce empirical 
+        # household secondary attack rates.
+        base_risk = self.model.infection_risk_contact_type_weights['close']
 
-                # modify the transmission risk based on the contact type
-                n1 = self.ID
-                n2 = c.ID
-                tmp = [n1, n2]
-                tmp.sort()
-                n1, n2 = tmp
-                key = n1 + n2 + 'd{}'.format(self.model.weekday)
-                contact_weight = self.model.G.get_edge_data(\
-                    self.ID, c.ID, key)['weight']
-                modifier = base_modifier * contact_weight
+        for target in contacts:
+            if (target.exposed == False) and (target.infectious == False) and \
+               (target.recovered == False) and (target.contact_to_infected == False):
 
-                # modify the transmission risk based on the reception risk of 
-                # the receiving agent
-                modifier *= self.model.reception_risks[c.type]
-
-                modified_transmission_risk = 1 - transmission_risk * modifier
-
-                # draw random number for transmission
+                # determine if a transmission occurrs
+                p = self.model.calculate_transmission_probability(\
+                                self, target, base_risk)
                 transmission = self.random.random()
 
-                if transmission > modified_transmission_risk:
-                    c.contact_to_infected = True
+                if transmission < p:
+                    target.contact_to_infected = True
                     self.transmissions += 1
 
                     # track the state of the agent pertaining to testing at the
@@ -135,11 +105,13 @@ class agent_SEIRX(Agent):
                         self.sample == 'positive':
                         self.model.pending_test_infections += 1
 
-                    self.transmission_targets.update({c.ID:self.model.Nstep})
+                    self.transmission_targets.update({target.ID:self.model.Nstep})
 
                     if self.verbose > 0:
                         print('transmission: {} {} -> {} {}'
-                        .format(self.type, self.unique_id, c.type, c.unique_id))
+                        .format(self.type, self.unique_id, \
+                                target.type, target.unique_id))
+
 
     def act_on_test_result(self):
         '''
@@ -261,7 +233,7 @@ class agent_SEIRX(Agent):
         self.infectious = False
         self.symptoms = False
         self.recovered = True
-        self.days_since_exposure = 0
+        self.days_since_exposure = self.infection_duration + 1
         if self.verbose > 0:
             print('{} recovered: {}'.format(self.type, self.unique_id))
 

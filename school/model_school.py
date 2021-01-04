@@ -204,18 +204,18 @@ class SEIRX_school(SEIRX):
         exposure_duration=4, time_until_symptoms=6, infection_duration=11, 
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
-            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
+            'very_far': 0.9, 'far': 0.75, 'intermediate': 0.5, 'close': 0},
         K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, liberating_testing=False,
         index_case='employee', 
         agent_types={'type1': {'screening_interval': None,
                               'index_probability': None,
-                              'transmission_risk': 0.015,
-                              'reception_risk':1,
                               'mask':False}},
         age_transmission_risk_discount = {'slope':-0.05, 'intercept':1},
         age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
+        mask_filter_efficiency = {'exhale':0, 'inhale':0},
+        transmission_risk_ventilation_modifier = 0,
         seed=None):
 
 
@@ -227,7 +227,8 @@ class SEIRX_school(SEIRX):
             preventive_screening_test_type,
             follow_up_testing_interval, liberating_testing,
             index_case, agent_types, age_transmission_risk_discount,
-            age_symptom_discount, seed)
+            age_symptom_discount, mask_filter_efficiency, 
+            transmission_risk_ventilation_modifier, seed)
 
         # random shift of the weekday at which the simulation starts, to not
         # always start on Mondays
@@ -278,6 +279,80 @@ class SEIRX_school(SEIRX):
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
 
+    def calculate_transmission_probability(self, source, target, base_risk):
+        """
+        Calculates the risk of transmitting an infection between a source agent
+        and a target agent given the model's and agent's properties and the base
+        transmission risk.
+
+        Transmission is an independent Bernoulli trial with a probability of
+        success p. The probability of transmission without any modifications
+        by for example masks or ventilation is given by the base_risk, which
+        is calibrated in the model. The probability is modified by contact type
+        q1 (also calibrated in the model), age of the transmitting agent q2 
+        & age of the receiving agent q3 (both age dependencies are linear in 
+        age and the same, and they are calibrated), infection progression q4
+        (from literature), reduction of exhaled viral load of the source by mask
+        wearing q5 (from literature), reduction of inhaled viral load by the
+        target q6 (from literature), and ventilation of the rooms q7 (from
+        literature).
+
+        Parameters
+        ----------
+        source : agent_SEIRX
+            Source agent that transmits the infection to the target.
+        target: agent_SEIRX
+            Target agent that (potentially) receives the infection from the 
+            source.
+        base_risk : float
+            Probability p of infection transmission without any modifications
+            through prevention measures.
+
+        Returns
+        -------
+        p : float
+            Modified transmission risk.
+        """
+        n1 = source.ID
+        n2 = target.ID
+        tmp = [n1, n2]
+        tmp.sort()
+        n1, n2 = tmp
+        key = n1 + n2 + 'd{}'.format(self.weekday)
+        link_type = self.G.get_edge_data(n1, n2, key)['link_type']
+
+        q1 = self.get_transmission_risk_contact_type_modifier(source, target)
+        q2 = self.get_transmission_risk_age_modifier_transmission(source)
+        q3 = self.get_transmission_risk_age_modifier_reception(target)
+        q4 = self.get_transmission_risk_progression_modifier(source)
+        q5 = self.get_transmission_risk_subclinical_modifier(source)
+
+        # contact types where masks and ventilation are irrelevant
+        if link_type in ['student_household', 'teacher_household']:
+            p = 1 - (1 - (1 - base_risk) * (1- q1) * (1 - q2) * (1 - q3) * \
+                (1 - q4) * (1 - q5))
+
+        # contact types were masks and ventilation are relevant
+        elif link_type in ['student_student_intra_class',
+                           'student_student_table_neighbour',
+                           'student_student_daycare',
+                           'teacher_teacher_short',
+                           'teacher_teacher_long',
+                           'teacher_teacher_team_teaching',
+                           'teacher_teacher_daycare_supervision',
+                           'teaching_teacher_student',
+                           'daycare_supervision_teacher_student']:
+            q6 = self.get_transmission_risk_exhale_modifier(source)
+            q7 = self.get_transmission_risk_inhale_modifier(target)
+            q8 = self.get_transmission_risk_ventilation_modifier()
+
+            p = 1 - (1 - (1 - base_risk) * (1- q1) * (1 - q2) * (1 - q3) * \
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8))
+
+        else:
+            print('unknown link type: {}'.format(link_type))
+            p = None
+        return p
 
 
     def step(self):

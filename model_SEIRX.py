@@ -275,14 +275,8 @@ class SEIRX(Model):
 			index probability : float in the range [0, 1], sets the probability
 			to become an index case in each time step
 
-			transmission_risk : float in the range [0, 1], sets the probability
-			to transmit an infection if in contact with a susceptible agent
-
-			reception_risk : float in the range [0, 1], sets the probability to
-			get infected if in contact with an infectious agnt
-
-			symptom_probability : float in the range [0, 1], sets the probability
-			for a symptomatic disease course
+			mask : bool
+                whether or not the agent type is wearing a mask
 			}
 		}
 
@@ -305,7 +299,8 @@ class SEIRX(Model):
         preventive_screening_test_type,
         follow_up_testing_interval, liberating_testing,
         index_case, agent_types, age_transmission_risk_discount,
-        age_symptom_discount, seed=None):
+        age_symptom_discount, mask_filter_efficiency, 
+        transmission_risk_ventilation_modifier, seed=None):
 
         # mesa models already implement fixed seeds through their own random
         # number generations. Sadly, we need to use the Weibull distribution
@@ -371,6 +366,10 @@ class SEIRX(Model):
         self.age_symptom_discount = \
             check_discount(age_symptom_discount)
 
+        self.mask_filter_efficiency = mask_filter_efficiency
+        self.transmission_risk_ventilation_modifier = \
+            transmission_risk_ventilation_modifier
+
         ## agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
@@ -391,28 +390,24 @@ class SEIRX(Model):
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
-        params = ['screening_interval','index_probability','transmission_risk',
-                'reception_risk']
+        params = ['screening_interval','index_probability', 'mask']
 
         # default values that are used in case a characteristic is not specified
         # for an agent group
         defaults = {'screening_interval':None,
                     'index_probability':0,
-                    'transmission_risk':0.01,
-                    'reception_risk':1}
+                    'mask':False}
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
-        check_funcs = [check_positive_int, check_probability, check_probability,
-                       check_probability]
+        check_funcs = [check_positive_int, check_probability, check_bool]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
-        self.transmission_risks = {}
-        self.reception_risks = {}
+        self.masks = {}
         param_dicts = [self.screening_intervals, self.index_probabilities, 
-                    self.transmission_risks, self.reception_risks]
+                    self.masks]
 
         # iterate over all possible agent parameters and agent groups: set the
         # respective value to the value passed through the constructor or to 
@@ -573,14 +568,99 @@ class SEIRX(Model):
                 })
 
 
-    def get_risk_age_modifier(self, age):
+    ## transmission risk modifiers
+    def get_transmission_risk_contact_type_modifier(self, source, target):
+        # construct the edge key as combination between agent IDs and weekday
+        n1 = source.ID
+        n2 = target.ID
+        tmp = [n1, n2]
+        tmp.sort()
+        n1, n2 = tmp
+        key = n1 + n2 + 'd{}'.format(self.weekday)
+        q1 = self.G.get_edge_data(n1, n2, key)['weight']
+
+        return q1
+
+
+    def get_transmission_risk_age_modifier_transmission(self, source):
         '''linear function such that at age 18 the risk is that of an adult (=1).
         The slope of the line needs to be calibrated.
         '''
+        age = source.age
         max_age = 18
-        modifier = self.age_transmission_risk_discount['slope']*np.abs(age-max_age)\
-                 + self.age_transmission_risk_discount['intercept']
-        return modifier
+        if age <= max_age:
+            q2 = self.age_transmission_risk_discount['slope'] * \
+                 np.abs(age - max_age) + \
+                 self.age_transmission_risk_discount['intercept']
+        else:
+            q2 = 0
+
+        return q2
+
+
+    def get_transmission_risk_age_modifier_reception(self, target):
+        '''linear function such that at age 18 the risk is that of an adult (=1).
+        The slope of the line needs to be calibrated.
+        '''
+        age = target.age
+        max_age = 18
+        if age <= max_age:
+            q3 = self.age_transmission_risk_discount['slope'] * \
+            np.abs(age - max_age) \
+            + self.age_transmission_risk_discount['intercept']
+        else:
+            q3 = 0
+
+        return q3
+
+
+    # infectiousness is constant and high until symptom onset and then
+    # decreases monotonically until agents are not infectious anymore 
+    # at the end of the infection_duration 
+    def get_transmission_risk_progression_modifier(self, source):
+        if source.days_since_exposure < source.exposure_duration:
+            q4 = 1
+        elif source.days_since_exposure <= source.time_until_symptoms:
+            q4 = 0
+        elif source.days_since_exposure > source.time_until_symptoms and \
+             source.days_since_exposure <= source.infection_duration:
+            q4 = (source.days_since_exposure - source.time_until_symptoms) / \
+                 (source.infection_duration - source.time_until_symptoms)
+            q4 = max(1, q4)
+        else:
+            q4 = 1
+            
+        return q4
+
+    def get_transmission_risk_subclinical_modifier(self, source):
+        if source.symptomatic_course == False:
+            q5 = self.subclinical_modifier
+        else:
+            q5 = 0
+
+        return q5
+
+    def get_transmission_risk_exhale_modifier(self, source):
+        if source.mask:
+            q6 = self.mask_filter_efficiency['exhale']
+        else:
+            q6 = 0
+
+        return q6
+
+
+    def get_transmission_risk_inhale_modifier(self, target):
+        if target.mask:
+            q7 = self.mask_filter_efficiency['inhale']
+        else:
+            q7 = 0
+
+        return q7
+
+
+    def get_transmission_risk_ventilation_modifier(self):
+        q8 = self.transmission_risk_ventilation_modifier
+        return q8
 
 
     def test_agent(self, a, test_type):
