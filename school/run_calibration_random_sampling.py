@@ -399,7 +399,7 @@ far_contact_weights = np.arange(0.1, 0.8, 0.02)
 # transmission risk. Transmission risk for adults (age 18+) is always base 
 # transmission risk. For every year an agent is younger than 18 years, the
 # transmission risk is reduced
-age_transmission_discounts = np.arange(-0.4, 0, 0.02)
+age_transmission_discounts = np.arange(-0.1, 0, 0.02)
 
 # list of all possible parameter combinations from the grid
 params = [(i, j, k) for i in intermediate_contact_weights \
