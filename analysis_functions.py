@@ -233,7 +233,10 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                         elif G[a.ID][target.ID][key]['link_type'] in \
                             ['student_student_intra_class', 'student_student_table_neighbour']:
                             hour = np.random.choice(teaching_hours)
-                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_1'])                        
+                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_1'])  
+                        elif G[a.ID][target.ID][key]['link_type'] == 'student_household':
+                            hour = 10
+                            location = 'home'                     
                         else:
                             print('unknown student <-> student link type ',\
                             G[a.ID][target.ID][key]['link_type'])
@@ -420,7 +423,7 @@ def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, teacher_mask, student_mask, half_classes,
               node_list, teacher_schedule, student_schedule, rep_transmission_events,
-              state_data):
+              state_data, start_weekday, duration):
 
     student_schedule = student_schedule.reset_index()
     teacher_schedule = teacher_schedule.reset_index()
@@ -469,7 +472,9 @@ def dump_JSON(path, school,
             'teacher_schedule':teacher_schedule,
             'student_schedule':student_schedule,
             'rep_trans_events':rep_transmission_events,
-            'agent_states':state_data}
+            'agent_states':state_data,
+            'start_weekday':start_weekday,
+            'duration':duration}
     
     with open(join(path, 'test-{}_'.format(ttype) + \
                    'turnover-{}_index-{}_tf-{}_'
