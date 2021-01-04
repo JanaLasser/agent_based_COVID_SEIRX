@@ -1971,10 +1971,10 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 ###													      ###
 #############################################################
 
-def map_contacts(G, student_mask, teacher_mask, contact_map, copy=False):
+def map_contacts(G, contact_map, copy=False):
 	"""
 	Map the different link types between agents to contact types None, far, 
-	intermediate and close, depending on link type and mask wearing. Contact
+	intermediate and close, depending on link type. Contact
 	types are added to the graph as additional edge attributes, next to link
 	types.
 
@@ -1987,14 +1987,9 @@ def map_contacts(G, student_mask, teacher_mask, contact_map, copy=False):
 		modelled as edges between nodes with different link types. 
 		In MultiGraphs edges can exist on certain weekdaays only (1=Monday, ...,
 		7=Sunday).
-	student_mask : bool 
-		Indicator if students are wearing masks.
-	teacher_mask : bool
-		Indicator if teachers are wearing masks.
-	contact_map : dict of dicts
-		Dictionary that contains a dictionary with two entries (mask, no mask) 
-		for every link  type, specifying the contact type in the given link 
-		type + mask wearing scenario.
+	contact_map : dict
+		Dictionary that contains a contact type for every link type, specifying 
+		the contact type in the given scenario (link type).
 	copy : bool
 		If copy=True, a copy of the graph will be made before contacts are
 		mapped and the copy will then be returned by the function.
@@ -2027,26 +2022,10 @@ def map_contacts(G, student_mask, teacher_mask, contact_map, copy=False):
 
 			tmp = [n1, n2]
 			tmp.sort()
-
 			n1, n2 = tmp
-
 			key = n1 + n2 + 'd{}'.format(wd)
 			link_type = G[n1][n2][key]['link_type']
-			if link_type in student_links:
-				mask = student_mask
-			elif link_type in teacher_links:
-				mask = teacher_mask
-			# only if BOTH students and teachers are wearing masks, the contact 
-			# type is considered to be less close
-			elif link_type in student_teacher_links:
-				if student_mask and teacher_mask:
-					mask = True
-				else:
-					mask = False
-			else:
-				print('unknown link type')
-				
-			G[n1][n2][key]['contact_type'] = contact_map[link_type][mask]
+			G[n1][n2][key]['contact_type'] = contact_map[link_type]
 
 	if copy:
 		return G
