@@ -365,7 +365,7 @@ def generate_students(G, school_type,N_classes,class_size,p_children,p_parents):
 				family_member_ID = 'f{:04d}'.format(family_member_counter)
 				G.add_node(family_member_ID)
 				nx.set_node_attributes(G, \
-						{family_member_ID:{'type':'family_member_student',
+						{family_member_ID:{'type':'family_member',
 										   'age':age,
 										   'family':family_counter,
 										   'unit':'family'}})
@@ -377,7 +377,7 @@ def generate_students(G, school_type,N_classes,class_size,p_children,p_parents):
 				family_member_ID = 'f{:04d}'.format(family_member_counter)
 				G.add_node(family_member_ID)
 				nx.set_node_attributes(G, \
-						{family_member_ID:{'type':'family_member_student',
+						{family_member_ID:{'type':'family_member',
 											# Note: 20.5 is the age at which
 											# the symptom and transmission risk
 											# is that of an adult
@@ -447,7 +447,7 @@ def generate_teachers(G, school_type, N_classes, family_member_counter,
 			G.add_node(family_member_ID)
 			family_member_counter += 1
 			nx.set_node_attributes(G, \
-						{family_member_ID:{'type':'family_member_teacher',
+						{family_member_ID:{'type':'family_member',
 										   'age':age,
 										   'family':family_counter,
 										   'unit':'family'}})
