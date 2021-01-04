@@ -359,7 +359,7 @@ def compose_agents(prevention_measures, transmission_risk, reception_risk):
 
 # paths for data I/O
 src = '../data/school/calibration_schools'
-dst = '../data/school/calibration_results'
+dst = '../data/school/calibration_results/ventilation'
 
 
 # set the simulation parameters that are not used in this investigation to
@@ -367,7 +367,8 @@ dst = '../data/school/calibration_results'
 base_reception_risk = 1 # is adjusted by age for students
 verbosity = 0 # only needed for debug output
 subclinical_modifier = 0.6 # sublinical cases are 40% less infectious than symptomatic cases
-
+mask_filter_efficiency  = {'exhale':0.5, 'inhale':0.7}
+transmission_risk_ventilation_modifier = 0.2
 
 ## statistics parameters
 # number of maximum steps per run. This is a very conservatively chosen value
@@ -491,7 +492,10 @@ for k, sample_index in enumerate(samples):
                   agent_types = agent_types, 
                   age_transmission_risk_discount = \
                              {'slope':age_transmission_discount, 'intercept':1},
-                  age_symptom_discount = age_symptom_discount)
+                  age_symptom_discount = age_symptom_discount,
+                  mask_filter_efficiency = mask_filter_efficiency,
+                  transmission_risk_ventilation_modifier = \
+                      transmission_risk_ventilation_modifier)
 
         # run the model until the outbreak is over
         for i in range(N_steps):
