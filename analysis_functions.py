@@ -227,13 +227,13 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     if target.type == 'student':
                         # transmussions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'student_student_daycare':
-                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_8'])
+                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_8'])
                             hour = np.random.choice(daycare_hours)
                         # transmission during morning teaching
                         elif G[a.ID][target.ID][key]['link_type'] in \
                             ['student_student_intra_class', 'student_student_table_neighbour']:
                             hour = np.random.choice(teaching_hours)
-                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_1'])  
+                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_1'])  
                         elif G[a.ID][target.ID][key]['link_type'] == 'student_household':
                             hour = 10
                             location = 'home'                     
@@ -247,10 +247,10 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     elif target.type == 'teacher':
                         # transmissions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
-                            location = 'class_{}'.format(s_schedule.loc[a.ID, 'hour_8'])
+                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_8'])
                             hour = np.random.choice(daycare_hours)
                         elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
-                            classroom = s_schedule.loc[a.ID, 'hour_1']
+                            classroom = s_schedule.loc[a.ID]['hour_1']
                             location = 'class_{}'.format(classroom)
                             # get the hour in which the teacher is teaching in the given location
                             hour = int(t_schedule.loc[target.ID][t_schedule.loc[target.ID] == classroom]\
@@ -275,10 +275,10 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     if target.type == 'student':
                         # transmissions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
-                            location = 'class_{}'.format(s_schedule.loc[target.ID, 'hour_8'])
+                            location = 'class_{}'.format(s_schedule.loc[target.ID]['hour_8'])
                             hour = np.random.choice(daycare_hours)
                         elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
-                            classroom = s_schedule.loc[target.ID, 'hour_1']
+                            classroom = s_schedule.loc[target.ID]['hour_1']
                             location = 'class_{}'.format(classroom)
                             # get the hour in which the teacher is teaching in the given location
                             hour = int(t_schedule.loc[a.ID][t_schedule.loc[a.ID] == classroom]\
@@ -431,7 +431,6 @@ def dump_JSON(path, school,
     school_type = school['type']
     classes = school['classes']
     students = school['students']
-    floors = school['floors']
 
     turnover, _, ttype = test_type.split('_')
     turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
@@ -459,7 +458,6 @@ def dump_JSON(path, school,
     data = {'school_type':school_type,
             'classes':classes,
             'students':students,
-            'floors':floors,
             'test_type':ttype,
             'test_turnover':turnover,
             'indexcase':index_case,
