@@ -168,7 +168,7 @@ prevention_measures = {
     'primary':     
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -187,7 +187,7 @@ prevention_measures = {
     'primary_dc':     
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -206,7 +206,7 @@ prevention_measures = {
     'lower_secondary':
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -225,7 +225,7 @@ prevention_measures = {
     'lower_secondary_dc':
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -244,7 +244,7 @@ prevention_measures = {
     'upper_secondary':
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -263,7 +263,7 @@ prevention_measures = {
     'secondary':
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -282,7 +282,7 @@ prevention_measures = {
     'secondary_dc':
                    {'testing':'diagnostic', 
                     'follow_up_testing_interval':None,
-                    'diagnostic_test_type':'two_day_PCR',
+                    'diagnostic_test_type':'one_day_PCR',
                     'preventive_screening_test_type':None,
                     'student_screen_interval':None,
                     'teacher_screen_interval':None,
@@ -333,25 +333,22 @@ school_types = ['primary', 'primary_dc', 'lower_secondary', 'lower_secondary_dc'
 
 
 
-def compose_agents(prevention_measures, transmission_risk, reception_risk):
+def compose_agents(prevention_measures):
     agent_types = {
             'student':{
                 'screening_interval':prevention_measures['student_screen_interval'],
                 'index_probability':prevention_measures['student_index_probability'],
-                'transmission_risk':transmission_risk,
-                'reception_risk':reception_risk},
+                'mask':prevention_measures['student_mask']},
 
             'teacher':{
                 'screening_interval': prevention_measures['teacher_screen_interval'],
                 'index_probability': prevention_measures['student_index_probability'],
-                'transmission_risk':transmission_risk,
-                'reception_risk':reception_risk},
+                'mask':prevention_measures['teacher_mask']},
 
             'family_member':{
                 'screening_interval':prevention_measures['family_member_screen_interval'],
                 'index_probability':prevention_measures['family_member_index_probability'],
-                'transmission_risk':transmission_risk,
-                'reception_risk':reception_risk}
+                'mask':prevention_measures['family_member_mask']}
     }
     
     return agent_types
@@ -364,9 +361,11 @@ dst = '../data/school/calibration_results'
 
 # set the simulation parameters that are not used in this investigation to
 # default values
-base_reception_risk = 1 # is adjusted by age for students
 verbosity = 0 # only needed for debug output
 subclinical_modifier = 0.6 # sublinical cases are 40% less infectious than symptomatic cases
+target_base_transmission_risk = 0.0737411844049918
+mask_filter_efficiency  = {'exhale':0.5, 'inhale':0.7}
+transmission_risk_ventilation_modifier = 0.36
 
 
 ## statistics parameters
@@ -390,15 +389,15 @@ N_high = int(sys.argv[5])
 # the contact weight is the modifier by which the base transmission risk (for
 # household transmissions) is multiplied for contacts of type "intermediate" 
 # and of type "far"
-intermediate_contact_weights = [0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+intermediate_contact_weights = [0.8, 0.825, 0.875, 0.9]
 
-far_contact_weights = [0.2, 0.25, 0.3, 0.35, 0.4]
+far_contact_weights = [0.7, 0.725, 0.775, 0.8]
 
 # the age_transmission_discount sets the slope of the age-dependence of the 
 # transmission risk. Transmission risk for adults (age 18+) is always base 
 # transmission risk. For every year an agent is younger than 18 years, the
 # transmission risk is reduced
-age_transmission_discounts = [-0.04, -0.03, -0.02, -0.01]
+age_transmission_discounts = [-0.03, -0.0275, -0.025, -0.0225, -0.0175, -0.015, -0.0125 -0.01]
 
 # list of all possible parameter combinations from the grid
 params = [(i, j, k) for i in intermediate_contact_weights \
@@ -448,8 +447,7 @@ for k, sample_index in enumerate(samples):
     
     # create the agent dictionaries based on the given parameter values and
     # prevention measures
-    agent_types = compose_agents(measures, target_base_transmission_risk,
-                             base_reception_risk)
+    agent_types = compose_agents(measures)
 
     # conduct all runs for an ensemble with a given set of parameters
     ensemble_results = pd.DataFrame()
@@ -472,6 +470,7 @@ for k, sample_index in enumerate(samples):
 
         # initialize the model
         model = SEIRX_school(G, verbosity, 
+                  base_transmission_risk = target_base_transmission_risk,
                   testing = measures['testing'],
                   exposure_duration = [5.0, 1.9], # literature values
                   time_until_symptoms = [6.4, 0.8], # literature values
@@ -491,7 +490,10 @@ for k, sample_index in enumerate(samples):
                   agent_types = agent_types, 
                   age_transmission_risk_discount = \
                              {'slope':age_transmission_discount, 'intercept':1},
-                  age_symptom_discount = age_symptom_discount)
+                  age_symptom_discount = age_symptom_discount,
+                  mask_filter_efficiency = mask_filter_efficiency,
+                  transmission_risk_ventilation_modifier = \
+                      transmission_risk_ventilation_modifier)
 
         # run the model until the outbreak is over
         for i in range(N_steps):
