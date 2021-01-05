@@ -83,7 +83,7 @@ class agent_SEIRX(Agent):
         # the basic transmission risk is that between two members of the 
         # same household and has been calibrated to reproduce empirical 
         # household secondary attack rates.
-        base_risk = self.model.infection_risk_contact_type_weights['close']
+        base_risk = self.model.base_transmission_risk
 
         for target in contacts:
             if (target.exposed == False) and (target.infectious == False) and \
@@ -93,6 +93,10 @@ class agent_SEIRX(Agent):
                 p = self.model.calculate_transmission_probability(\
                                 self, target, base_risk)
                 transmission = self.random.random()
+
+                if self.verbose > 1:
+                    print('target: {} {}, p: {}'\
+                        .format(target.type, target.ID, p))
 
                 if transmission < p:
                     target.contact_to_infected = True
@@ -108,9 +112,9 @@ class agent_SEIRX(Agent):
                     self.transmission_targets.update({target.ID:self.model.Nstep})
 
                     if self.verbose > 0:
-                        print('transmission: {} {} -> {} {}'
+                        print('transmission: {} {} -> {} {} (p: {})'
                         .format(self.type, self.unique_id, \
-                                target.type, target.unique_id))
+                                target.type, target.unique_id, p))
 
 
     def act_on_test_result(self):

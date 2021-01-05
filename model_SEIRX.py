@@ -291,7 +291,7 @@ class SEIRX(Model):
     initialized at random.
     '''
 
-    def __init__(self, G, verbosity, testing,
+    def __init__(self, G, verbosity, base_transmission_risk, testing,
     	exposure_duration, time_until_symptoms, infection_duration,
         quarantine_duration, subclinical_modifier,
     	infection_risk_contact_type_weights,
@@ -310,6 +310,13 @@ class SEIRX(Model):
         if seed != None:
             np.random.seed(seed)
 
+        # sets the (daily) transmission risk for a household contact without
+        # any precautions. Target infection ratios are taken from literature
+        # and the value of the base_transmission_risk is calibrated such that
+        # the simulation produces the correct infection ratios in a household
+        # setting with the given distributions for epidemiological parameters
+        # of agents
+        self.base_transmission_risk = base_transmission_risk
     	# sets the level of detail of text output to stdout (0 = no output)
         self.verbosity = check_positive_int(verbosity)
         # flag to turn off the testing & tracing strategy
@@ -577,7 +584,21 @@ class SEIRX(Model):
         tmp.sort()
         n1, n2 = tmp
         key = n1 + n2 + 'd{}'.format(self.weekday)
-        q1 = self.G.get_edge_data(n1, n2, key)['weight']
+        contact_weight = self.G.get_edge_data(n1, n2, key)['weight']
+
+        # the link weight is a multiplicative modifier of the link strength.
+        # contacts of type "close" have, by definition, a weight of 1. Contacts
+        # of type intermediate, far or very far have a weight < 1 and therefore
+        # are less likely to transmit an infection. For example, if the contact
+        # type far has a weight of 0.2, a contact of type far has only a 20% 
+        # chance of transmitting an infection, when compared to a contact of
+        # type close. To calculate the probability of success p in the Bernoulli
+        # trial, we need to reduce the base risk (or base probability of success)
+        # by the modifications introduced by preventive measures. These
+        # modifications are formulated in terms of "probability of failure", or
+        # "q". A low contact weight has a high probability of failure, therefore
+        # we return q = 1 - contact_weight here.
+        q1 = 1 - contact_weight
 
         return q1
 
@@ -589,9 +610,22 @@ class SEIRX(Model):
         age = source.age
         max_age = 18
         if age <= max_age:
-            q2 = self.age_transmission_risk_discount['slope'] * \
-                 np.abs(age - max_age) + \
-                 self.age_transmission_risk_discount['intercept']
+            age_weight = self.age_transmission_risk_discount['slope'] * \
+                 np.abs(age - max_age) + self.age_transmission_risk_discount['intercept']
+
+            # The age weight can be interpreted as multiplicative factor that 
+            # reduces the chance for transmission with decreasing age. The slope
+            # of the age_transmission_discount function is the decrease (in % of 
+            # the transmission risk for an 18 year old or above) of transmission
+            # risk with every year a person is younger than 18 (the intercept is
+            # 1 by definition). 
+            # To calculate the probability of success p in the Bernoulli
+            # trial, we need to reduce the base risk (or base probability of success)
+            # by the modifications introduced by preventive measures. These
+            # modifications are formulated in terms of "probability of failure", or
+            # "q". A low age weight has a high probability of failure, therefore
+            # we return q = 1 - age_weight here.
+            q2 = 1 - age_weight
         else:
             q2 = 0
 
@@ -605,9 +639,10 @@ class SEIRX(Model):
         age = target.age
         max_age = 18
         if age <= max_age:
-            q3 = self.age_transmission_risk_discount['slope'] * \
-            np.abs(age - max_age) \
-            + self.age_transmission_risk_discount['intercept']
+            age_weight = self.age_transmission_risk_discount['slope'] * \
+            np.abs(age - max_age) + self.age_transmission_risk_discount['intercept']
+            # see description in get_transmission_risk_age_modifier_transmission
+            q3 = 1 - age_weight
         else:
             q3 = 0
 
@@ -619,47 +654,56 @@ class SEIRX(Model):
     # at the end of the infection_duration 
     def get_transmission_risk_progression_modifier(self, source):
         if source.days_since_exposure < source.exposure_duration:
-            q4 = 1
+            progression_weight = 0
         elif source.days_since_exposure <= source.time_until_symptoms:
-            q4 = 0
+            progression_weight = 1
         elif source.days_since_exposure > source.time_until_symptoms and \
              source.days_since_exposure <= source.infection_duration:
-            q4 = (source.days_since_exposure - source.time_until_symptoms) / \
-                 (source.infection_duration - source.time_until_symptoms)
-            q4 = max(1, q4)
+            # we add 1 in the denominator, such that the source is also 
+            # (slightly) infectious on the last day of the infection_duration
+            progression_weight = \
+                 (source.days_since_exposure - source.time_until_symptoms) / \
+                 (source.infection_duration - source.time_until_symptoms + 1)
         else:
-            q4 = 1
+            progression_weight = 0
+        # see description in get_transmission_risk_age_modifier_transmission
+        q4 = 1 - progression_weight
             
         return q4
 
     def get_transmission_risk_subclinical_modifier(self, source):
         if source.symptomatic_course == False:
-            q5 = self.subclinical_modifier
+            subclinical_weight = self.subclinical_modifier
         else:
-            q5 = 0
-
+            subclinical_weight = 1
+        # see description in get_transmission_risk_age_modifier_transmission
+        q5 = 1 - subclinical_weight
         return q5
 
     def get_transmission_risk_exhale_modifier(self, source):
         if source.mask:
-            q6 = self.mask_filter_efficiency['exhale']
+            exhale_weight = self.mask_filter_efficiency['exhale']
         else:
-            q6 = 0
-
+            exhale_weight = 1
+        # see description in get_transmission_risk_age_modifier_transmission
+        q6 = 1 - exhale_weight
         return q6
 
 
     def get_transmission_risk_inhale_modifier(self, target):
         if target.mask:
-            q7 = self.mask_filter_efficiency['inhale']
+            inhale_weight = self.mask_filter_efficiency['inhale']
         else:
-            q7 = 0
-
+            inhale_weight = 1
+        # see description in get_transmission_risk_age_modifier_transmission
+        q7 = 1 - inhale_weight
         return q7
 
 
     def get_transmission_risk_ventilation_modifier(self):
-        q8 = self.transmission_risk_ventilation_modifier
+        ventilation_weight = self.transmission_risk_ventilation_modifier
+        # see description in get_transmission_risk_age_modifier_transmission
+        q8 = 1 - ventilation_weight
         return q8
 
 

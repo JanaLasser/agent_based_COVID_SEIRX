@@ -200,11 +200,12 @@ class SEIRX_school(SEIRX):
     See documentation of model_SEIRX for the description of other parameters.
     '''
 
-    def __init__(self, G, verbosity=0, testing=True,
+    def __init__(self, G, verbosity=0, 
+        base_transmission_risk = 0.05, testing=True,
         exposure_duration=4, time_until_symptoms=6, infection_duration=11, 
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
-            'very_far': 0.9, 'far': 0.75, 'intermediate': 0.5, 'close': 0},
+            'very_far': 0.1, 'far': 0.25, 'intermediate': 0.5, 'close': 1},
         K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, liberating_testing=False,
@@ -219,7 +220,7 @@ class SEIRX_school(SEIRX):
         seed=None):
 
 
-        super().__init__(G, verbosity, testing,
+        super().__init__(G, verbosity, base_transmission_risk, testing,
             exposure_duration, time_until_symptoms, infection_duration,
             quarantine_duration, subclinical_modifier,
             infection_risk_contact_type_weights,
@@ -329,7 +330,7 @@ class SEIRX_school(SEIRX):
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['student_household', 'teacher_household']:
-            p = 1 - (1 - (1 - base_risk) * (1- q1) * (1 - q2) * (1 - q3) * \
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
                 (1 - q4) * (1 - q5))
 
         # contact types were masks and ventilation are relevant
@@ -346,7 +347,7 @@ class SEIRX_school(SEIRX):
             q7 = self.get_transmission_risk_inhale_modifier(target)
             q8 = self.get_transmission_risk_ventilation_modifier()
 
-            p = 1 - (1 - (1 - base_risk) * (1- q1) * (1 - q2) * (1 - q3) * \
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
                 (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8))
 
         else:
