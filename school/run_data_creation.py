@@ -249,6 +249,24 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                      student_schedule, tm_events, state_data, start_weekday, 
                      duration)
 
+        # save intermediate results
+        screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
+            'teacher_screen_interval', 'student_mask', 'teacher_mask',
+            'half_classes', 'ventilation_modification']
+        other_cols = [c for c in observables if c not in screen_cols]
+        observables = observables[screen_cols + other_cols]
+        observables.to_csv(join(join(res_path + '/results/{}/'\
+                        .format(stype), 'observables'), 
+                        '{}_N{}_curr.csv'.format(sname, runs)), index=False)
+    
+    # cleanup & save results to disk
+    shutil.rmtree(join(spath, 'tmp'))
+    observables.to_csv(join(join(res_path + '/results/{}/'\
+                    .format(stype), 'observables'), 
+                    '{}_N{}.csv'.format(sname, runs)), index=False)
+
+
+
     # cleanup & save results to disk
     shutil.rmtree(join(spath, 'tmp'))
     screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
