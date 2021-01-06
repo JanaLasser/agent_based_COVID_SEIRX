@@ -1,6 +1,6 @@
 import numpy as np
 import networkx as nx
-from scipy.special import gamma
+from math import gamma
 from scipy.optimize import root_scalar
 
 from mesa import Model
