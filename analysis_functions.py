@@ -227,13 +227,15 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     if target.type == 'student':
                         # transmussions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'student_student_daycare':
-                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_8'])
+                            classroom = s_schedule.loc[a.ID]['hour_8']
+                            location = 'class_{}'.format(int(classroom))
                             hour = np.random.choice(daycare_hours)
                         # transmission during morning teaching
                         elif G[a.ID][target.ID][key]['link_type'] in \
                             ['student_student_intra_class', 'student_student_table_neighbour']:
                             hour = np.random.choice(teaching_hours)
-                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_1'])  
+                            classroom = s_schedule.loc[a.ID]['hour_1']
+                            location = 'class_{}'.format(int(classroom))  
                         elif G[a.ID][target.ID][key]['link_type'] == 'student_household':
                             hour = 10
                             location = 'home'                     
@@ -247,11 +249,12 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     elif target.type == 'teacher':
                         # transmissions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
-                            location = 'class_{}'.format(s_schedule.loc[a.ID]['hour_8'])
+                            classroom = s_schedule.loc[a.ID]['hour_8']
+                            location = 'class_{}'.format(int(classroom))
                             hour = np.random.choice(daycare_hours)
                         elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
                             classroom = s_schedule.loc[a.ID]['hour_1']
-                            location = 'class_{}'.format(classroom)
+                            location = 'class_{}'.format(int(classroom))
                             # get the hour in which the teacher is teaching in the given location
                             hour = int(t_schedule.loc[target.ID][t_schedule.loc[target.ID] == classroom]\
                                 .index[0].split('_')[1])                          
@@ -275,11 +278,12 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
                     if target.type == 'student':
                         # transmissions during daycare
                         if G[a.ID][target.ID][key]['link_type'] == 'daycare_supervision_teacher_student':
-                            location = 'class_{}'.format(s_schedule.loc[target.ID]['hour_8'])
+                            classroom = s_schedule.loc[target.ID]['hour_8']
+                            location = 'class_{}'.format(int(classroom))
                             hour = np.random.choice(daycare_hours)
                         elif G[a.ID][target.ID][key]['link_type'] == 'teaching_teacher_student':
                             classroom = s_schedule.loc[target.ID]['hour_1']
-                            location = 'class_{}'.format(classroom)
+                            location = 'class_{}'.format(int(classroom))
                             # get the hour in which the teacher is teaching in the given location
                             hour = int(t_schedule.loc[a.ID][t_schedule.loc[a.ID] == classroom]\
                                 .index[0].split('_')[1])     
@@ -422,8 +426,8 @@ def get_representative_run(N_infected, path):
 def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, teacher_mask, student_mask, half_classes,
-              node_list, teacher_schedule, student_schedule, rep_transmission_events,
-              state_data, start_weekday, duration):
+              ventilation_mod, node_list, teacher_schedule, student_schedule, 
+              rep_transmission_events, state_data, start_weekday, duration):
 
     student_schedule = student_schedule.reset_index()
     teacher_schedule = teacher_schedule.reset_index()
@@ -466,6 +470,7 @@ def dump_JSON(path, school,
             'teacher_mask':teacher_mask,
             'student_mask':student_mask,
             'half_classes':half_classes,
+            'ventilation_mod':ventilation_mod,
             'node_list':node_list,
             'teacher_schedule':teacher_schedule,
             'student_schedule':student_schedule,
@@ -477,8 +482,8 @@ def dump_JSON(path, school,
     with open(join(path, 'test-{}_'.format(ttype) + \
                    'turnover-{}_index-{}_tf-{}_'
                    .format(turnover, index_case[0], screen_frequency_teacher) +\
-                   'sf-{}_tmask-{}_smask-{}_half-{}.txt'\
+                   'sf-{}_tmask-{}_smask-{}_half-{}_vent-{}.txt'\
                    .format(screen_frequency_student, bool_dict[teacher_mask],\
-                    bool_dict[student_mask], bool_dict[half_classes])),'w')\
+                    bool_dict[student_mask], bool_dict[half_classes], ventilation_mod)),'w')\
                    as outfile:
         json.dump(data, outfile)
