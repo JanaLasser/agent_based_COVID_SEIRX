@@ -223,6 +223,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                'half_classes':half_classes,
                'ventilation_modification':ventilation_mod}
         
+        ensemble_results = ensemble_results[ensemble_results['infected_agents'] > 0]
         for col in ensemble_results.columns:
             row.update(af.get_statistics(ensemble_results, col))
         observables = observables.append(row, ignore_index=True)
