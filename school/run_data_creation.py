@@ -88,7 +88,7 @@ def set_multiindex(df, agent_type):
     return df
 
 def sample_prevention_strategies(screen_params, school, agent_types, measures, 
-                                 model_params, res_path, runs):
+                model_params, res_path, runs, min_measure_idx, max_measure_idx):
     # maximum number of steps in a single run. A run automatically stops if the 
     # outbreak is contained, i.e. there are no more infected or exposed agents.
     N_steps = 1000 
@@ -114,7 +114,9 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     observables = pd.DataFrame()
     c = 0
     for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
-                teacher_mask, half_classes, ventilation_mod in screen_params[0:1]:
+                teacher_mask, half_classes, ventilation_mod in \
+                screen_params[min_measure_idx:max_measure_idx]:
+                
         print('{} / {}'.format(c, len(screen_params)))
         c += 1
         
@@ -271,6 +273,8 @@ school_type = sys.argv[1]
 runs = int(sys.argv[2])
 min_idx = int(sys.argv[3])
 max_idx = int(sys.argv[4])
+min_measure_idx = int(sys.argv[5])
+max_measure_idx = int(sys.argv[6])
 
 # school layouts
 class_sizes = [10, 15, 20, 25, 30]
@@ -287,5 +291,5 @@ for school_type, N_classes, class_size in school_configs:
     school = {'type':school_type, 'classes':N_classes,
               'students':class_size}
     
-    sample_prevention_strategies(params, 
-                school, agent_types, measures, model_params, res_path, runs)
+    sample_prevention_strategies(params, school, agent_types, measures, 
+        model_params, res_path, runs, min_measure_idx, max_measure_idx)
