@@ -4,6 +4,8 @@ import networkx as nx
 import os
 import json
 import pickle
+import bz2
+import _pickle as cPickle
 from os.path import join
 
 import sys
@@ -409,6 +411,18 @@ def get_ensemble_observables_school(model, run):
 
     return row
 
+
+def compress_pickle(fname, fpath, data):
+    with bz2.BZ2File(join(fpath, fname + '.pbz2'), 'w') as f: 
+        cPickle.dump(data, f)
+    
+    
+def decompress_pickle(fname, fpath):
+    data = bz2.BZ2File(join(fpath, fname), 'rb')
+    data = cPickle.load(data)
+    return data
+
+
 def get_representative_run(N_infected, path):
     filenames = os.listdir(path)
     medians = {int(f.split('_')[1]):int(f.split('_')[3].split('.')[0]) \
@@ -420,8 +434,9 @@ def get_representative_run(N_infected, path):
         if np.abs(N_infected - median) < dist:
             closest_run = run
             
-    return pickle.load(open(join(path, \
-                       'run_{}_N_{}.p'.format(run, medians[run])), 'rb'))
+    fname = 'run_{}_N_{}.pbz2'.format(run, medians[run])
+    return decompress_pickle(fname, path)
+
 
 def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
