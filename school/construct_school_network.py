@@ -1088,7 +1088,8 @@ def set_student_student_daycare_contacts(G, school_type, student_schedule):
 ###########################
 
 
-def generate_student_schedule(school_type, N_classes, class_size):
+def generate_student_schedule(school_type, N_classes, class_size, \
+		student_offset=0):
 	"""
 	Generate the schedule of classes every student attends at every hour of
 	every teaching day (days 1-5). For school types with no daycare, students
@@ -1113,6 +1114,26 @@ def generate_student_schedule(school_type, N_classes, class_size):
 		and entries correspond to the classes / classrooms a student is at 
 		during a given day and hour.
 	"""
+	# in the case of secondary schools with daycare, we have to split the
+	# student population into students in lower secondary grades (that
+	# participate in daycare) and students in upper secondary grades, that
+	# have normal lessons. Here, we split the student population and then 
+	# generate separate schedules according to the lower_secondary schedule
+	# and the secondary schedule, which are then combined.
+	if school_type == 'secondary_dc':
+		age_bracket_map = get_age_distribution('secondary', N_classes)
+		lower_secondary_classes = [c for c, age in age_bracket_map.items() \
+									if age < 14]
+		offset = len(lower_secondary_classes) * class_size
+
+		lower_secondary_schedule = generate_student_schedule(\
+			'lower_secondary_dc', len(lower_secondary_classes), class_size)
+		upper_secondary_schedule = generate_student_schedule(\
+			'secondary', N_classes - len(lower_secondary_classes),
+			class_size, student_offset=offset)
+		student_schedule = pd.concat([lower_secondary_schedule,
+									  upper_secondary_schedule])
+		return student_schedule.sort_index()
 
 	# ratio of students that attend afternoon daycare
 	daycare_ratio = get_daycare_ratio(school_type)
@@ -1120,9 +1141,13 @@ def generate_student_schedule(school_type, N_classes, class_size):
 	teaching_hours = get_teaching_hours(school_type)
 	# maximum hours students & teachers spend at the school on a given day
 	max_hours = 9
-	N_teaching_hours = range(1, teaching_hours + 1)
-	N_daycare_hours = range(teaching_hours + 1, max_hours + 1)
-
+	# no lunch break included
+	if teaching_hours < 5:
+		N_teaching_hours = range(1, teaching_hours + 1) 
+	# lunch break included
+	else:
+		N_teaching_hours = range(1, teaching_hours + 2) 
+	N_daycare_hours = range(teaching_hours + 2, max_hours + 1)
 	N_weekdays = 7
 	weekend_days = [6, 7]
 
@@ -1132,7 +1157,8 @@ def generate_student_schedule(school_type, N_classes, class_size):
 		daycare = True
 
 	student_nodes = ['s{:04d}'.format(i) for \
-			i in range(1, N_classes * class_size + 1)]
+			i in range(1 + student_offset,
+					   N_classes * class_size + 1 + student_offset)]
 
 	student_schedule = pd.DataFrame(columns=['student'] + \
 					['hour_{}'.format(i) for i in range(1, max_hours + 1)])
@@ -1163,19 +1189,21 @@ def generate_student_schedule(school_type, N_classes, class_size):
 						
 		# weekdays: students are distributed across classes
 		else:
-			for i, s in enumerate(student_nodes):
+			for s in student_nodes:
+				# necessary to ensure classromms are assigned correctly, even
+				# if there is a student offset (in the case of secondary_dc)
+				i = int(s[1:])
 
 				# teaching hours
 				for hour in N_teaching_hours:
-					# students are distributed to classes evenly, starting by s1
-					# in class 1 to student s N_classes * class_size in class N
-					classroom = int(i / class_size) + 1
-					student_schedule.loc[wd,s]['hour_{}'.format(hour)]=classroom
-
-				# lunchbreak
-				hour = 5
-				classroom = pd.NA
-				student_schedule.loc[wd, s]['hour_{}'.format(hour)] = classroom
+					if hour == 5: # lunchbreak
+						classroom = pd.NA
+						student_schedule.loc[wd, s]['hour_{}'.format(hour)] = classroom
+					else:
+						# students are distributed to classes evenly, starting by s1
+						# in class 1 to student s N_classes * class_size in class N
+						classroom = int(i / class_size) + 1
+						student_schedule.loc[wd,s]['hour_{}'.format(hour)]=classroom
 
 			for i, s in enumerate(daycare_students):
 				# daycare hours
