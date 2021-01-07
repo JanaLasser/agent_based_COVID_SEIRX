@@ -1152,6 +1152,7 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 			i in range(1 + student_offset,
 					   N_classes * class_size + 1 + student_offset)]
 
+
 	student_schedule = pd.DataFrame(columns=['student'] + \
 					['hour_{}'.format(i) for i in range(1, max_hours + 1)])
 	student_schedule['student'] = student_nodes * N_weekdays
@@ -1194,10 +1195,11 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 					else:
 						# students are distributed to classes evenly, starting by s1
 						# in class 1 to student s N_classes * class_size in class N
-						classroom = int(i / class_size) + 1
+						classroom = int((i - 1)/ class_size) + 1
 						student_schedule.loc[wd,s]['hour_{}'.format(hour)]=classroom
 
-			for i, s in enumerate(daycare_students):
+			for s in daycare_students:
+				i = int(s[1:])
 				# daycare hours
 				for hour in N_daycare_hours:
 					# students in daycare are distributed evenly to the newly 
@@ -1205,10 +1207,11 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 					# order) are randomly picked, the daycare groups also create
 					# new contacts between  students, which are later set by the
 					# function generate_student_daycare_contacts
-					classroom = int(i / class_size) + 1
+					classroom = int((i - 1) / class_size) + 1
 					student_schedule.loc[wd,s]['hour_{}'.format(hour)]=classroom
 
 			for s in non_daycare_students:
+				i = int(s[1:])
 				# daycare hours
 				for hour in N_daycare_hours:
 					classroom = pd.NA
