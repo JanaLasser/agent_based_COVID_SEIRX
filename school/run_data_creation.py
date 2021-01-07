@@ -92,6 +92,8 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     # maximum number of steps in a single run. A run automatically stops if the 
     # outbreak is contained, i.e. there are no more infected or exposed agents.
     N_steps = 1000 
+
+    screen_params = screen_params[min_measure_idx:max_measure_idx]
     
     ## data I/O
     stype = school['type']
@@ -114,8 +116,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     observables = pd.DataFrame()
     c = 0
     for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
-                teacher_mask, half_classes, ventilation_mod in \
-                screen_params[min_measure_idx:max_measure_idx]:
+                teacher_mask, half_classes, ventilation_mod in screen_params:
 
         print('layout {}-{}, measures {}-{}: {} / {}'\
             .format(min_idx, max_idx, min_measure_idx, max_measure_idx,
