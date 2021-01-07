@@ -268,7 +268,6 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
 
 
     # cleanup & save results to disk
-    shutil.rmtree(join(spath, 'tmp'))
     screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
             'teacher_screen_interval', 'student_mask', 'teacher_mask',
             'half_classes', 'ventilation_modification']
@@ -277,6 +276,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     observables.to_csv(join(join(res_path + '/results/{}/'\
                     .format(stype), 'observables'), 
                     '{}_N{}.csv'.format(sname, runs)), index=False)
+    try:
+        shutil.rmtree(join(spath, 'tmp'))
+    except FileNotFoundError:
+        pass
 
 
 res_path = '../data/school'
