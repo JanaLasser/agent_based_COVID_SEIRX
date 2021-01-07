@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 #SBATCH -J COVID_SEIRX_data_creation_primary_dc
 #SBATCH -N 2                 
 #SBATCH -o output
@@ -17,7 +18,7 @@ conda activate covid
 
 N_runs=300
 measure_step=64
-school_type=primary
+school_type=primary_dc
 
 for school_layout_start_index in $(seq 0 14)
    do
