@@ -72,6 +72,18 @@ def get_scheduler(school_type):
 	return schedulers[school_type]
 
 
+def get_teaching_framework():
+	"""Return the parameters that structure a teaching week in Austria"""
+	# maximum number of hours students spend at the school, including lunch
+	# break and daycare
+	max_hours = 9
+	# number of days in the week
+	N_weekdays = 7
+	# days on which no teaching takes place
+	weekend_days = [6, 7]
+
+	return max_hours, N_weekdays, weekend_days
+
 def get_floor_distribution(N_floors, N_classes):
 	"""
 	Distribute the number of classes evenly over the number of available floors.
@@ -505,8 +517,7 @@ def assign_classes(G, school_type, class_size, N_classes, N_floors):
 	all_students = {age:[] for age in age_bracket}
 	class_counter = 1
 	sequential_students = []
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	_, N_weekdays, weekend_days = get_teaching_framework()
 
 	for age in age_bracket:
 		# get all student nodes with one age
@@ -553,7 +564,7 @@ def set_family_contacts(G):
 		Graph holding the agents (students, teachers, household members) of the
 		school as nodes and their contacts as edges.
 	"""
-	N_weekdays = 7
+	_, N_weekdays, _ = get_teaching_framework()
 
 	# A list with all distinct families (households) in the graph.
 	families = set(dict(G.nodes(data='family')).values())
@@ -606,10 +617,7 @@ def set_student_student_intra_class_contacts(G, N_classes):
 	N_classes : int
 		Number of classes in the school.
 	"""
-	N_weekdays = 7
-	# on the weekend days, there are no contacts between students based on their
-	# affiliation to a class or table neighbours.
-	weekend_days = [6, 7]
+	_, N_weekdays, weekend_days = get_teaching_framework()
 
 	for wd in range(1, N_weekdays + 1):
 		if wd not in weekend_days:
@@ -709,8 +717,7 @@ def set_teacher_teacher_social_contacts(G, school_type, N_classes,
 	N_teacher_contacts_far = round(N_teachers * r_teacher_conversation)
 	N_teacher_contacts_intermediate = round(N_teachers * r_teacher_friend)
 
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	_, N_weekdays, weekend_days = get_teaching_framework()
 
 	# total number of unique far contacts that will be generated. The division
 	# by two ensures the ratio of far contacts to other teachers corresponds to
@@ -787,7 +794,7 @@ def set_teacher_student_teaching_contacts(G, school_type, N_classes,
 		the classroom that a given student is in (=the number of class the 
 		student is assigned to) during a given day and hour.
 	"""
-	N_weekdays = 7
+	_, N_weekdays, _ = get_teaching_framework()
 	teaching_hours = get_teaching_hours(school_type)
 	teaching_cols = ['hour_{}'.format(i) for i in range(1, teaching_hours + 1)]
 
@@ -844,12 +851,10 @@ def set_teacher_teacher_teamteaching_contacts(G, school_type, teacher_schedule):
 		Table of form (N_teachers * N_weekdays) X N_hours, where entries are the
 		class a given teacher is teaching during a given hour at a given day.
 	"""
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
 	# maximum hours students & teachers spend at the school on a given day
-	max_hours = 9 
 	teaching_hour_cols = ['hour_{}'.format(i) for \
 			i in range(1, teaching_hours + 1)]
 
@@ -906,8 +911,7 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 	"""
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
-	# maximum hours students & teachers spend at the school on a given day
-	max_hours = 9
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	# hours that students spend in daycare (max_hours - teaching_hours)
 	supervision_hour_cols = ['hour_{}'.format(i) for \
 			i in range(teaching_hours + 1, max_hours + 1)]
@@ -916,9 +920,6 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 	# from the list of daycare supervision hours
 	if 'hour_5' in supervision_hour_cols:
 		supervision_hour_cols.remove('hour_5')
-
-	N_weekdays = 7
-	weekend_days = [6, 7]
 
 	for wd in range(1, N_weekdays + 1):
 		if wd not in weekend_days: 
@@ -981,7 +982,7 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
 	# maximum hours students & teachers spend at the school on a given day
-	max_hours = 9
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	supervision_hour_cols = ['hour_{}'.format(i) for \
 			i in range(teaching_hours + 1, max_hours + 1)]
 
@@ -989,9 +990,6 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 	# from the list of daycare supervision hours
 	if 'hour_5' in supervision_hour_cols:
 		supervision_hour_cols.remove('hour_5')
-
-	N_weekdays = 7
-	weekend_days = [6, 7]
 
 	for wd in range(1, N_weekdays + 1):
 		if wd not in weekend_days:
@@ -1039,9 +1037,7 @@ def set_student_student_daycare_contacts(G, school_type, student_schedule):
 
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
-	# maximum hours students & teachers spend at the school on a given day
-	max_hours = 9
-
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	supervision_hour_cols = ['hour_{}'.format(i) for \
 			i in range(teaching_hours + 1, max_hours + 1)]
 
@@ -1049,9 +1045,6 @@ def set_student_student_daycare_contacts(G, school_type, student_schedule):
 	# from the list of daycare supervision hours
 	if 'hour_5' in supervision_hour_cols:
 		supervision_hour_cols.remove('hour_5')
-
-	N_weekdays = 7
-	weekend_days = [6, 7]
 
 	for wd in range(1, N_weekdays + 1):
 		if wd not in weekend_days:
@@ -1139,8 +1132,8 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 	daycare_ratio = get_daycare_ratio(school_type)
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
-	# maximum hours students & teachers spend at the school on a given day
-	max_hours = 9
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
+
 	# no lunch break included
 	if teaching_hours < 5:
 		N_teaching_hours = range(1, teaching_hours + 1) 
@@ -1148,8 +1141,7 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 	else:
 		N_teaching_hours = range(1, teaching_hours + 2) 
 	N_daycare_hours = range(teaching_hours + 2, max_hours + 1)
-	N_weekdays = 7
-	weekend_days = [6, 7]
+
 
 	# determine if any students will be in daycare
 	daycare = False
@@ -1254,9 +1246,7 @@ def generate_teacher_schedule_primary(N_classes):
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
 
 	N_teaching_hours = get_teaching_hours('primary')
-	max_hours = 9
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 
 	schedule = {t:[] for t in teacher_nodes}
 
@@ -1335,9 +1325,7 @@ def generate_teacher_schedule_primary_daycare(N_classes):
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
 
 	N_teaching_hours = get_teaching_hours('primary_dc')
-	max_hours = 9
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 
 	schedule = {t:[] for t in teacher_nodes}
 
@@ -1419,10 +1407,8 @@ def generate_teacher_schedule_lower_secondary(N_classes):
 
 	N_teachers = get_N_teachers('lower_secondary', N_classes)
 	N_hours = get_teaching_hours('lower_secondary')
-	max_hours = 9
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 
 	# we create the schedule for first teachers and second teachers by first 
 	# creating a list of teacher node IDs and then reshaping it such that it 
@@ -1532,13 +1518,12 @@ def generate_teacher_schedule_lower_secondary_daycare(N_classes):
 
 	N_teachers = get_N_teachers('lower_secondary_dc', N_classes)
 	N_hours = get_teaching_hours('lower_secondary_dc')
-	max_hours = 9
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	daycare_hours = range(N_hours + 1, max_hours)
 	if 5 in daycare_hours:
 		daycare_hours.remove(5)
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	N_weekdays = 7
-	weekend_days = [6, 7]
+	
 
 	# for lower secondary schools with daycare, there are 3 teachers per class
 	# 5 out of 6 hours / day are taught in team-teaching and daycare supervision
@@ -1685,9 +1670,7 @@ def generate_teacher_schedule_upper_secondary(N_classes):
 	all_teachers = get_N_teachers('upper_secondary', N_classes)
 	N_teachers = int(N_classes * 2.5)
 	N_additional_teachers = all_teachers - N_teachers # for team teaching
-	N_weekdays = 7
-	max_hours = 9
-	weekend_days = [6, 7]
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, all_teachers + 1)]
 
 	# we create the schedule for teachers by first creating a list of teacher 
@@ -1792,9 +1775,7 @@ def generate_teacher_schedule_secondary(N_classes):
 	N_hours = get_teaching_hours('secondary')
 	N_teachers = get_N_teachers('secondary', N_classes)
 	teacher_nodes = ['t{:04d}'.format(i) for i in range(1, N_teachers + 1)]
-	N_weekdays = 7
-	weekend_days = [6, 7]
-	max_hours = 9
+	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 
 	# we create the schedule for teachers by first creating a list of teacher 
 	# node IDs and then reshaping it such that it fits the N_hours X N_classes 
@@ -2043,7 +2024,7 @@ def map_contacts(G, contact_map, copy=False):
 
 	household_links = ['student_household', 'teacher_household']
 
-	N_weekdays = 7
+	_, N_weekdays, _ = get_teaching_framework()
 	for wd in range(1, N_weekdays + 1):
 		for n1, n2 in [(n1, n2) for (n1, n2, linkday) \
 			in G.edges(data='weekday') if linkday == wd]:
