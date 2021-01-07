@@ -112,15 +112,23 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
 
     ## scan of all possible parameter combinations of additional prevention measures
     observables = pd.DataFrame()
-    k = 0
+    c = 0
     for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
-                teacher_mask, half_classes, ventilation_mod in screen_params:
-        print('{} / {}'.format(k, len(screen_params)))
-        k += 1
+                teacher_mask, half_classes, ventilation_mod in screen_params[0:1]:
+        print('{} / {}'.format(c, len(screen_params)))
+        c += 1
         
         turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
+        bmap = {True:'T', False:'F'}
         turnover, _, test = ttype.split('_')
         turnover = turnovers[turnover]
+        
+        measure_string = '{}_test-{}_turnover-{}_index-{}_tf-{}_sf-{}_tmask-{}'\
+            .format(stype, test, turnover, index_case[0], t_screen_interval,
+                    s_screen_interval, bmap[teacher_mask]) +\
+                    '_smask-{}_half-{}_vent-{}'\
+            .format(bmap[student_mask], bmap[half_classes], ventilation_mod)
+        tmp_path = join(spath,  measure_string + '_tmp')
         
         half = ''
         if half_classes:
@@ -149,10 +157,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         # temporary folder for all runs in the ensemble, will be
         # deleted after a representative run is picked
         try:
-            shutil.rmtree(join(spath, 'tmp'))
+            shutil.rmtree(tmp_path)
         except FileNotFoundError:
             pass
-        os.mkdir(join(spath, 'tmp'))
+        os.mkdir(tmp_path)
 
         # results of one ensemble with the same parameters
         ensemble_results = pd.DataFrame()
@@ -197,20 +205,13 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
             ensemble_results = ensemble_results.append(row,
                 ignore_index=True)
             
-            bool_dict = {True:'T', False:'F'}
-            ensemble_results.to_csv(join(spath_ensmbl,  
-                '{}_test-{}_turnover-{}_index-{}_tf-{}_sf-{}'\
-                .format(stype, test, turnover,
-                index_case[0], t_screen_interval, s_screen_interval) +\
-                '_tmask-{}_smask-{}_half-{}_vent-{}.csv'.format(\
-                bool_dict[teacher_mask], bool_dict[student_mask], 
-                bool_dict[half_classes], ventilation_mod)))
+            
+            ensemble_results.to_csv(join(spath_ensmbl, measure_string + '.csv'))
             
             # dump the current model to later pick a representative run
             N_infected = row['infected_agents']
-            with open(join(join(spath, 'tmp'),
-                     'run_{}_N_{}.p'.format(r, int(N_infected))),'wb') as f:
-                pickle.dump(model, f)
+            fname = 'run_{}_N_{}'.format(r, int(N_infected))
+            af.compress_pickle(fname, tmp_path, model)
 
        # add ensemble statistics to the overall results
         row = {'test_type':test,
@@ -231,7 +232,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         # get the a representative model with the same number of infected
         # as the ensemble median
         rep_model = af.get_representative_run(row['infected_agents_median'],\
-                            join(spath, 'tmp'))
+                            tmp_path)
         try:
             tm_events = af.get_transmission_chain(\
                         rep_model, stype, teacher_schedule, student_schedule)
@@ -249,7 +250,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                      student_schedule, tm_events, state_data, start_weekday, 
                      duration)
 
-        # save intermediate results
+        
         screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
             'teacher_screen_interval', 'student_mask', 'teacher_mask',
             'half_classes', 'ventilation_modification']
@@ -260,26 +261,9 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                         '{}_N{}_curr.csv'.format(sname, runs)), index=False)
     
     # cleanup & save results to disk
-    shutil.rmtree(join(spath, 'tmp'))
     observables.to_csv(join(join(res_path + '/results/{}/'\
                     .format(stype), 'observables'), 
                     '{}_N{}.csv'.format(sname, runs)), index=False)
-
-
-
-    # cleanup & save results to disk
-    screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
-            'teacher_screen_interval', 'student_mask', 'teacher_mask',
-            'half_classes', 'ventilation_modification']
-    other_cols = [c for c in observables if c not in screen_cols]
-    observables = observables[screen_cols + other_cols]
-    observables.to_csv(join(join(res_path + '/results/{}/'\
-                    .format(stype), 'observables'), 
-                    '{}_N{}.csv'.format(sname, runs)), index=False)
-    try:
-        shutil.rmtree(join(spath, 'tmp'))
-    except FileNotFoundError:
-        pass
 
 
 res_path = '../data/school'
