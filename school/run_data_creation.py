@@ -100,14 +100,16 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     # construct folder for results if not yet existing
     sname = '{}_classes-{}_students-{}'.format(\
         stype, school['classes'], school['students'])
-    spath = join(res_path, join('results/{}/representative_runs'\
+    spath_run = join(res_path, join('results/{}/representative_runs'\
                       .format(stype), sname))
-    spath_ensmbl = join(res_path,'results/{}/ensembles'.format(stype))
+    spath_ensmbl = join(join(res_path,'results/{}/ensembles'.format(stype)), sname)
+    spath_obs = join(join(res_path,'results/{}/observables'.format(stype)), sname)
 
-    try:
-        os.mkdir(spath)
-    except FileExistsError:
-        pass   
+    for path in [spath_run, spath_ensmbl, spath_obs]:
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass     
 
     node_list = pd.read_csv(join(res_path + '/node_lists/{}'.format(stype),\
                                  '{}_node_list.csv'.format(sname)))
@@ -133,7 +135,8 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                     s_screen_interval, bmap[teacher_mask]) +\
                     '_smask-{}_half-{}_vent-{}'\
             .format(bmap[student_mask], bmap[half_classes], ventilation_mod)
-        tmp_path = join(spath,  measure_string + '_tmp')
+
+        tmp_path = join(spath_run, measure_string + '_tmp')
         
         half = ''
         if half_classes:
@@ -249,7 +252,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         duration = model.Nstep
         start_weekday = (0 + model.weekday_shift) % 7 + 1
 
-        af.dump_JSON(spath, school, ttype, index_case, s_screen_interval, 
+        af.dump_JSON(spath_run, school, ttype, index_case, s_screen_interval, 
                      t_screen_interval, teacher_mask, student_mask, 
                      half_classes, ventilation_mod, node_list, teacher_schedule,
                      student_schedule, tm_events, state_data, start_weekday, 
@@ -261,14 +264,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
             'half_classes', 'ventilation_modification']
         other_cols = [c for c in observables if c not in screen_cols]
         observables = observables[screen_cols + other_cols]
-        observables.to_csv(join(join(res_path + '/results/{}/'\
-                        .format(stype), 'observables'), 
-                        '{}_N{}_curr.csv'.format(sname, runs)), index=False)
-    
-    # cleanup & save results to disk
-    observables.to_csv(join(join(res_path + '/results/{}/'\
-                    .format(stype), 'observables'), 
-                    '{}_N{}.csv'.format(sname, runs)), index=False)
+        observables.to_csv(join(spath_obs, '{}_N{}_curr.csv'\
+                .format(sname, runs)), index=False)
+
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 res_path = '../data/school'
@@ -293,6 +292,13 @@ school_configs = school_configs[min_idx:max_idx]
 for school_type, N_classes, class_size in school_configs:
     school = {'type':school_type, 'classes':N_classes,
               'students':class_size}
+
+    for d in ['representative_runs', 'ensembles', 'observables']:
+        try:
+            os.mkdir(join(join(join(res_path, 'results'), school_type), d))
+        except FileExistsError:
+            pass
+
     
     sample_prevention_strategies(params, school, agent_types, measures, 
         model_params, res_path, runs, min_measure_idx, max_measure_idx)
