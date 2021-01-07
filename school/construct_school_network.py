@@ -1198,8 +1198,7 @@ def generate_student_schedule(school_type, N_classes, class_size, \
 						classroom = int((i - 1)/ class_size) + 1
 						student_schedule.loc[wd,s]['hour_{}'.format(hour)]=classroom
 
-			for s in daycare_students:
-				i = int(s[1:])
+			for i, s in enumerate(daycare_students):
 				# daycare hours
 				for hour in N_daycare_hours:
 					# students in daycare are distributed evenly to the newly 
