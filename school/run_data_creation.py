@@ -116,8 +116,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
                 teacher_mask, half_classes, ventilation_mod in \
                 screen_params[min_measure_idx:max_measure_idx]:
-                
-        print('{} / {}'.format(c, len(screen_params)))
+
+        print('layout {}-{}, measures {}-{}: {} / {}'\
+            .format(min_idx, max_idx, min_measure_idx, max_measure_idx,
+                c, len(screen_params)))
         c += 1
         
         turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
