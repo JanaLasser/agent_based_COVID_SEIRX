@@ -84,11 +84,13 @@ def calculate_finite_size_R0(model):
     for ft in first_transmitters:
         N_transmissions.append(len(df[df['ID'] == ft]))
     
-    mean = np.mean(N_transmissions)
-    if np.isnan(mean):
-        return 0, df
+    if len(N_transmissions) > 0:
+        mean = np.mean(N_transmissions)
     else:
-        return mean, df
+        mean = 0
+
+    return mean, df
+    
 
 def count_infected_by_age(model, age_brackets):
 	age_counts = {}
