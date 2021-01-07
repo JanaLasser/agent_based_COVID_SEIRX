@@ -151,7 +151,8 @@ def draw_infection_timeline(model, agent_type, ax):
 	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
 
-	N = len([x for x,y in model.G.nodes(data=True) if y['type'] == agent_type])
+	N = len(set([x for x,y in model.MG.nodes(data=True) \
+		if y['type'] == agent_type]))
 
 	pop_numbers['S_{}'.format(agent_type)] = N - pop_numbers['E_{}'.format(agent_type)]\
 											   - pop_numbers['I_{}'.format(agent_type)]\
@@ -205,7 +206,7 @@ def draw_infection_timeline(model, agent_type, ax):
 
 	ax.set_xlabel('steps', fontsize=20)
 	ax.set_ylabel('% of population', fontsize=20)
-	ax.set_ylim(-1, 100)
+	#ax.set_ylim(-1, 100)
 	#ax.set_xlim(0, 60)
 	ax.xaxis.set_major_locator(MultipleLocator(10))
 	ax.xaxis.set_minor_locator(MultipleLocator(1))
@@ -217,7 +218,8 @@ def draw_combined_infection_timeline(model, agent_groups, ax):
 	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
 
-	N_total = len([x for x,y in model.G.nodes(data=True) if y['type'] in agent_groups])
+	N_total = len(set([x for x,y in model.MG.nodes(data=True) \
+		if y['type'] in agent_groups]))
 
 	pop_numbers['S_combined'] = 0
 	pop_numbers['E_combined'] = 0
