@@ -1,3 +1,4 @@
+print('enter imports')
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -12,6 +13,8 @@ sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
 import analysis_functions as af
+
+print('exit imports')
 
 
 # screening parameters
@@ -89,6 +92,7 @@ def set_multiindex(df, agent_type):
 
 def sample_prevention_strategies(screen_params, school, agent_types, measures, 
                 model_params, res_path, runs, min_measure_idx, max_measure_idx):
+    print('enter function')
     # maximum number of steps in a single run. A run automatically stops if the 
     # outbreak is contained, i.e. there are no more infected or exposed agents.
     N_steps = 1000 
@@ -268,6 +272,8 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                 .format(sname, runs)), index=False)
 
         shutil.rmtree(tmp_path, ignore_errors=True)
+        print('exit function')
+
 
 
 res_path = '../data/school'
@@ -289,6 +295,7 @@ school_configs = [(i, j, k) for i in school_types \
 
 school_configs = school_configs[min_idx:max_idx]
 
+print('enter for loop')
 for school_type, N_classes, class_size in school_configs:
     school = {'type':school_type, 'classes':N_classes,
               'students':class_size}
@@ -302,3 +309,5 @@ for school_type, N_classes, class_size in school_configs:
     
     sample_prevention_strategies(params, school, agent_types, measures, 
         model_params, res_path, runs, min_measure_idx, max_measure_idx)
+
+print('exit for loop')
