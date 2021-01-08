@@ -16,4 +16,4 @@ source /opt/sw/x86_64/glibc-2.17/ivybridge-ep/anaconda3/5.3.0/etc/profile.d/cond
 conda activate covid
 
 echo $HOSTNAME
-python cluster_test.py
+python cluster_test.py > stdout_min 2> stderr_min &
