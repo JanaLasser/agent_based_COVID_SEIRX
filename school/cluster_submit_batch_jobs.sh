@@ -5,7 +5,7 @@
 #SBATCH -o output
 #SBATCH -e error
 #SBATCH --ntasks-per-core=2
-#SBATCH --ntasks=32          
+#SBATCH --ntasks=16          
 #SBATCH --time=00:05:00      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
