@@ -10,15 +10,10 @@
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
-echo after batch block 
 module purge
-echo after purge
 module load anaconda3/5.3.0
-echo after anaconda
 source /opt/sw/x86_64/glibc-2.17/ivybridge-ep/anaconda3/5.3.0/etc/profile.d/conda.sh
-echo after source
 conda activate covid
-echo after venv activation
 
 
 N_runs=5
@@ -34,7 +29,7 @@ for school_layout_start_index in $(seq 0 9)
       measure_end_index=`echo $measure_start_index+$measure_step | bc`
       echo python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index 
       echo $HOSTNAME
-      python3 run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
+      python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
 
    done
 
