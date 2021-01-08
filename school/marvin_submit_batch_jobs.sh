@@ -4,7 +4,7 @@ N_runs=300
 measure_step=64
 school_type=primary
 
-for school_layout_start_index in $(seq 15 24)
+for school_layout_start_index in $(seq 13 24)
    do
    school_layout_end_index=`echo $school_layout_start_index+1 | bc`
    
