@@ -1,9 +1,6 @@
 print('enter imports')
 import sys
 
-print('in se middle of se imports')
-sys.exit()
-
 import networkx as nx
 
 import pandas as pd
