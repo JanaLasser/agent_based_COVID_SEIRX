@@ -11,7 +11,7 @@
 #SBATCH --mail-user=lasser@csh.ac.at
 
 module purge
-module module load anaconda3/5.3.0
+module load anaconda3/5.3.0
 source /opt/sw/x86_64/glibc-2.17/ivybridge-ep/anaconda3/5.3.0/etc/profile.d/conda.sh
 conda activate covid
 
