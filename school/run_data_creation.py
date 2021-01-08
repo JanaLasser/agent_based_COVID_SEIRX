@@ -4,14 +4,17 @@ import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
+
+print('in se middle of se imports')
+sys.exit()
+
 from os.path import join
 import os
 import shutil
 import pickle
 import json
 
-print('in se middle of se imports')
-sys.exit()
+
 
 #import sys
 sys.path.insert(0,'../school')
