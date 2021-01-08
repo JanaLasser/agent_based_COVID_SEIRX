@@ -10,10 +10,15 @@
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
+echo after batch block 
 module purge
+echo after purge
 module load anaconda3/5.3.0
+echo after anaconda
 source /opt/sw/x86_64/glibc-2.17/ivybridge-ep/anaconda3/5.3.0/etc/profile.d/conda.sh
+echo after source
 conda activate covid
+echo after venv activation
 
 
 N_runs=5
