@@ -17,18 +17,18 @@ conda activate covid
 
 
 N_runs=5
-measure_step=1
+measure_step=2
 school_type=primary_dc
 
 for school_layout_start_index in $(seq 0 9)
    do
    school_layout_end_index=`echo $school_layout_start_index+1 | bc`
    
-   for measure_start_index in $(seq 0 $measure_step 2)
+   for measure_start_index in $(seq 0 $measure_step 4)
       do
       measure_end_index=`echo $measure_start_index+$measure_step | bc`
       echo python3 run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index 
-      echo hostname
+      echo $HOSTNAME
       python3 run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
 
    done
