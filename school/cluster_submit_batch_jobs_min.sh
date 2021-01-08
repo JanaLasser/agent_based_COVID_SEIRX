@@ -16,5 +16,7 @@ source /opt/sw/x86_64/glibc-2.17/ivybridge-ep/anaconda3/5.3.0/etc/profile.d/cond
 conda activate covid
 
 echo $HOSTNAME
-python test.py 1 &
-python test.py 2 &
+fname=1
+python test.py 1 > stdout-$fname 2> stderr-$fname &
+fname=2
+python test.py 2 > stdout-$fname 2> stderr-$fname &
