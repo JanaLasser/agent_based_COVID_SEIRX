@@ -32,7 +32,7 @@ for school_layout_start_index in $(seq 0 9)
    for measure_start_index in $(seq 0 $measure_step 4)
       do
       measure_end_index=`echo $measure_start_index+$measure_step | bc`
-      echo python3 run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index 
+      echo python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index 
       echo $HOSTNAME
       python3 run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
 
