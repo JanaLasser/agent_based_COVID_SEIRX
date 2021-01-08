@@ -3,10 +3,11 @@ import sys
 
 import networkx as nx
 import pandas as pd
-import numpy as np
 
 print('in se middle of se imports')
 sys.exit()
+
+import numpy as np
 
 from os.path import join
 import os
