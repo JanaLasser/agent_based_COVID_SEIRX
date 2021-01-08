@@ -1,4 +1,7 @@
 print('enter imports')
+import sys
+sys.exit()
+
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -8,7 +11,7 @@ import shutil
 import pickle
 import json
 
-import sys
+#import sys
 sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
