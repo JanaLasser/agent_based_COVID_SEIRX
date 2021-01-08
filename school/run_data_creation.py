@@ -10,14 +10,16 @@ import shutil
 import pickle
 import json
 
+print('in se middle of se imports')
+sys.exit()
+
 #import sys
 sys.path.insert(0,'../school')
 sys.path.insert(0,'../nursing_home')
 from model_school import SEIRX_school
 import analysis_functions as af
 
-print('exit imports')
-sys.exit()
+
 
 # screening parameters
 # student and teacher streening intervals (in days)
