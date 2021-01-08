@@ -29,7 +29,7 @@ for school_layout_start_index in $(seq 0 9)
       measure_end_index=`echo $measure_start_index+$measure_step | bc`
       echo python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index 
       echo $HOSTNAME
-      srun python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
+      python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
 
    done
 
