@@ -1,7 +1,8 @@
 #!/bin/bash
 #
 #SBATCH -J COVID_SEIRX_data_creation_primary_dc
-#SBATCH -N 1                 
+#SBATCH -N 1       
+#SBATCH -E          
 #SBATCH -o output
 #SBATCH -e error
 #SBATCH --ntasks-per-core=2
