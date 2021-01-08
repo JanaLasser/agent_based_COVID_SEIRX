@@ -149,7 +149,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         # load the contact network, schedule and node_list corresponding to the school
         G = nx.readwrite.gpickle.read_gpickle(\
                 join(res_path + '/networks/{}'.format(stype),\
-                '{}_network{}.gpickle'.format(sname, half)))
+                '{}_network{}.bz2'.format(sname, half)))
             
         student_schedule = pd.read_csv(\
                 join(res_path + '/schedules/{}'.format(stype),\
