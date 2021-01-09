@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-#SBATCH -J COVID_SEIRX_data_creation_primary_dc
+#SBATCH -J COVID_SEIRX_data_creation_primary_dc_swarm
 #SBATCH -N 1                 
-#SBATCH -o output_primary_dc
-#SBATCH -e error_primary_dc
+#SBATCH -o output_primary_dc_swarm
+#SBATCH -e error_primary_dc_swarm
 #SBATCH --ntasks-per-core=2
 #SBATCH --ntasks=16          
-#SBATCH --time=36:00:00      
+#SBATCH --time=48:00:00      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
@@ -22,21 +22,20 @@ conda activate covid
 
 
 N_runs=300
-school_type=primary_dc
-measure_step=64              
+school_type=primary_dc             
 max_tasks=32                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
 
 for school_layout_start_index in $(seq 16 24)
-    do
-    school_layout_end_index=`echo $school_layout_start_index+1 | bc`
-   
-    for measure_start_index in $(seq 0 127)
+	do
+	school_layout_end_index=`echo $school_layout_start_index+1 | bc`
+	
+	for measure_start_index in $(seq 0 127)
 		do
 		running_tasks=`ps -C python --no-headers | wc -l`
 		
-		while (($running_tasks -ge $max_tasks))
+		while [ "$running_tasks" -ge "$max_tasks" ]
 			do
 			sleep 5
 			running_tasks=`ps -C python --no-headers | wc -l`
@@ -44,15 +43,15 @@ for school_layout_start_index in $(seq 16 24)
 
 		measure_end_index=`echo $measure_start_index+1 | bc`
 		echo "*********************"
-      	echo $HOSTNAME: python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index  
-      	date
-      	uptime
-      	free -h
-      	python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
-      	echo "*********************"
+		echo $HOSTNAME: python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index  
+		date
+		uptime
+		free -h
+		python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
+		echo "*********************"
 		sleep 1
 		
-    done
+	done
 done
 wait
 
