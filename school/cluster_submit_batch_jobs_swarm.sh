@@ -43,13 +43,13 @@ for school_layout_start_index in $(seq 16 24)
 		done
 
 		measure_end_index=`echo $measure_start_index+1 | bc`
-		echo *********************
+		echo "*********************"
       	echo $HOSTNAME: python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index  
       	date
       	uptime
       	free -h
       	python run_data_creation.py $school_type $N_runs $school_layout_start_index $school_layout_end_index $measure_start_index $measure_end_index &
-      	echo *********************
+      	echo "*********************"
 		sleep 1
 		
     done
