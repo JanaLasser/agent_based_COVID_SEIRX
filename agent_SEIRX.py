@@ -71,7 +71,7 @@ class agent_SEIRX(Agent):
     def introduce_external_infection(self):
         if (self.infectious == False) and (self.exposed == False) and\
            (self.recovered == False):
-            index_transmission = self.random.random()
+            index_transmission = self.model.random.random()
             if index_transmission <= self.index_probability:
                 self.contact_to_infected = True
                 if self.verbose > 0:
@@ -92,7 +92,7 @@ class agent_SEIRX(Agent):
                 # determine if a transmission occurrs
                 p = self.model.calculate_transmission_probability(\
                                 self, target, base_risk)
-                transmission = self.random.random()
+                transmission = self.model.random.random()
 
                 if self.verbose > 1:
                     print('target: {} {}, p: {}'\
@@ -216,7 +216,7 @@ class agent_SEIRX(Agent):
         # I.e. agents that will become symptomatic down the road might
         # already be more infectious before they show any symptoms than
         # agents that stay asymptomatic
-        if self.random.random() <= self.symptom_probability:
+        if self.model.random.random() <= self.symptom_probability:
             self.symptomatic_course = True
             if self.verbose > 0:
                 print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
