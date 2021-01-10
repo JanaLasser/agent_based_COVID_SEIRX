@@ -101,12 +101,25 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     # construct folder for results if not yet existing
     sname = '{}_classes-{}_students-{}'.format(\
         stype, school['classes'], school['students'])
-    spath_run = join(res_path, join('results/{}/representative_runs'\
-                      .format(stype), sname))
-    spath_ensmbl = join(join(res_path,'results/{}/ensembles'.format(stype)), sname)
-    spath_obs = join(join(res_path,'results/{}/observables'.format(stype)), sname)
 
-    for path in [spath_run, spath_ensmbl, spath_obs]:
+
+    for subdir in ['representative_runs_median', 'representative_runs_best',
+                   'representative_runs_worst', 'ensembles']:
+        try:
+            os.mkdir(join(res_path, 'results/{}/{}'\
+                      .format(stype, subdir)))
+        except FileExistsError:
+            pass   
+
+    spath_median = join(res_path, join('results/{}/representative_runs_median'\
+                      .format(stype), sname))
+    spath_best = join(res_path, join('results/{}/representative_runs_best'\
+                      .format(stype), sname))
+    spath_worst = join(res_path, join('results/{}/representative_runs_worst'\
+                      .format(stype), sname))
+    spath_ensmbl = join(res_path,'results/{}/ensembles'.format(stype))
+
+    for path in [spath_median, spath_best, spath_worst]:
         try:
             os.mkdir(path)
         except FileExistsError:
@@ -116,7 +129,6 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                                  '{}_node_list.csv'.format(sname)))
 
     ## scan of all possible parameter combinations of additional prevention measures
-    observables = pd.DataFrame()
     c = 0
     for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
                 teacher_mask, half_classes, ventilation_mod in screen_params:
@@ -137,7 +149,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                     '_smask-{}_half-{}_vent-{}'\
             .format(bmap[student_mask], bmap[half_classes], ventilation_mod)
 
-        tmp_path = join(spath_run, measure_string + '_tmp')
+        tmp_path = join(spath_median, measure_string + '_tmp')
         
         half = ''
         if half_classes:
@@ -236,39 +248,33 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         ensemble_results = ensemble_results[ensemble_results['infected_agents'] > 0]
         for col in ensemble_results.columns:
             row.update(af.get_statistics(ensemble_results, col))
-        observables = observables.append(row, ignore_index=True)
         
         # get the a representative model with the same number of infected
         # as the ensemble median
-        rep_model = af.get_representative_run(row['infected_agents_median'],\
-                            tmp_path)
+        for stat, path in zip(['median', '0.10', '0.90'], 
+                              [spath_median, spath_best, spath_worst]):
+            rep_model = af.get_representative_run(row['infected_agents_{}'.format(stat)],\
+                                tmp_path)
+            try:
+                tm_events = af.get_transmission_chain(\
+                            rep_model, stype, teacher_schedule, student_schedule)
+            except (KeyError, IndexError) as e:
+                print(e)
+                return rep_model, teacher_schedule, student_schedule
+            state_data = af.get_agent_states(rep_model, tm_events)
+
+            duration = model.Nstep
+            start_weekday = (0 + model.weekday_shift) % 7 + 1
+
+            af.dump_JSON(path, school, ttype, index_case, s_screen_interval, 
+                         t_screen_interval, teacher_mask, student_mask, 
+                         half_classes, ventilation_mod, node_list, teacher_schedule,
+                         student_schedule, tm_events, state_data, start_weekday, 
+                         duration)
         try:
-            tm_events = af.get_transmission_chain(\
-                        rep_model, stype, teacher_schedule, student_schedule)
-        except (KeyError, IndexError) as e:
-            print(e)
-            return rep_model, teacher_schedule, student_schedule
-        state_data = af.get_agent_states(rep_model, tm_events)
-        
-        duration = model.Nstep
-        start_weekday = (0 + model.weekday_shift) % 7 + 1
-
-        af.dump_JSON(spath_run, school, ttype, index_case, s_screen_interval, 
-                     t_screen_interval, teacher_mask, student_mask, 
-                     half_classes, ventilation_mod, node_list, teacher_schedule,
-                     student_schedule, tm_events, state_data, start_weekday, 
-                     duration)
-
-        
-        screen_cols = ['test_type', 'turnover', 'index_case', 'student_screen_interval',
-            'teacher_screen_interval', 'student_mask', 'teacher_mask',
-            'half_classes', 'ventilation_modification']
-        other_cols = [c for c in observables if c not in screen_cols]
-        observables = observables[screen_cols + other_cols]
-        observables.to_csv(join(spath_obs, '{}_N{}_curr.csv'\
-                .format(sname, runs)), index=False)
-
-        shutil.rmtree(tmp_path, ignore_errors=True)
+            shutil.rmtree(tmp_path)
+        except FileNotFoundError:
+            pass
 
 
 
@@ -288,6 +294,21 @@ school_types = [school_type]
 school_configs = [(i, j, k) for i in school_types \
                                for j in class_numbers \
                                for k in class_sizes]
+
+school_sizes = [j * k for i, j, k in school_configs]
+
+schools = pd.DataFrame()
+index = pd.MultiIndex.from_tuples(school_configs, 
+                        names=['school_type', 'N_classes', 'N_students'])
+schools['size'] = school_sizes
+schools.index = index
+
+# sort school configs by number of students in descending order
+schools = schools.sort_values('size', ascending=False)
+schools = schools.reset_index()
+school_configs = [(i, j, k) for i, j, k in zip(schools['school_type'],
+                                               schools['N_classes'],
+                                               schools['N_students'])]
 
 school_configs = school_configs[min_idx:max_idx]
 
