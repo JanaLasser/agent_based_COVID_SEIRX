@@ -10,7 +10,7 @@ max_tasks=30                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
 
-for school_layout_start_index in $(seq 0 24)
+for school_layout_start_index in $(seq 0 3)
 	do
 	school_layout_end_index=`echo $school_layout_start_index+1 | bc`
 	
