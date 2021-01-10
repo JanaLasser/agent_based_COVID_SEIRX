@@ -123,8 +123,10 @@ def get_statistics(df, col):
         '{}_mean'.format(col):df[col].mean(),
         '{}_median'.format(col):df[col].median(),
         '{}_0.025'.format(col):df[col].quantile(0.025),
-        '{}_0.75'.format(col):df[col].quantile(0.75),
+        '{}_0.10'.format(col):df[col].quantile(0.10),
         '{}_0.25'.format(col):df[col].quantile(0.25),
+        '{}_0.75'.format(col):df[col].quantile(0.75),
+        '{}_0.90'.format(col):df[col].quantile(0.90),
         '{}_0.975'.format(col):df[col].quantile(0.975),
         '{}_std'.format(col):df[col].std(),
     }
@@ -433,10 +435,14 @@ def get_representative_run(N_infected, path):
     closest_run = None
     
     for run, median in medians.items():
-        if np.abs(N_infected - median) < dist:
+        curr_dist = np.abs(N_infected - median)
+        if curr_dist < dist:
             closest_run = run
+            dist = curr_dist
+        if curr_dist == 0:
+            break
             
-    fname = 'run_{}_N_{}.pbz2'.format(run, medians[run])
+    fname = 'run_{}_N_{}.pbz2'.format(closest_run, medians[closest_run])
     return decompress_pickle(fname, path)
 
 
