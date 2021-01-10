@@ -450,7 +450,8 @@ def dump_JSON(path, school,
               test_type, index_case, screen_frequency_student, 
               screen_frequency_teacher, teacher_mask, student_mask, half_classes,
               ventilation_mod, node_list, teacher_schedule, student_schedule, 
-              rep_transmission_events, state_data, start_weekday, duration):
+              rep_transmission_events, state_data, start_weekday, duration,
+              fname_addition=''):
 
     student_schedule = student_schedule.reset_index()
     teacher_schedule = teacher_schedule.reset_index()
@@ -501,12 +502,15 @@ def dump_JSON(path, school,
             'agent_states':state_data,
             'start_weekday':start_weekday,
             'duration':duration}
-    
-    with open(join(path, 'test-{}_'.format(ttype) + \
-                   'turnover-{}_index-{}_tf-{}_'
-                   .format(turnover, index_case[0], screen_frequency_teacher) +\
-                   'sf-{}_tmask-{}_smask-{}_half-{}_vent-{}.txt'\
-                   .format(screen_frequency_student, bool_dict[teacher_mask],\
-                    bool_dict[student_mask], bool_dict[half_classes], ventilation_mod)),'w')\
+
+    fname = join(path, 'test-{}_'.format(ttype) + \
+       'turnover-{}_index-{}_tf-{}_'
+       .format(turnover, index_case[0], screen_frequency_teacher) +\
+       'sf-{}_tmask-{}_smask-{}_half-{}_vent-{}'\
+       .format(screen_frequency_student, bool_dict[teacher_mask],\
+        bool_dict[student_mask], bool_dict[half_classes], ventilation_mod))
+    fname = fname + fname_addition + '.txt'
+
+    with open(fname,'w')\
                    as outfile:
         json.dump(data, outfile)
