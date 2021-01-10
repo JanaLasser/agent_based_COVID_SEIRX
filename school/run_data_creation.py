@@ -117,9 +117,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                       .format(stype), sname))
     spath_worst = join(res_path, join('results/{}/representative_runs_worst'\
                       .format(stype), sname))
-    spath_ensmbl = join(res_path,'results/{}/ensembles'.format(stype))
+    spath_ensmbl = join(res_path, join('results/{}/ensembles'\
+                      .format(stype), sname))
 
-    for path in [spath_median, spath_best, spath_worst]:
+    for path in [spath_median, spath_best, spath_worst, spath_ensmbl]:
         try:
             os.mkdir(path)
         except FileExistsError:
