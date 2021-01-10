@@ -317,7 +317,8 @@ for school_type, N_classes, class_size in school_configs:
     school = {'type':school_type, 'classes':N_classes,
               'students':class_size}
 
-    for d in ['representative_runs', 'ensembles', 'observables']:
+    for d in ['representative_runs_median', 'representative_runs_best',
+              'representative_runs_worst', 'ensembles']:
         try:
             os.mkdir(join(join(join(res_path, 'results'), school_type), d))
         except FileExistsError:
