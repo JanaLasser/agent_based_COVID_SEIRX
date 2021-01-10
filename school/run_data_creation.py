@@ -263,8 +263,8 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
                 return rep_model, teacher_schedule, student_schedule
             state_data = af.get_agent_states(rep_model, tm_events)
 
-            duration = model.Nstep
-            start_weekday = (0 + model.weekday_shift) % 7 + 1
+            duration = rep_model.Nstep
+            start_weekday = (0 + rep_model.weekday_shift) % 7 + 1
 
             af.dump_JSON(path, school, ttype, index_case, s_screen_interval, 
                          t_screen_interval, teacher_mask, student_mask, 
