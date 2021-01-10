@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-#SBATCH -J COVID_SEIRX_data_creation_primary_dc_swarm
+#SBATCH -J COVID_SEIRX_data_creation_lower_secondary_dc_largest
 #SBATCH -N 1                 
-#SBATCH -o output_primary_dc_swarm
-#SBATCH -e error_primary_dc_swarm
+#SBATCH -o output_lower_secondary_dc_largest
+#SBATCH -e error_lower_secondary_dc_largest
 #SBATCH --ntasks-per-core=2
 #SBATCH --ntasks=16          
-#SBATCH --time=48:00:00      
+#SBATCH --time=24:00:00      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
