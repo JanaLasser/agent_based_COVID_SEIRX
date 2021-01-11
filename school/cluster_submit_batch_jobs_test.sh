@@ -2,8 +2,8 @@
 #
 #SBATCH -J COVID_SEIRX_data_creation_primary_test
 #SBATCH -N 1                
-#SBATCH -o output_primary_test
-#SBATCH -e error_primary_test
+#SBATCH -o output_test
+#SBATCH -e error_test
 #SBATCH --partition=mem_0128
 #SBATCH --qos=devel_0128
 #SBATCH --ntasks-per-core=2
