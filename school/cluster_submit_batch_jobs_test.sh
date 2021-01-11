@@ -15,7 +15,7 @@
 uptime
 echo -n "start: "
 date
-echo "primary test"
+echo "primary_dc test"
 
 module purge
 module load anaconda3/5.3.0
@@ -25,7 +25,7 @@ conda activate covid
 
 
 N_runs=1
-school_type=primary             
+school_type=primary_dc             
 max_tasks=32                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
