@@ -429,6 +429,9 @@ class SEIRX_school(SEIRX):
                     elif interval == 2 and self.weekday in [1, 3, 5]:
                             self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type, 'preventive')
+                    # No interval specified = no testing, even if testing mode == preventive
+                    elif interval == None:
+                        pass
                     else:
                         if self.verbosity > 0:
                             print('not initiating {} preventive screen (wrong weekday)'\
