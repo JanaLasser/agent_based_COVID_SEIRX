@@ -15,7 +15,7 @@
 uptime
 echo -n "start: "
 date
-echo "upper_secondary test"
+echo "lower_secondary_dc test"
 
 module purge
 module load anaconda3/5.3.0
@@ -25,7 +25,7 @@ conda activate covid
 
 
 N_runs=1
-school_type=upper_secondary             
+school_type=lower_secondary_dc             
 max_tasks=32                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
