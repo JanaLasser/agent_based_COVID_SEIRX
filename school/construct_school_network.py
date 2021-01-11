@@ -909,6 +909,9 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 		class that is taught by a given teacher during a given hours at a given 
 		weekday.
 	"""
+	if not school_type.endswith('_dc'):
+		return
+
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
 	max_hours, N_weekdays, weekend_days = get_teaching_framework()
