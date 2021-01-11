@@ -981,6 +981,9 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
+	# add one hour for the lunch break
+	if teaching_hours >= 5:
+		teaching_hours += 1
 	# maximum hours students & teachers spend at the school on a given day
 	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	supervision_hour_cols = ['hour_{}'.format(i) for \
@@ -1037,6 +1040,9 @@ def set_student_student_daycare_contacts(G, school_type, student_schedule):
 
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
+	# add an hour for the lunch break
+	if teaching_hours >= 5:
+		teaching_hours += 1
 	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	supervision_hour_cols = ['hour_{}'.format(i) for \
 			i in range(teaching_hours + 1, max_hours + 1)]
