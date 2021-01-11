@@ -211,7 +211,7 @@ def get_transmission_chain(model, school_type, teacher_schedule, student_schedul
             for target, step in a.transmission_targets.items():
                 location = ''
                 hour = np.nan
-                weekday =  (step + model.weekday_shift) % 7 + 1
+                weekday =  step % 7 + 1
                 G = model.weekday_connections[weekday]
                 target = get_agent(model, target)
                 n1 = a.ID
