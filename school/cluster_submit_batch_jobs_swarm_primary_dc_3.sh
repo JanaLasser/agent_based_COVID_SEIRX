@@ -23,7 +23,7 @@ conda activate covid
 
 
 N_runs=500
-school_type=primary             
+school_type=primary_dc             
 max_tasks=32                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
