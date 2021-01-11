@@ -6,7 +6,7 @@
 #SBATCH -e error_primary_3
 #SBATCH --ntasks-per-core=2
 #SBATCH --ntasks=16          
-#SBATCH --time=24:00:00      
+#SBATCH --time=36:00:00      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
