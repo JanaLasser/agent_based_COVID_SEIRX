@@ -230,10 +230,6 @@ class SEIRX_school(SEIRX):
             index_case, agent_types, age_transmission_risk_discount,
             age_symptom_discount, mask_filter_efficiency, 
             transmission_risk_ventilation_modifier, seed)
-
-        # random shift of the weekday at which the simulation starts, to not
-        # always start on Mondays
-        self.weekday_shift = self.random.randint(1, 8)
         
         self.MG = G
         self.weekday_connections = {}
@@ -357,8 +353,10 @@ class SEIRX_school(SEIRX):
 
 
     def step(self):
-        self.weekday = (self.Nstep + self.weekday_shift) % 7 + 1
+        self.weekday = self.Nstep % 7 + 1
         self.G = self.weekday_connections[self.weekday]
+        if self.verbosity > 0:
+            print('weekday {}'.format(self.weekday))
 
         if self.testing:
             for agent_type in self.agent_types:
@@ -414,16 +412,27 @@ class SEIRX_school(SEIRX):
                 np.any(list(self.Testing.screening_intervals.values())):
 
                 for agent_type in ['teacher', 'student']:
-                    if self.Testing.screening_intervals[agent_type] != None and\
-                    self.days_since_last_agent_screen[agent_type] >=\
-                    self.Testing.screening_intervals[agent_type]:
+                    interval = self.Testing.screening_intervals[agent_type]
+                    assert interval in [7, 3, 2], \
+                        'testing interval {} for agent type {} not supported!'\
+                        .format(interval, agent_type)
+
+                    # (c.1) testing every 7 days = testing on mondays
+                    if interval == 7 and self.weekday == 1:
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type, 'preventive')
+                    # (c.2) testing every 3 days = testing on mondays & thursdays
+                    elif interval == 3 and self.weekday in [1, 4]:
+                            self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type, 'preventive')
+                    # (c.3) testing every 2 days = testing on mondays, wednesdays & fridays
+                    elif interval == 2 and self.weekday in [1, 3, 5]:
+                            self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type, 'preventive')
                     else:
-                        if self.verbosity > 0: 
-                            print('not initiating {} preventive screen (last screen too close)'\
-                                .format(agent_type))
-
+                        if self.verbosity > 0:
+                            print('not initiating {} preventive screen (wrong weekday)'\
+                                    .format(agent_type))
             else:
                 # do nothing
                 pass
