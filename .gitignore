@@ -3,6 +3,7 @@ __pycache__/
 /data
 
 *.ipynb    
+*.html
 !example_nursing_home.ipynb
 !example_school.ipynb
 !screening_frequency_data_creation.ipynb
