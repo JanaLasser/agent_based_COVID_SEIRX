@@ -17,8 +17,8 @@ import analysis_functions as af
 
 # screening parameters
 # student and teacher streening intervals (in days)
-s_screen_range = [None, 7]
-t_screen_range = [None, 7]
+s_screen_range = [None, 3, 7]
+t_screen_range = [None, 3, 7]
 # test technologies (and test result turnover times) used in the
 # different scenarios
 test_types = ['same_day_antigen']
@@ -265,7 +265,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
             state_data = af.get_agent_states(rep_model, tm_events)
 
             duration = rep_model.Nstep
-            start_weekday = (0 + rep_model.weekday_shift) % 7 + 1
+            start_weekday = 1
 
             af.dump_JSON(path, school, ttype, index_case, s_screen_interval, 
                          t_screen_interval, teacher_mask, student_mask, 
@@ -289,7 +289,10 @@ max_measure_idx = int(sys.argv[6])
 
 # school layouts
 class_sizes = [10, 15, 20, 25, 30]
-class_numbers = [4, 8, 12, 20, 30]
+if school_type in ['secondary', 'secondary_dc']:
+    class_numbers = [8, 12, 20]
+else:
+    class_numbers = [4, 8, 12, 20]
 school_types = [school_type]
 
 school_configs = [(i, j, k) for i in school_types \
