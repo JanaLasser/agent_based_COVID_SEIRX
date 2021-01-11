@@ -413,7 +413,7 @@ class SEIRX_school(SEIRX):
 
                 for agent_type in ['teacher', 'student']:
                     interval = self.Testing.screening_intervals[agent_type]
-                    assert interval in [7, 3, 2], \
+                    assert interval in [7, 3, 2, None], \
                         'testing interval {} for agent type {} not supported!'\
                         .format(interval, agent_type)
 
