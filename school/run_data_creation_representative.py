@@ -203,7 +203,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
             ensemble_results.to_csv(join(spath_ensmbl, measure_string + '.csv'))
 
 
-dst = '../data/school/results_representative'
+dst = '../data/school/results_representative_schools'
 src = '../data/school/representative_schools'
 runs = int(sys.argv[1])
 min_idx = int(sys.argv[2])
