@@ -144,10 +144,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
         # school
         G = nx.readwrite.gpickle.read_gpickle(join(src, '{}_network{}.bz2'\
         			.format(sname, half)))   
-        student_schedule = pd.read_csv(join(src,'{}_students_schedule{}.csv'\
+        student_schedule = pd.read_csv(join(src,'{}_schedule_students{}.csv'\
         			.format(sname, half)))
         student_schedule = set_multiindex(student_schedule, 'student')
-        teacher_schedule = pd.read_csv(join(src,'{}_teachers_schedule.csv'\
+        teacher_schedule = pd.read_csv(join(src,'{}_schedule_teachers.csv'\
         			.format(sname)))
         teacher_schedule = set_multiindex(teacher_schedule, 'teacher')
 
