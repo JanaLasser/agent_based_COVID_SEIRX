@@ -796,6 +796,9 @@ def set_teacher_student_teaching_contacts(G, school_type, N_classes,
 	"""
 	_, N_weekdays, _ = get_teaching_framework()
 	teaching_hours = get_teaching_hours(school_type)
+	# add an hour for the lunch break
+	if teaching_hours >= 5:
+		teaching_hours += 1
 	teaching_cols = ['hour_{}'.format(i) for i in range(1, teaching_hours + 1)]
 
 	teacher_nodes = list(teacher_schedule.loc[1].index)
@@ -809,20 +812,25 @@ def set_teacher_student_teaching_contacts(G, school_type, N_classes,
 		# in the classes taught by the teachers
 		for hour in range(1, teaching_hours + 1):
 			for c in range(1, N_classes + 1):
+				hour_col = 'hour_{}'.format(hour)
 				# teachers teaching a given class in a given hour during a 
 				# given day
-				teachers = wd_teacher_schedule['hour_{}'.format(hour)][\
-					wd_teacher_schedule['hour_{}'.format(hour)] == c].index
+				teachers = wd_teacher_schedule[hour_col][\
+					wd_teacher_schedule[hour_col] == c].index
 
 				# students in a given class during a given day
-				students = wd_student_schedule['hour_{}'.format(hour)][\
-					wd_student_schedule['hour_{}'.format(hour)] == c].index
+				students = wd_student_schedule[hour_col][\
+					wd_student_schedule[hour_col] == c].index
 
 				for t in teachers:
 					for s in students:
+						key = s + t + 'd{}'.format(wd)
+						if key == 's0026t0005d2':
+							print('got it!')
+						# no sorting needed, student nodes come first
 						G.add_edge(s, t, link_type = 'teaching_teacher_student',
 										 weekday = wd,
-										 key = s + t + 'd{}'.format(wd))
+										 key = key)
 
 
 def set_teacher_teacher_teamteaching_contacts(G, school_type, teacher_schedule):
@@ -851,6 +859,16 @@ def set_teacher_teacher_teamteaching_contacts(G, school_type, teacher_schedule):
 		Table of form (N_teachers * N_weekdays) X N_hours, where entries are the
 		class a given teacher is teaching during a given hour at a given day.
 	"""
+
+	# only three school types suppor team teaching. We need to hard-code these
+	# types here and return immediately if the school type passed to the function
+	# does not feature team teaching, because otherwise jointly supervised classes
+	# during daycare in these school types will be mistaken for team teaching and
+	# contacts not set correctly
+	if school_type not in ['lower_secondary', 'lower_secondary_dc',\
+		 'upper_secondary']:
+		 return
+
 	max_hours, N_weekdays, weekend_days = get_teaching_framework()
 	# number of hours that are usually taught every day in the given school type
 	teaching_hours = get_teaching_hours(school_type)
@@ -1813,8 +1831,7 @@ def generate_teacher_schedule_secondary(N_classes):
 	first_teacher_schedule = first_teacher_schedule.drop(columns = ['hour'])
 
 	# create the overall teacher schedule of form (N_weekdays * N_teachers) X
-	# N_hours by drawing information from the first_teacher_schedule and then 
-	# adding additional teacher to about 10% of lessons at random
+	# N_hours by drawing information from the first_teacher_schedule 
 	schedule_df = pd.DataFrame(columns=['teacher'] + ['hour_{}'.format(i) for\
 			 i in range(1, max_hours + 1)])
 	schedule_df['teacher'] = teacher_nodes * N_weekdays
@@ -1925,6 +1942,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 
 	G = nx.MultiGraph()
 
+
 	# add students and their household members as nodes to the graph
 	family_member_counter, family_counter = generate_students(G, school_type, 
 				  N_classes, class_size, student_p_children, student_p_parents)
@@ -1962,6 +1980,11 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 	# create links between teachers and students based on the teaching schedule
 	set_teacher_student_teaching_contacts(G, school_type, N_classes, 
 		teacher_schedule, student_schedule)
+
+	try:
+		print(G['s0035']['t0005']['s0035t0005d1'])
+	except KeyError:
+		pass
 
 	# generate links between teachers that supervise groups during daycare
 	# together
