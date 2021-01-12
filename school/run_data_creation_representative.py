@@ -106,7 +106,7 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     sname = '{}_classes-{}_students-{}'.format(\
         stype, school['classes'], school['students'])
 
-    spath_ensmbl = join(dst, 'ensembles')
+    spath_ensmbl = join(dst, join('ensembles', stype))
     try:
         os.mkdir(spath_ensmbl)
     except FileExistsError:
