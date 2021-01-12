@@ -764,6 +764,35 @@ def set_teacher_teacher_social_contacts(G, school_type, N_classes,
 			contacts_created += 1
 
 
+def _set_teaching_contacts(G, teacher_schedule, student_schedule, 
+					       teaching_hours, N_classes):
+	_, N_weekdays, _ = get_teaching_framework()
+	for wd in range(1, N_weekdays + 1):
+		wd_teacher_schedule = teacher_schedule.loc[wd]
+		wd_student_schedule = student_schedule.loc[wd]
+
+		# morning classes: create links between the teachers and all students
+		# in the classes taught by the teachers
+		for hour in range(1, teaching_hours + 1):
+			for c in range(1, N_classes + 1):
+				hour_col = 'hour_{}'.format(hour)
+				# teachers teaching a given class in a given hour during a 
+				# given day
+				teachers = wd_teacher_schedule[hour_col][\
+					wd_teacher_schedule[hour_col] == c].index
+
+				# students in a given class during a given day
+				students = wd_student_schedule[hour_col][\
+					wd_student_schedule[hour_col] == c].index
+
+				for t in teachers:
+					for s in students:
+						key = s + t + 'd{}'.format(wd)
+						# no sorting needed, student nodes come first
+						G.add_edge(s, t, link_type = 'teaching_teacher_student',
+										 weekday = wd,
+										 key = key)
+
 def set_teacher_student_teaching_contacts(G, school_type, N_classes, 
 										  teacher_schedule, student_schedule):
 	"""
@@ -794,44 +823,37 @@ def set_teacher_student_teaching_contacts(G, school_type, N_classes,
 		the classroom that a given student is in (=the number of class the 
 		student is assigned to) during a given day and hour.
 	"""
-	_, N_weekdays, _ = get_teaching_framework()
-	teaching_hours = get_teaching_hours(school_type)
-	# add an hour for the lunch break
-	if teaching_hours >= 5:
-		teaching_hours += 1
-	teaching_cols = ['hour_{}'.format(i) for i in range(1, teaching_hours + 1)]
+	if school_type == 'secondary_dc':
+		low_sec_students = [n[0] for n in \
+				G.nodes(data='age') if n[1] < 14 and n[0].startswith('s')]
+		low_sec_student_schedule = student_schedule.\
+				loc[(slice(None), low_sec_students),].copy()
+		low_sec_teaching_hours = get_teaching_hours('lower_secondary')
+		# add an hour for the lunch break
+		if low_sec_teaching_hours >= 5:
+			low_sec_teaching_hours += 1
+		_set_teaching_contacts(G, teacher_schedule, low_sec_student_schedule,
+							   low_sec_teaching_hours, N_classes)
 
-	teacher_nodes = list(teacher_schedule.loc[1].index)
-	student_nodes = list(student_schedule.loc[1].index)
 
-	for wd in range(1, N_weekdays + 1):
-		wd_teacher_schedule = teacher_schedule.loc[wd]
-		wd_student_schedule = student_schedule.loc[wd]
-
-		# morning classes: create links between the teachers and all students
-		# in the classes taught by the teachers
-		for hour in range(1, teaching_hours + 1):
-			for c in range(1, N_classes + 1):
-				hour_col = 'hour_{}'.format(hour)
-				# teachers teaching a given class in a given hour during a 
-				# given day
-				teachers = wd_teacher_schedule[hour_col][\
-					wd_teacher_schedule[hour_col] == c].index
-
-				# students in a given class during a given day
-				students = wd_student_schedule[hour_col][\
-					wd_student_schedule[hour_col] == c].index
-
-				for t in teachers:
-					for s in students:
-						key = s + t + 'd{}'.format(wd)
-						if key == 's0026t0005d2':
-							print('got it!')
-						# no sorting needed, student nodes come first
-						G.add_edge(s, t, link_type = 'teaching_teacher_student',
-										 weekday = wd,
-										 key = key)
-
+		up_sec_students = [n[0] for n in \
+				G.nodes(data='age') if n[1] >= 14 and n[0].startswith('s')]
+		up_sec_student_schedule = student_schedule.\
+				loc[(slice(None), up_sec_students),].copy()
+		up_sec_teaching_hours = get_teaching_hours('upper_secondary')
+		# add an hour for the lunch break
+		if up_sec_teaching_hours >= 5:
+			up_sec_teaching_hours += 1
+		_set_teaching_contacts(G, teacher_schedule, up_sec_student_schedule,
+							   up_sec_teaching_hours, N_classes)
+	else:
+		teaching_hours = get_teaching_hours(school_type)
+		# add an hour for the lunch break
+		if teaching_hours >= 5:
+			teaching_hours += 1
+		_set_teaching_contacts(G, teacher_schedule, student_schedule,
+							   teaching_hours, N_classes)
+	
 
 def set_teacher_teacher_teamteaching_contacts(G, school_type, teacher_schedule):
 	"""
@@ -975,7 +997,7 @@ def set_teacher_teacher_daycare_supervision_contacts(G, school_type,
 								key=n1 + n2 + 'd{}'.format(wd))
 
 
-def set_teacher_student_daycare_supervision_contacts(G, school_type, 
+def set_teacher_student_daycare_supervision_contacts(G, school_type, N_classes,
 	teacher_schedule, student_schedule):
 	"""
 	Set the contacts between the students in afternoon daycare supervision 
@@ -990,6 +1012,8 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 		school as nodes and their contacts as edges.
 
 	school_type : (str) type of the school
+
+	N_classes: (int) number of classes in the school
 
 	teacher_schedule : (pandas DataFrame) table of form 
 	(N_teachers * N_weekdays) X N_hours, where entries are the class that is 
@@ -1010,6 +1034,12 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 	supervision_hour_cols = ['hour_{}'.format(i) for \
 			i in range(teaching_hours + 1, max_hours + 1)]
 
+	# for secondary schools, only the age brackets corresponding to lower
+	# secondary levels are eligible for daycare supervision
+	age_bracket_map = get_age_distribution(school_type, N_classes)
+	daycare_eligibe = [c for c, age in age_bracket_map.items() \
+                            if age < 14]
+
 	# the fifth hour is the lunch break by definition and is therefore removed 
 	# from the list of daycare supervision hours
 	if 'hour_5' in supervision_hour_cols:
@@ -1021,7 +1051,10 @@ def set_teacher_student_daycare_supervision_contacts(G, school_type,
 			wd_student_schedule = student_schedule.loc[wd]
 
 			for hour_col in supervision_hour_cols:
-				daycare_groups = wd_teacher_schedule[hour_col].dropna().unique()
+				# all classes that are taught in the afternoon
+				tmp = wd_teacher_schedule[hour_col].dropna().unique()
+				# classes eligible for daycare
+				daycare_groups = [g for g in tmp if g in daycare_eligibe]
 				for daycare_group in daycare_groups:
 					# teachers supervising a given daycare group in a given hour
 					# at a given day
@@ -1995,7 +2028,7 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 	# all students in the afternoon groups. Note: the information about 
 	# which students are in which afternoon group are taken from the student
 	# schedule, because students are assigned to afternoon groups at random.
-	set_teacher_student_daycare_supervision_contacts(G, school_type, 
+	set_teacher_student_daycare_supervision_contacts(G, school_type, N_classes, 
 		teacher_schedule, student_schedule)
 
 	# add student contacts based on the groups they belong to druing the 
