@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH -J COVID_SEIRX_data_creation_primary_test
+#SBATCH -J COVID_SEIRX_data_creation_test
 #SBATCH -N 1                
 #SBATCH -o output_test
 #SBATCH -e error_test
@@ -15,7 +15,7 @@
 uptime
 echo -n "start: "
 date
-echo "lower_secondary_dc test"
+echo "secondary_dc test"
 
 module purge
 module load anaconda3/5.3.0
@@ -25,7 +25,7 @@ conda activate covid
 
 
 N_runs=1
-school_type=lower_secondary_dc             
+school_type=secondary_dc             
 max_tasks=32                 ## number of tasks per node.
 running_tasks=0              ## initialization
 
