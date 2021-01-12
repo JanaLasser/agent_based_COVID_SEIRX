@@ -2014,11 +2014,6 @@ def compose_school_graph(school_type, N_classes, class_size, N_floors,
 	set_teacher_student_teaching_contacts(G, school_type, N_classes, 
 		teacher_schedule, student_schedule)
 
-	try:
-		print(G['s0035']['t0005']['s0035t0005d1'])
-	except KeyError:
-		pass
-
 	# generate links between teachers that supervise groups during daycare
 	# together
 	set_teacher_teacher_daycare_supervision_contacts(G, school_type, 
