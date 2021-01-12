@@ -14,7 +14,7 @@ for school_layout_start_index in $(seq 0 6)
 	do
 	school_layout_end_index=`echo $school_layout_start_index+1 | bc`
 	
-	for measure_start_index in $(seq 0 143)
+	for measure_start_index in $(seq 0 5)
 		do
 		running_tasks=`ps -C python --no-headers | wc -l`
 		
