@@ -6,7 +6,7 @@
 #SBATCH -e error_primary_dc_2
 #SBATCH --ntasks-per-core=2
 #SBATCH --ntasks=16          
-#SBATCH --time=36:00:00      
+#SBATCH --time=24:00:00      
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=lasser@csh.ac.at
 
@@ -32,7 +32,7 @@ for school_layout_start_index in $(seq 2 4)
 	do
 	school_layout_end_index=`echo $school_layout_start_index+1 | bc`
 	
-	for measure_start_index in $(seq 0 287)
+	for measure_start_index in $(seq 0 127)
 		do
 		running_tasks=`ps -C python --no-headers | wc -l`
 		
