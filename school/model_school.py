@@ -353,7 +353,10 @@ class SEIRX_school(SEIRX):
 
 
     def step(self):
-        self.weekday = self.Nstep % 7 + 1
+        #print(self.Nstep)
+        #print(self.weekday_offset)
+        #print((self.Nstep + self.weekday_offset) % 7 + 1)
+        self.weekday = (self.Nstep + self.weekday_offset)% 7 + 1
         self.G = self.weekday_connections[self.weekday]
         if self.verbosity > 0:
             print('weekday {}'.format(self.weekday))
