@@ -855,6 +855,16 @@ class SEIRX(Model):
 
 
     def step(self):
+        self.weekday = (self.Nstep + self.weekday_offset) % 7 + 1
+        # if the connection graph is time-resloved, set the graph that is
+        # used to determine connections in this step to the sub-graph corres-
+        # ponding to the current day of the week
+        if self.dynamic_connections:
+            self.G = self.weekday_connections[self.weekday]
+
+        if self.verbosity > 0:
+            print('weekday {}'.format(self.weekday))
+
         if self.testing:
             for agent_type in self.agent_types:
                 for screen_type in ['reactive', 'follow_up', 'preventive']:
