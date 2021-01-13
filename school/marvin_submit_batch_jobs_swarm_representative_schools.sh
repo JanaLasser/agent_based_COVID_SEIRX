@@ -6,7 +6,7 @@ echo "representative schools"
 conda activate covid
 
 N_runs=500           
-max_tasks=8                  
+max_tasks=32                  
 running_tasks=0              
 
 
