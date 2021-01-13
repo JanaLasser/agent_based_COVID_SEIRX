@@ -326,6 +326,13 @@ class SEIRX(Model):
         self.schedule = SimultaneousActivation(self)
 
         self.Nstep = 0  # internal step counter used to launch screening tests
+        # since we may have weekday-specific contact networks, we need
+        # to keep track of the day of the week. Since the index case
+        # per default is introduced at step 0 in index case mode, we
+        # need to offset the starting weekday by a random number of weekdays
+        # to prevent artifacts from always starting on the same day of the week
+        self.weekday_offset = np.random.randint(1, 8)
+        self.weekday = self.Nstep + self.weekday_offset
 
         ## epidemiological parameters: can be either a single integer or the
         # mean and standard deviation of a distribution
