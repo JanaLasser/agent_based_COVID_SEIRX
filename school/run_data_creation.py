@@ -17,8 +17,8 @@ import analysis_functions as af
 
 # screening parameters
 # student and teacher streening intervals (in days)
-s_screen_range = [None, 3, 7]
-t_screen_range = [None, 3, 7]
+s_screen_range = [3, 7]
+t_screen_range = [3, 7]
 # test technologies (and test result turnover times) used in the
 # different scenarios
 test_types = ['same_day_antigen']
