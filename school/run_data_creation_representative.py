@@ -20,20 +20,24 @@ t_screen_range = [None, 3, 7]
 # test technologies (and test result turnover times) used in the
 # different scenarios
 test_types = ['same_day_antigen']
+# specifies whether the index case will be introduced via an
+# employee or a resident
+index_cases = ['student', 'teacher']
 # specifies whether teachers wear masks
 student_masks = [True, False]
 teacher_masks = [True, False]
 half_classes = [True, False]
 transmission_risk_ventilation_modifiers = [1, 0.36]
 
-params = [(i, j, k, l, m, n, o)\
+params = [(i, j, k, l, m, n, o, p)\
               for i in test_types \
-              for j in s_screen_range \
-              for k in t_screen_range \
-              for l in student_masks \
-              for m in teacher_masks \
-              for n in half_classes \
-              for o in transmission_risk_ventilation_modifiers]
+              for j in index_cases \
+              for k in s_screen_range \
+              for l in t_screen_range \
+              for m in student_masks \
+              for n in teacher_masks \
+              for o in half_classes \
+              for p in transmission_risk_ventilation_modifiers]
 
 # agents
 agent_types = {
@@ -117,12 +121,10 @@ def sample_prevention_strategies(screen_params, school, agent_types, measures,
     # the index case is picked randomly, according to the empirically observed
     # distribution of index cases for a given school type
     agent_index_ratio = agent_index_ratios[school_type]
-    index_case = np.random.choice(list(agent_index_ratio.keys()),
-                                          p=list(agent_index_ratio.values()))
 
     # scan of all possible parameter combinations of additional prevention 
     # measures
-    for ttype, s_screen_interval, t_screen_interval, student_mask, \
+    for ttype, index_case, s_screen_interval, t_screen_interval, student_mask, \
                 teacher_mask, half_classes, ventilation_mod in screen_params:
         
         turnovers = {'same':0, 'one':1, 'two':2, 'three':3}
