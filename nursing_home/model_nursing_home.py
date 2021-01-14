@@ -134,24 +134,27 @@ data_collection_functions = \
 class SEIRX_nursing_home(SEIRX):
         
 
-    def __init__(self, G, verbosity=0, testing=True,
+    def __init__(self, G, verbosity=0, 
+        base_transmission_risk = 0.05, testing=True,
         exposure_duration=4, time_until_symptoms=6, infection_duration=11, 
         quarantine_duration=14, subclinical_modifier=1,
         infection_risk_contact_type_weights={
-            'very_far': 0.1, 'far': 0.5, 'intermediate': 1, 'close': 3},
+            'very_far': 0.1, 'far': 0.25, 'intermediate': 0.5, 'close': 1},
         K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
         preventive_screening_test_type='one_day_PCR',
         follow_up_testing_interval=None, liberating_testing=False,
         index_case='employee', 
         agent_types={'type1': {'screening_interval': None,
                               'index_probability': None,
-                              'transmission_risk': 0.015,
-                              'reception_risk': 0.015}},
-        age_transmission_risk_discount = {'slope':None, 'intercept':1},
-        age_symptom_discount = {'slope':None, 'intercept':0.6},
+                              'mask':False}},
+        age_transmission_risk_discount = {'slope':-0.05, 'intercept':1},
+        age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
+        mask_filter_efficiency = {'exhale':0, 'inhale':0},
+        transmission_risk_ventilation_modifier = 0,
         seed=None):
 
-        super().__init__(G, verbosity, testing,
+
+        super().__init__(G, verbosity, base_transmission_risk, testing,
             exposure_duration, time_until_symptoms, infection_duration,
             quarantine_duration, subclinical_modifier,
             infection_risk_contact_type_weights,
@@ -159,10 +162,17 @@ class SEIRX_nursing_home(SEIRX):
             preventive_screening_test_type,
             follow_up_testing_interval, liberating_testing,
             index_case, agent_types, age_transmission_risk_discount,
-            age_symptom_discount, seed)
+            age_symptom_discount, mask_filter_efficiency, 
+            transmission_risk_ventilation_modifier, seed)
 
 
+        # agent types that are included in preventive, background & follow-up
+        # screens
+        self.screening_agents = ['employee', 'resident']
 
+        # define, whether or not a multigraph that defines separate connections
+        # for every day of the week is used
+        self.dynamic_connections = False
 
         
         # data collectors to save population counts and agent states every
@@ -197,3 +207,64 @@ class SEIRX_nursing_home(SEIRX):
         self.datacollector = DataCollector(
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
+
+    def calculate_transmission_probability(self, source, target, base_risk):
+        """
+        Calculates the risk of transmitting an infection between a source agent
+        and a target agent given the model's and agent's properties and the base
+        transmission risk.
+
+        Transmission is an independent Bernoulli trial with a probability of
+        success p. The probability of transmission without any modifications
+        by for example masks or ventilation is given by the base_risk, which
+        is calibrated in the model. The probability is modified by contact type
+        q1 (also calibrated in the model), infection progression q2
+        (from literature), reduction of the viral load due to a sublclinical
+        course of the disease q3 (from literature), reduction of exhaled viral
+        load of the source by mask wearing q4 (from literature), reduction of
+        inhaled viral load by the target q5 (from literature), and ventilation 
+        of the rooms q6 (from literature).
+
+        Parameters
+        ----------
+        source : agent_SEIRX
+            Source agent that transmits the infection to the target.
+        target: agent_SEIRX
+            Target agent that (potentially) receives the infection from the 
+            source.
+        base_risk : float
+            Probability p of infection transmission without any modifications
+            through prevention measures.
+
+        Returns
+        -------
+        p : float
+            Modified transmission risk.
+        """
+        n1 = source.ID
+        n2 = target.ID
+        link_type = self.G.get_edge_data(n1, n2)['link_type']
+
+        q1 = self.get_transmission_risk_contact_type_modifier(source, target)
+        q2 = self.get_transmission_risk_progression_modifier(source)
+        q3 = self.get_transmission_risk_subclinical_modifier(source)
+
+        # contact types where masks and ventilation are irrelevant
+        if link_type in ['resident_resident_room', 'resident_resident_table']:
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3))
+
+        # contact types were masks and ventilation are relevant
+        elif link_type in ['resident_resident_quarters',
+                           'resident_employee_care',
+                           'employee_employee_short']:
+            q4 = self.get_transmission_risk_exhale_modifier(source)
+            q5 = self.get_transmission_risk_inhale_modifier(target)
+            q6 = self.get_transmission_risk_ventilation_modifier()
+
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
+                (1 - q4) * (1 - q5) * (1 - q6))
+
+        else:
+            print('unknown link type: {}'.format(link_type))
+            p = None
+        return p
