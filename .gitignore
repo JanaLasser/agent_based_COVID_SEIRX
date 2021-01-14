@@ -10,6 +10,7 @@ __pycache__/
 !screening_frequency_analysis.ipynb
 !outbreak_visualization.ipynb
 !construct_school_network.ipynb
+!parse_static_networsk.ipynb
 
 *.svg
 *.png
