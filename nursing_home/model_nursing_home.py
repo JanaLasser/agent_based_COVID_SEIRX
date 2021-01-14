@@ -255,7 +255,7 @@ class SEIRX_nursing_home(SEIRX):
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['resident_resident_quarters',
-                           'resident_employee_care',
+                           'employee_resident_care',
                            'employee_employee_short']:
 
             q4 = self.get_transmission_risk_exhale_modifier(source)

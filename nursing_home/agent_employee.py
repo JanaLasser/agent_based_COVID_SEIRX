@@ -16,7 +16,7 @@ class employee(agent_SEIRX):
             verbosity)
         
 
-def step(self):
+    def step(self):
         '''
         Infection step: if a employee is infected and not in quarantine, it 
         interacts with other residents and employees trough the specified 
