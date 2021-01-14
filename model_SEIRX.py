@@ -12,11 +12,6 @@ sys.path.insert(0,'school')
 sys.path.insert(0, 'nursing_home')
 
 from testing_strategy import Testing
-from agent_resident import resident
-from agent_employee import employee
-from agent_student import student
-from agent_teacher import teacher
-from agent_family_member import family_member
 
 ## data collection functions ##
 
@@ -325,13 +320,16 @@ class SEIRX(Model):
         # set the interaction mode to simultaneous activation
         self.schedule = SimultaneousActivation(self)
 
-        self.Nstep = 0  # internal step counter used to launch screening tests
+
+        # internal step counter used to launch screening tests
+        self.Nstep = 0
+
         # since we may have weekday-specific contact networks, we need
         # to keep track of the day of the week. Since the index case
         # per default is introduced at step 0 in index case mode, we
         # need to offset the starting weekday by a random number of weekdays
         # to prevent artifacts from always starting on the same day of the week
-        
+
         self.weekday_offset = self.random.randint(1, 8)
         self.weekday = self.Nstep + self.weekday_offset
 
@@ -401,7 +399,23 @@ class SEIRX(Model):
 
         # extract the different agent types from the contact graph
         self.agent_types = list(agent_types.keys())
-
+        # dictionary of available agent classes with agent types and classes
+        self.agent_classes = {}
+        if 'resident' in agent_types:
+            from agent_resident import resident
+            self.agent_classes['resident'] = resident
+        if 'employee' in agent_types:
+            from agent_employee import employee
+            self.agent_classes['employee'] = employee
+        if 'student' in agent_types:
+            from agent_student import student
+            self.agent_classes['student'] = student
+        if 'teacher' in agent_types:
+            from agent_teacher import teacher
+            self.agent_classes['teacher'] = teacher
+        if 'family_member' in agent_types:
+            from agent_family_member import family_member
+            self.agent_classes['family_member'] = family_member
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
@@ -452,11 +466,6 @@ class SEIRX(Model):
         # single (randomly chosen) index case in the passed agent group
         self.index_case = check_index_case(index_case, self.agent_types)
 
-        # dictionary of available agent classes with agent types and classes
-        agent_classes = {'resident':resident, 'employee':employee,
-                         'student':student, 'teacher':teacher,
-                         'family_member':family_member}
-
         self.num_agents = {}
 
         ## add agents
@@ -498,7 +507,7 @@ class SEIRX(Model):
                             print('pathological epi-param case found!')
                             print(tmp_epi_params)
 
-                a = agent_classes[agent_type](ID, unit, self, 
+                a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
                     tmp_epi_params['time_until_symptoms'], 
                     tmp_epi_params['infection_duration'], 
@@ -895,16 +904,16 @@ class SEIRX(Model):
             # (a)
             if (self.testing == 'background' or self.testing == 'preventive')\
                and self.new_positive_tests == True:
-                for agent_type in self.agent_types:
-	                self.screen_agents(
-	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
-	                self.scheduled_follow_up_screen[agent_type] = True
+                for agent_type in self.screening_agents:
+                    self.screen_agents(
+                        agent_type, self.Testing.diagnostic_test_type, 'reactive')
+                    self.scheduled_follow_up_screen[agent_type] = True
 
             # (b)
             elif (self.testing == 'background' or self.testing == 'preventive') and \
                 self.Testing.follow_up_testing_interval != None and \
                 sum(list(self.scheduled_follow_up_screen.values())) > 0:
-                for agent_type in self.agent_types:
+                for agent_type in self.screening_agents:
                     if self.scheduled_follow_up_screen[agent_type] and\
                        self.days_since_last_agent_screen[agent_type] >=\
                        self.Testing.follow_up_testing_interval:
@@ -913,23 +922,41 @@ class SEIRX(Model):
                     else:
                         if self.verbosity > 0: 
                             print('not initiating {} follow-up screen (last screen too close)'\
-                            	.format(agent_type))
+                                .format(agent_type))
 
             # (c) 
             elif self.testing == 'preventive' and \
                 np.any(list(self.Testing.screening_intervals.values())):
-                for agent_type in self.agent_types:
 
-                    if self.Testing.screening_intervals[agent_type] != None and\
-                    self.days_since_last_agent_screen[agent_type] >=\
-                    self.Testing.screening_intervals[agent_type]:
+                for agent_type in self.screening_agents:
+                    interval = self.Testing.screening_intervals[agent_type]
+                    assert interval in [7, 3, 2, None], \
+                        'testing interval {} for agent type {} not supported!'\
+                        .format(interval, agent_type)
+
+                    # (c.1) testing every 7 days = testing on Mondays
+                    if interval == 7 and self.weekday == 1:
                         self.screen_agents(agent_type,
-                            self.Testing.preventive_screening_test_type, 'preventive')
+                            self.Testing.preventive_screening_test_type,\
+                             'preventive')
+                    # (c.2) testing every 3 days = testing on Mo & Turs
+                    elif interval == 3 and self.weekday in [1, 4]:
+                            self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type,\
+                             'preventive')
+                    # (c.3) testing every 2 days = testing on Mo, Wed & Fri
+                    elif interval == 2 and self.weekday in [1, 3, 5]:
+                            self.screen_agents(agent_type,
+                            self.Testing.preventive_screening_test_type,\
+                             'preventive')
+                    # No interval specified = no testing, even if testing 
+                    # mode == preventive
+                    elif interval == None:
+                        pass
                     else:
-                        if self.verbosity > 0: 
-                            print('not initiating {} preventive screen (last screen too close)'\
-                                .format(agent_type))
-
+                        if self.verbosity > 0:
+                            print('not initiating {} preventive screen (wrong weekday)'\
+                                    .format(agent_type))
             else:
                 # do nothing
                 pass

@@ -36,10 +36,7 @@ class resident(agent_SEIRX):
         # infected and not in quarantine. Randomly transmit the infection 
         # according to the transmission risk
         if self.infectious:
-            print('infectious!')
             if not self.quarantined:
-                print('not quarantined!')
-
                 # get contacts to other agent groups according to the
                 # interaction network
                 residents = self.get_contacts('resident')

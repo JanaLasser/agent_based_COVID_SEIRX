@@ -257,6 +257,7 @@ class SEIRX_nursing_home(SEIRX):
         elif link_type in ['resident_resident_quarters',
                            'resident_employee_care',
                            'employee_employee_short']:
+
             q4 = self.get_transmission_risk_exhale_modifier(source)
             q5 = self.get_transmission_risk_inhale_modifier(target)
             q6 = self.get_transmission_risk_ventilation_modifier()

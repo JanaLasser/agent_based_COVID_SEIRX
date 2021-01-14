@@ -230,7 +230,14 @@ class SEIRX_school(SEIRX):
             index_case, agent_types, age_transmission_risk_discount,
             age_symptom_discount, mask_filter_efficiency, 
             transmission_risk_ventilation_modifier, seed)
-        
+
+        # agent types that are included in preventive, background & follow-up
+        # screens
+        self.screening_agents = ['teacher', 'student']
+
+        # define, whether or not a multigraph that defines separate connections
+        # for every day of the week is used
+        self.dynamic_connections = True
         self.MG = G
         self.weekday_connections = {}
         all_edges = self.MG.edges(keys=True, data='weekday')
@@ -289,10 +296,11 @@ class SEIRX_school(SEIRX):
         q1 (also calibrated in the model), age of the transmitting agent q2 
         & age of the receiving agent q3 (both age dependencies are linear in 
         age and the same, and they are calibrated), infection progression q4
-        (from literature), reduction of exhaled viral load of the source by mask
-        wearing q5 (from literature), reduction of inhaled viral load by the
-        target q6 (from literature), and ventilation of the rooms q7 (from
-        literature).
+        (from literature), reduction of viral load due to a sublclinical course
+        of the disease q5 (from literature), reduction of exhaled viral load of
+        the source by mask wearing q6 (from literature), reduction of inhaled 
+        viral load by the target q7 (from literature), and ventilation of the 
+        rooms q8 (from literature).
 
         Parameters
         ----------
@@ -351,103 +359,3 @@ class SEIRX_school(SEIRX):
             p = None
         return p
 
-
-    def step(self):
-        self.weekday = (self.Nstep + self.weekday_offset)% 7 + 1
-        self.G = self.weekday_connections[self.weekday]
-        if self.verbosity > 0:
-            print('weekday {}'.format(self.weekday))
-
-        if self.testing:
-            for agent_type in self.agent_types:
-                for screen_type in ['reactive', 'follow_up', 'preventive']:
-                    self.screened_agents[screen_type][agent_type] = False
-
-            if self.verbosity > 0: 
-                print('* testing and tracing *')
-            
-            self.test_symptomatic_agents()
-            
-
-            # collect and act on new test results
-            agents_with_test_results = self.collect_test_results()
-            for a in agents_with_test_results:
-                a.act_on_test_result()
-            
-            self.quarantine_contacts()
-
-            # screening:
-            # a screen should take place if
-            # (a) there are new positive test results
-            # (b) as a follow-up screen for a screen that was initiated because
-            # of new positive cases
-            # (c) if there is a preventive screening policy and it is time for
-            # a preventive screen in a given agent group
-
-            # (a)
-            if (self.testing == 'background' or self.testing == 'preventive')\
-               and self.new_positive_tests == True:
-                for agent_type in ['teacher', 'student']:
-	                self.screen_agents(
-	                    agent_type, self.Testing.diagnostic_test_type, 'reactive')
-	                self.scheduled_follow_up_screen[agent_type] = True
-
-            # (b)
-            elif (self.testing == 'background' or self.testing == 'preventive') and \
-                self.Testing.follow_up_testing_interval != None and \
-                sum(list(self.scheduled_follow_up_screen.values())) > 0:
-                for agent_type in ['teacher', 'student']:
-                    if self.scheduled_follow_up_screen[agent_type] and\
-                       self.days_since_last_agent_screen[agent_type] >=\
-                       self.Testing.follow_up_testing_interval:
-                        self.screen_agents(
-                            agent_type, self.Testing.diagnostic_test_type, 'follow_up')
-                    else:
-                        if self.verbosity > 0: 
-                            print('not initiating {} follow-up screen (last screen too close)'\
-                            	.format(agent_type))
-
-            # (c) 
-            elif self.testing == 'preventive' and \
-                np.any(list(self.Testing.screening_intervals.values())):
-
-                for agent_type in ['teacher', 'student']:
-                    interval = self.Testing.screening_intervals[agent_type]
-                    assert interval in [7, 3, 2, None], \
-                        'testing interval {} for agent type {} not supported!'\
-                        .format(interval, agent_type)
-
-                    # (c.1) testing every 7 days = testing on mondays
-                    if interval == 7 and self.weekday == 1:
-                        self.screen_agents(agent_type,
-                            self.Testing.preventive_screening_test_type, 'preventive')
-                    # (c.2) testing every 3 days = testing on mondays & thursdays
-                    elif interval == 3 and self.weekday in [1, 4]:
-                            self.screen_agents(agent_type,
-                            self.Testing.preventive_screening_test_type, 'preventive')
-                    # (c.3) testing every 2 days = testing on mondays, wednesdays & fridays
-                    elif interval == 2 and self.weekday in [1, 3, 5]:
-                            self.screen_agents(agent_type,
-                            self.Testing.preventive_screening_test_type, 'preventive')
-                    # No interval specified = no testing, even if testing mode == preventive
-                    elif interval == None:
-                        pass
-                    else:
-                        if self.verbosity > 0:
-                            print('not initiating {} preventive screen (wrong weekday)'\
-                                    .format(agent_type))
-            else:
-                # do nothing
-                pass
-
-            for agent_type in self.agent_types:
-            	if not (self.screened_agents['reactive'][agent_type] or \
-            		    self.screened_agents['follow_up'][agent_type] or \
-            		    self.screened_agents['preventive'][agent_type]):
-            			self.days_since_last_agent_screen[agent_type] += 1
-
-
-        if self.verbosity > 0: print('* agent interaction *')
-        self.datacollector.collect(self)
-        self.schedule.step()
-        self.Nstep += 1

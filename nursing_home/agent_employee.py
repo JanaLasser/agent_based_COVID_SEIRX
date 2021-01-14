@@ -18,13 +18,13 @@ class employee(agent_SEIRX):
 
 def step(self):
         '''
-        Infection step: if a resident is infected and not in quarantine, it 
+        Infection step: if a employee is infected and not in quarantine, it 
         interacts with other residents and employees trough the specified 
+
         contact network and can pass a potential infection.
         Infections are staged here and only applied in the 
         "advance"-step to simulate "simultaneous" interaction
         '''
-        print('step')
 
         # check for external infection in continuous index case modes
         if self.model.index_case in ['continuous'] and \
@@ -35,9 +35,7 @@ def step(self):
         # infected and not in quarantine. Randomly transmit the infection 
         # according to the transmission risk
         if self.infectious:
-            print('infectious!')
             if not self.quarantined:
-                print('not quarantined!')
 
                 # get contacts to other agent groups according to the
                 # interaction network
@@ -48,4 +46,3 @@ def step(self):
                 # separately to allow for differences in transmission risk
                 self.transmit_infection(residents)
                 self.transmit_infection(employees)
-
