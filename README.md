@@ -19,6 +19,7 @@ _Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing 
 * [Assumptions and Approximations](#assumptions-and-approximations)
 * [Calibration](#calibration)
 * [Installation](#installation)
+* [Running the simulation](#running-the-simulation)
 * [Acknowledgements](#acknowledgements)
 * [References](#references)
 
@@ -173,6 +174,7 @@ Note: if you want to clone the development branch, use
 ``` pip install --upgrade pip```  
 5. Install dependencies  
 ```pip install -r requirements.txt```  
+
 
 ## Running the simulation
 The following requires the activation of the virtual environment you created during installation  
