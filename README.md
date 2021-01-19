@@ -197,7 +197,7 @@ and
 
 
 ## Acknowledgements
-I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from Complexity Science Hub Vienna and Thomas Wochele-Thoma from [Caritas Austria](https://www.caritas.at/) for the fruitful discussions that led to the development of this project.
+I would like to thank Thomas Wochele-Thoma from [Caritas Austria](https://www.caritas.at/) for the fruitful discussions that led to the development of the nursing home scenario and for supplying the empirical outbreak observation data for this scenario. I would like to thank Lukas Richter and Daniela Schmid from [AGES Österreich](https://www.ages.at/startseite/) for supplying the data for the school scenario. I would like to than the numerous school directors and teachers that were willing to tell us about the daily life in Austrian schools during the pandemic. Lats but not least I would like to thank [Peter Klimek](https://www.csh.ac.at/researcher/peter-klimek/) from the [Complexity Science Hub Vienna](https://www.csh.ac.at/) and [Medical University Vienna](https://www.meduniwien.ac.at/web/) for the close collaboration during the inception and development of this project.
 
 ## References
 Backer Jantien A, Klinkenberg Don, Wallinga Jacco. Incubation period of 2019 novel coronavirus (2019-nCoV) infections among travellers from Wuhan, China, 20–28 January 2020. Euro Surveill. 2020;25(5):pii=2000062. [DOI: 10.2807/1560-7917.ES.2020.25.5.2000062](https://doi.org/10.2807/1560-7917.ES.2020.25.5.2000062)
