@@ -6,7 +6,7 @@ A simulation tool to explore the spread of COVID-19 in small communities such as
 <img alt="Illustrative figure of infection spread in a nursing home" src="img/fig.png?raw=true" height="500" width="800" align="center">
 
 
-**This software is under development and intended to respond rapidly to the current situation. Please use it with caution and bear in mind that there might be bugs**
+*This software is under development and intended to respond rapidly to the current situation. Please use it with caution and bear in mind that there might be bugs.*
 
 Reference:  
 
@@ -124,11 +124,11 @@ The assumptions and approximations made by the model to simplify the dynamics of
 * **Index cases**: There are several ways to introduce index cases to a facility: One way is to introduce a single index case through an agent (specify the agent group through the ```index_case``` parameter) and then simulate the ensuing outbreak in the facility. The agent will be randomly chosen from all agents in the corresponding group. The second option is to set a probability of an agent to become an index case in each simulation step and choose whether employees, patients or both agent groups can become index cases. To use this option, specify ```index_case='continuous'``` and set the ```index_probability``` in the ```agent_types``` parameter to a non-zero risk for the desired agent groups.
 
 ### Epidemiological parameters
-* **Exposure duration** (latent time): The time from transmission to becoming infectious is approximated to be $5\pm 1.9$ days ([Ferreti et al. 2020](https://doi.org/10.1126/science.abb6936), [Linton et al. 2020](https://www.mdpi.com/2077-0383/9/2/538), [Lauer et al. 2020](https://www.acpjournals.org/doi/full/10.7326/M20-0504)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```exposure_duration``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the exposure duration of every agent is drawn from this distribution, such that 0 < exposure duration <= time until symptoms and exposure duration < infection duration.
+* **Exposure duration** (latent time): The time from transmission to becoming infectious is approximated to be 5 +- 1.9 days ([Ferreti et al. 2020](https://doi.org/10.1126/science.abb6936), [Linton et al. 2020](https://www.mdpi.com/2077-0383/9/2/538), [Lauer et al. 2020](https://www.acpjournals.org/doi/full/10.7326/M20-0504)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```exposure_duration``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the exposure duration of every agent is drawn from this distribution, such that 0 < exposure duration <= time until symptoms and exposure duration < infection duration.
 
-* **Infection duration**: An infected agent is assumed to be infectious for 10.91 $\pm$ 3.95 days after becoming infections ([Walsh et al. 2020](https://doi.org/10.1016/j.jinf.2020.06.067), [You et al. 2020](https://www.sciencedirect.com/science/article/abs/pii/S1438463920302133?via%3Dihub)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```infection_duration``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the infection duration of every agent is drawn from this distribution, such that infection duration > exposure duration.
+* **Infection duration**: An infected agent is assumed to be infectious for 10.91 +- 3.95 days after becoming infections ([Walsh et al. 2020](https://doi.org/10.1016/j.jinf.2020.06.067), [You et al. 2020](https://www.sciencedirect.com/science/article/abs/pii/S1438463920302133?via%3Dihub)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```infection_duration``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the infection duration of every agent is drawn from this distribution, such that infection duration > exposure duration.
 
-* **Time until symptoms** (incubation time): Humans infected with SARS-CoV2 that develop a clinical course of the disease usually develop symptoms only after they become infectious. We assume the length of the time period between transmission and developing symptoms to be $6.4\pm 0.8$ days ([He et al. 2020](https://www.nature.com/articles/s41591-020-0869-5), [Backer et al. 2020](https://doi.org/10.2807/1560-7917.ES.2020.25.5.2000062)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```time_until_symptoms``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the time until symptoms of every agent is drawn from this distribution, such that time until symptoms >= exposure duration.
+* **Time until symptoms** (incubation time): Humans infected with SARS-CoV2 that develop a clinical course of the disease usually develop symptoms only after they become infectious. We assume the length of the time period between transmission and developing symptoms to be 6.4 +- 0.8 days ([He et al. 2020](https://www.nature.com/articles/s41591-020-0869-5), [Backer et al. 2020](https://doi.org/10.2807/1560-7917.ES.2020.25.5.2000062)), which we use in both scenarios and as default value for the simulation. Adjust this parameter through the ```time_until_symptoms``` variable by supplying either a mean duration or the mean and standard deviation of a Weibull distribution. If mean & standard deviation of a Weibull distribution are supplied, the time until symptoms of every agent is drawn from this distribution, such that time until symptoms >= exposure duration.
 
 * **Infectiousness**: We assume that infectiousness stays constantly high until symptom onset and thereafter decreases monotonically thereafter, until it reaches zero at the end of the infection duration ([He et al. 2020](https://doi.org/10.1038/s41591-020-0869-5), [Walsh et al. 2020](10.1016/j.jinf.2020.06.067)). We model this by a trapezoid function that is one (i.e. infectiousness is equal to the base transmission risk, if no other modifiers apply) in the time between the end of the exposure duration and the onset of symptoms. After symptom onset, infectiousness declines linearly over a number of days equal to infection duration - time until symptoms. This behaviour is currently hard-coded (see ```get_transmission_risk_progression_modifier()``` in the ```model_SEIRX``` class).
 
@@ -169,10 +169,20 @@ _p_i = 1 - [1 - b(1 - q_4_i)(1 - q_5)]_
 In our model, we draw the relevant epidemiological parameters (exposure duration, infection duration, symptomatic course) individually for every agent from distributions. To calibrate, we create pairs of agents and let one of them be infected. We then simulate the whole course of the infection (from day 0 to the end of the infection duration) and check for a transmission with probability of success _p_i_ on every day _i_. We minimize the difference between the expected number of successful infections (37.8%) and the simulated number of successful infections by varying _b_. This results in a value of _b=0.074_ or an average risk of 7.4% for a household member per day to get infected.  
 We note that the reduction of transmission risk and reception risk due to age of the transmitting and receiving agents is treated separately. This is why we only calibrate the transmission risk between adults here and calibrate the age discount factor separately.
 
-### Intermediate and far contacts
-TODO
+### Calibration for schools
+For schools, we simultaneously calibrate the following parameters
+* weight of the contact type "intermediate" (```infection_risk_contact_type_weights['intermediate']```),
+* weight of the contact type "far" (```infection_risk_contact_type_weights['far']```) and
+* the age transmission risk discount (```age_transmission_risk_discount['slope']```).
 
-### Transmission risk and age
+For the calibration, we use observations of SARS-CoV-2 outbreaks in Austrian schools in the weeks 35-46 of the year 2020. We optimize two distinct target observables:
+1. The distribution of outbreak sizes
+2. The distribution of cases to the agent groups "teacher" and "student".
+For the optimization, we calculate the sum of the [Chi-squared distances](https://link.springer.com/referenceworkentry/10.1007%2F978-0-387-32833-1_53) between the empirically observed distributions and the distributions generated from ensembles of 500 runs for every parameter combination. 
+
+To find optimal values for the parameters, we first conduct a 
+
+### Calibration for nursing homes
 TODO
 
 
