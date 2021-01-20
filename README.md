@@ -155,20 +155,36 @@ The assumptions and approximations made by the model to simplify the dynamics of
 * **Quarantine duration**: We assume that agents that were tested positive are isolated (quarantined) for 14 days, according to [recommendations by the WHO](https://www.who.int/publications/i/item/considerations-for-quarantine-of-individuals-in-the-context-of-containment-for-coronavirus-disease-(covid-19)). This time can be changed by supplying the parameter ```quarantine_duration``` to the simulation.
 
 ## Calibration
+The most important part of any agent based model is its calibration. As described above, the model has many parameters that can be set and will influence the dynamics of infection spread. Some parameter choices can be based on existing literature (such as the effectiveness of masks or ventilation) or directly observable characteristics of infection spread in our settings (such as the age dependence of the probability to develop a symptomatic course). Depending on the setting, there will be a number of free parameters in the model that have to be calibrated to reproduce the observed dynamics of infection spread as closely as possible. In our application, these are a total of three parameters for nursing homes and four parameters for schools:
+1. **The base transmission risk of a household contact**, i.e. the probability to transmit an infection through a contact of type "close". This parameter is calibrated for both the nursing home and school setting.
+2. **The weight of "intermediate" contacts**, i.e. how much the transmission risk through an intermediate contact is reduced as compared to a close contact. If a close contact has a weight of 1, a weight of 0.8 for an intermediate contact means, that the transmission risk through an intermediate contact is reduced by 20%. This parameter is calibrated for both the nursing home and school setting.
+3. **The weight of "far" contacts**, i.e. how much the transmission risk through a far contact is reduced as compared to a close contact. If a close contact has a weight of 1, a weight of 0.4 for an intermediate contact means, that the transmission risk through an intermediate contact is reduced by 60%. This parameter is calibrated for both the nursing home and school setting.
+4. **The reduction of transmission and reception risk for children**. Here we have to calibrate a linear discount factor for every year a child is younger than 18. If the discount factor is 0.02, then children aged 6 will have a transmission risk that is reduced by 24% as compared to people aged 18 and above. This parameter is only calibrated for the school setting, since this is the only setting were children are involved, for which significantly reduced transmission and reception risks are assumed.
+
+### Household transmissions
+Most recent research indicates that there is a 37.8% risk of adult members of the same household than an infected person to get infected themselves over the course of the infection ([Madwell et al. 2020](https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2774102)). Our aim is to calibrate the base transmission risk _b_ between adult agents in our systems to reflect this empirical finding. Transmission risk is influenced by a range of factors (see section [Transmissions](#transmissions)). For household transmissions between adults, the only relevant factors that influence the transmission risk is the reduction due to progression of the disease _q_4(t)_ (in later stages of the infection the transmission risk decreases) and the reduction in case of an asymptomatic course _q_5_. The values for both of these factors are taken from literature. For one contact on day _i_ the probability of a successful transmission (transmission risk) is therefore
+
+_p_i = 1 - [1 - b(1 - q_4_i)(1 - q_5)]_
+
+In our model, we draw the relevant epidemiological parameters (exposure duration, infection duration, symptomatic course) individually for every agent from distributions. To calibrate, we create pairs of agents and let one of them be infected. We then simulate the whole course of the infection (from day 0 to the end of the infection duration) and check for a transmission with probability of success _p_i_ on every day _i_. We minimize the difference between the expected number of successful infections (37.8%) and the simulated number of successful infections by varying _b_. This results in a value of _b=0.074_ or an average risk of 7.4% for a household member per day to get infected.  
+We note that the reduction of transmission risk and reception risk due to age of the transmitting and receiving agents is treated separately. This is why we only calibrate the transmission risk between adults here and calibrate the age discount factor separately.
+
+### Intermediate and far contacts
+TODO
+
+### Transmission risk and age
 TODO
 
 
 ## Installation (Linux)
-Note: this is currently not working because the dependencies are buggy. This simulation uses the standard scientific python stack (python 3.7, numpy, pandas, matplotlib) plus networkx and mesa. If these libraries are installed, the simulation should work out of the box.
-
 1. Clone the repository:  
 ```git clone https://github.com/JanaLasser/agent_based_COVID_SEIRX.git```  
 Note: if you want to clone the development branch, use  
 ```git clone --branch dev https://github.com/JanaLasser/agent_based_COVID_SEIRX.git``` 
 2. Navigate to the repository  
 ```cd agent_based_COVID_SEIRX```
-3. Create and activate a virtual environment. Make sure you use a Python binary with a version version >= 3.8  
-```virtualenv -p=/usr/bin/python3.8 .my_venv```  
+3. Create and activate a virtual environment. Make sure you use a Python binary with a version version >= 3.7  
+```virtualenv -p=/usr/bin/python3.7 .my_venv```  
 ```source .my_venv/bin/activate```  
 4. Update pip  
 ``` pip install --upgrade pip```  
