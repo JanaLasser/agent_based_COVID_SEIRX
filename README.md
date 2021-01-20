@@ -48,7 +48,9 @@ We currently account for eight different factors that can influence the transmis
 * q_1: Modification of the transmission risk due to the type of contact between agents. Here, q_1 = 1 for a household contact (contact type "close", no modification), whereas q_1 < 1 for other contact types ("intermediate", "far", "very far", reduction of transmission risk). The value of q_1 depending on the type of the contact has to be specified via the model parameter ```infection_risk_contact_type_weights``` at model setup. Contact types between each two agents are stored in the contact network supplied to the model.
 * q_2: Modification of the transmission risk due to the age of the _transmitting agent_. The dependence of transmission risk on age is set via the model parameter ```age_symptom_discount``` at model setup.
 * q_3: Modification of the reception risk due to the age of the _receiving agent_. The dependence of reception risk on age is approximated to be the same as the dependence of the transmission risk on age and is therefore also set via the model parameter ```age_symptom_discount``` at model setup.
+<img alt="Illustration of the dependence of transmission risk on age" src="img/age_transmission_discount.png?raw=true" height="500" width="800" align="center">
 * q_4: Modification of the transmission risk due to the progression of the infection. This dependence is currently hard-coded, based on literature values.
+<img alt="Illustration of the transmission risk with a progressing SARS-CoV2-infection" src="img/transmission_risk_progression.png?raw=true" height="500" width="800" align="center">
 * q_5: Modification of the transmission risk due to the type of the course of the infection (symptomatic, asymptomatic). This parameter is set via the model parameter ```subclinical_modifier``` at model setup.
 * q_6: Modification of the transmission risk due to mask wearing of the _transmitting agent_. This parameter is set via the model parameter ```mask_filter_efficiency["exhale"]``` at model setup. Whether or not an agent group is wearing masks has to be specified via the ```agent_types["mask"]``` parameter and the contact types that are affected by mask-wearing are hard-coded in the model (for example, household contacts are generally not affected by mask-wearing).
 * q_7: Modification of the reception risk due to mask wearing of the _receiving agent_. This parameter is set via the model parameter ```mask_filter_efficiency["inhale"]``` at model setup. Whether or not an agent group is wearing masks has to be specified via the ```agent_types["mask"]``` parameter and the contact types that are affected by mask-wearing are hard-coded in the model (for example, household contacts are generally not affected by mask-wearing).
@@ -236,11 +238,11 @@ The following requires the activation of the virtual environment you created dur
 ```source .my_venv/bin/activate```
 
 I provide exemplary Jupyter Notebooks for [nursing homes](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/example_nursing_home.ipynb) and [schools](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/school/example_school.ipynb) that illustrate how a simulation model is set up and run for these two applications, how results are visualised and how data from a model run can be collected. Run the example notebook from the terminal:  
-```jupyter-notebook nursing_home/example_nursing_home.ipynb```  
+```jupyter-notebook example_nursing_home.ipynb```  
 
 or  
 
-```jupyter-notebook school/example_school.ipynb```
+```jupyter-notebook example_school.ipynb```
 
 I also provide the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/dev/nursing_home/screening_frequency_data_creation.ipynb) used to run the simulations and create the data used in the publication **Agent-based simulations for optimized prevention of the spread of SARS-CoV-2 in nursing homes** as well as the [Jupyter Notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/nursing_home/screening_frequency_analysis.ipynb) used to create the heatmaps for the different analysed screnarios from the simulation data. Run these notebooks from the terminal using:
 
