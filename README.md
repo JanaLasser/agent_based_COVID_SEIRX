@@ -180,7 +180,36 @@ For the calibration, we use observations of SARS-CoV-2 outbreaks in Austrian sch
 2. The distribution of cases to the agent groups "teacher" and "student".
 For the optimization, we calculate the sum of the [Chi-squared distances](https://link.springer.com/referenceworkentry/10.1007%2F978-0-387-32833-1_53) between the empirically observed distributions and the distributions generated from ensembles of 500 runs for every parameter combination. 
 
-To find optimal values for the parameters, we first conduct a 
+For the other simulation parameters, we use settings that most closely match the situation in Austrian schools in the period of time from which the empirical observations stem: 
+* Index cases are drawn from the empirically observed distribution of index cases between teachers and students.
+* The age dependence of the probability of developing a symptomatic course is matched to the empirically observed age dependence.
+* Only diagnostic testing with PCR tests with a one-day turnover was in place, followed by a background screen in case of a positive result.
+* There were no preventive screens and no follow-up tests after a background screen.
+* Contacts of type "close" and "intermediate" were considered to be K1 contacts and were quarantined for 10 days in case of a positive test result and there was no "liberating testing" in place.
+* Teachers and students did not regularly wear masks during lessons.
+* Teachers and students did wear masks in hallways and shared community areas and contacts between students of different classes were avoided.
+* All students of a class were present every day (i.e. no halving of classes).
+
+Using these settings, to find optimal values for the parameters, we first conduct a random search in the parameter grid spanned by the following ranges:
+* contact weight intermediate: [0:1:0.05],
+* contact weight far: [0:1:0.05] and
+* age transmission discount: [-0.1:0:0.02],
+where we impose the additional constraint on parameter combinations that contact weight intermediate > contact weight far. We randomly choose 100 parameter combinations out of the 950 possible parameter combinations and simulate ensembles of 500 runs for each parameter combination and school type. For school characteristics we choose a number of classes and students per class that most closely matches the average characteristics of an Austrian school of the given school type (see section [Schools](#schools)). Since the empirical data we have does not differentiate between schools with and without daycare of a given school type, we assume that 50% of the schools of a given school type are schools with daycare. This approximates the [percentage of schools with daycare in Austria](https://www.kdz.eu/de/content/fact-sheets-pflichtschule-und-tagesbetreuung). The [Austrian school statistics](https://www.bmbwf.gv.at/Themen/schule/schulsystem/gd.html) also do not differentiate between schools with and without daycare. Therefore we assume that schools with and without daycare are not significantly different in the number of classes and number of students per class. We therefore simulate ensembles for primary schools, primary schools with daycare, lower secondary schools, lower secondary schools with daycare, upper secondary schools (no daycare in this school type), secondary schools and secondary schools with daycare with the following characteristics:
+
+school type     | # classes | # students / class
+--------------- | --------- | ------------------
+primary         | 8         | 19
+lower secondary | 8         | 18
+upper secondary | 10        | 23
+secondary       | 28        | 24
+
+We calculate the overall difference between the simulated distribution of outbreak sizes and infected agent types as sum of the Chi-squared distances of every school type, weighted by the number of empirical observations for this school type.
+
+After we identify the parameter combination that minimizes this Chi-squared distance in the random grid search, we perform a refined grid search around the current optimal parameter combination and repeat the optimization process as described above. We find that a parameter combination of
+* contact weight intermediate = 0.85
+* contact weight far = 0.75
+* age transmission discount = -0.02
+produces outbreak characteristics that most closely match the empirically observed outbreaks. We use these parameter combination for all subsequent simulations to analyze the effect of different prevention strategies on outbreak characteristics in schools.
 
 ### Calibration for nursing homes
 TODO
