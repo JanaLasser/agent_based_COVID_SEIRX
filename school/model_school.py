@@ -201,7 +201,7 @@ class SEIRX_school(SEIRX):
     '''
 
     def __init__(self, G, verbosity=0, 
-        base_transmission_risk = 0.05, testing=True,
+        base_transmission_risk = 0.05, testing='diagnostic',
         exposure_duration=[5.0, 1.9], time_until_symptoms=[6.4, 0.8],
         infection_duration=[10.91, 3.95], 
         quarantine_duration=10, subclinical_modifier=0.6,
@@ -213,13 +213,13 @@ class SEIRX_school(SEIRX):
         index_case='teacher', 
         agent_types={
             'teacher':      {'screening_interval': None,
-                             'index_probability': None,
+                             'index_probability': 0,
                              'mask':False},
             'student':      {'screening_interval': None,
-                             'index_probability': None,
+                             'index_probability': 0,
                              'mask':False},
             'family_member':{'screening_interval': None,
-                             'index_probability': None,
+                             'index_probability': 0,
                              'mask':False}},
         age_transmission_risk_discount = {'slope':-0.02, 'intercept':1},
         age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
