@@ -32,7 +32,7 @@ _Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing 
     * [Household Transmissions](#household-transmissions)
     * [Calibration for Schools](#calibration-for-schools)
     * [Calibration for Nursing Homes](#calibration-for-nursing-homes)
-* [Installation (Linux)](#installation-(linux))
+* [Installation Linux](#installation-linux)
 * [Running the simulation](#running-the-simulation)
 * [Acknowledgements](#acknowledgements)
 * [References](#references)
@@ -235,7 +235,7 @@ produces outbreak characteristics that most closely match the empirically observ
 TODO
 
 
-## Installation (Linux)
+## Installation Linux
 1. Clone the repository:  
 ```git clone https://github.com/JanaLasser/agent_based_COVID_SEIRX.git```  
 Note: if you want to clone the development branch, use  
