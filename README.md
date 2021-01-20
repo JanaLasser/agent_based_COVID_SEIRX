@@ -14,20 +14,34 @@ _Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing 
 
 ## Table of contents
 * [Simulation Design](#simulation-design)
+    * [Actors](#actors)
+    * [Transmissions](#transmissions)
+    * [Containment strategies](#containment-strategies)
 * [Implementation](#implementation)
+    * [Model](#model)
+    * [Agents](#agents)
+    * [Testing](#testing)
+    * [Additional modules](#additional-modules)
 * [Applications](#applications)
+    * [Nursing Homes](#nursing-homes)
+    * [schools](#schools)
 * [Assumptions and Approximations](#assumptions-and-approximations)
+    * [Epidemiological parameters](#epidemiological-parameters)
+    * [Intervention Measure Effectiveness](#intervention-measure-effectiveness)
 * [Calibration](#calibration)
-* [Installation](#installation)
+    * [Household Transmissions](#household-transmissions)
+    * [Calibration for Schools](#calibration-for-schools)
+    * [Calibration for Nursing Homes](#calibration-for-nursing-homes)
+* [Installation (Linux)](#installation-(linux))
 * [Running the simulation](#running-the-simulation)
 * [Acknowledgements](#acknowledgements)
 * [References](#references)
 
 ## Simulation Design
 
-### Agents
+### Actors
 #### States
-Simulations can have several types of agents, for example residents & employees in nursing homes, or teachers, students and family members in schools. Infections are introduced through agents that have a certain probability to become an index case or that are explicitly chosen as index case in the beginning of the simulation. The contact network defines which agents interact with which other agents on which day of the week. Different contact types modulate the infection transmission risk between "close" and "very far". Contact networks are stored as a [networkx](https://networkx.org/) graph with edge attributes for different contact types. In every step (day) of the simulation, agents interact according to the contact network and can transmit the infection to the agents they are in contact with. Depending on its infection state, an agent has one of four states: susceptible (S), exposed (E), infected (I) or removed (R). In addition, agents can be quarantined (X) and develop symptoms when they are infected. While infected (I), agents can by symptomatic or asymptomatic. 
+Simulations can have several types of actors (agents), for example residents & employees in nursing homes, or teachers, students and family members in schools. Infections are introduced through agents that have a certain probability to become an index case or that are explicitly chosen as index case in the beginning of the simulation. The contact network defines which agents interact with which other agents on which day of the week. Different contact types modulate the infection transmission risk between "close" and "very far". Contact networks are stored as a [networkx](https://networkx.org/) graph with edge attributes for different contact types. In every step (day) of the simulation, agents interact according to the contact network and can transmit the infection to the agents they are in contact with. Depending on its infection state, an agent has one of four states: susceptible (S), exposed (E), infected (I) or removed (R). In addition, agents can be quarantined (X) and develop symptoms when they are infected. While infected (I), agents can by symptomatic or asymptomatic. 
 
 #### Attributes
 Next to the dynamic states pertaining to the infection state of an agent, agents also have (static) attributes that influence how they interact with the infection dynamics:
