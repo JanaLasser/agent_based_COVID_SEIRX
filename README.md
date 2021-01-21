@@ -250,6 +250,13 @@ Note: if you want to clone the development branch, use
 5. Install dependencies  
 ```pip install -r requirements.txt```  
 
+Tested on a clean install of ubuntu-20.10. System Requirements:
+* git
+* virtualenv
+
+Starting with a clean installation of Ubuntu 20.10, code and
+requirements will take up approximately 600MB.
+
 
 ## Running the simulation
 The following requires the activation of the virtual environment you created during installation  
