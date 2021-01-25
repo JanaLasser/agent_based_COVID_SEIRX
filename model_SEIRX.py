@@ -419,24 +419,29 @@ class SEIRX(Model):
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
-        params = ['screening_interval','index_probability', 'mask']
+        params = ['screening_interval','index_probability', 'mask',
+                  'voluntary_testing_rate']
 
         # default values that are used in case a characteristic is not specified
         # for an agent group
         defaults = {'screening_interval':None,
                     'index_probability':0,
-                    'mask':False}
+                    'mask':False,
+                    'voluntary_testing_rate':1}
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
-        check_funcs = [check_positive_int, check_probability, check_bool]
+        check_funcs = [check_positive_int, check_probability, check_bool,
+                       check_probability]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.masks = {}
+        self.voluntary_testing_rates = {}
+
         param_dicts = [self.screening_intervals, self.index_probabilities, 
-                    self.masks]
+                    self.masks, self.voluntary_testing_rates]
 
         # iterate over all possible agent parameters and agent groups: set the
         # respective value to the value passed through the constructor or to 
@@ -507,10 +512,16 @@ class SEIRX(Model):
                             print('pathological epi-param case found!')
                             print(tmp_epi_params)
 
+                # check if the agent participates in voluntary testing
+                p = self.voluntary_testing_rates[agent_type]
+                voluntary_testing = self.random.choice([True, False],
+                                         p=[p, 1-p])
+
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
                     tmp_epi_params['time_until_symptoms'], 
                     tmp_epi_params['infection_duration'], 
+                    voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
 
@@ -789,8 +800,18 @@ class SEIRX(Model):
             self.screened_agents[screen_type][agent_group] = True
             self.days_since_last_agent_screen[agent_group] = 0
 
-            for a in untested_agents:
-                self.test_agent(a, test_type)
+            # only test agents if they participate in voluntary testing
+            if screen_type == 'preventive':
+                for a in untested_agents:
+                    if a.voluntary_testing:
+                        self.test_agent(a, test_type)
+                    else:
+                        if self.verbosity > 1:
+                            print('not testing {} {}, not participating in voluntary testing'\
+                                .format(agent_group, a.ID))
+            else:
+                for a in untested_agents:
+                    self.test_agent(a, test_type)
 
             if self.verbosity > 0:
                 print()

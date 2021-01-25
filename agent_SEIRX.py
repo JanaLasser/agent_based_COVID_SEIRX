@@ -11,11 +11,12 @@ class agent_SEIRX(Agent):
 
     def __init__(self, unique_id, unit, model,
         exposure_duration, time_until_symptoms, infection_duration,
-        verbosity):
+        voluntary_testing, verbosity):
         super().__init__(unique_id, model)
         self.verbose = verbosity
         self.ID = unique_id
         self.unit = unit
+        self.voluntary_testing = voluntary_testing
 
         ## epidemiological parameters drawn from distributions
         # NOTE: all durations are inclusive, i.e. comparison are "<=" and ">="
