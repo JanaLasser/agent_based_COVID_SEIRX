@@ -200,18 +200,27 @@ class SEIRX_school(SEIRX):
     See documentation of model_SEIRX for the description of other parameters.
     '''
 
-    def __init__(self, G, verbosity=0, 
-        base_transmission_risk = 0.05, testing='diagnostic',
-        exposure_duration=[5.0, 1.9], time_until_symptoms=[6.4, 0.8],
-        infection_duration=[10.91, 3.95], 
-        quarantine_duration=10, subclinical_modifier=0.6,
-        infection_risk_contact_type_weights={
-            'very_far': 0.1, 'far': 0.25, 'intermediate': 0.5, 'close': 1},
-        K1_contact_types=['close'], diagnostic_test_type='one_day_PCR',
-        preventive_screening_test_type='same_day_antigen',
-        follow_up_testing_interval=None, liberating_testing=False,
-        index_case='teacher', 
-        agent_types={
+    def __init__(self, G, 
+        verbosity = 0, 
+        base_transmission_risk = 0.05,
+        testing = 'diagnostic',
+        exposure_duration = [5.0, 1.9],
+        time_until_symptoms = [6.4, 0.8],
+        infection_duration = [10.91, 3.95], 
+        quarantine_duration = 10, 
+        subclinical_modifier = 0.6,
+        infection_risk_contact_type_weights = {
+            'very_far': 0.1,
+            'far': 0.25,
+            'intermediate': 0.5,
+            'close': 1},
+        K1_contact_types = ['close'],
+        diagnostic_test_type = 'one_day_PCR',
+        preventive_screening_test_type = 'same_day_antigen',
+        follow_up_testing_interval = None,
+        liberating_testing = False,
+        index_case = 'teacher', 
+        agent_types = {
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
                              'mask':False},
@@ -221,23 +230,43 @@ class SEIRX_school(SEIRX):
             'family_member':{'screening_interval': None,
                              'index_probability': 0,
                              'mask':False}},
-        age_transmission_risk_discount = {'slope':-0.02, 'intercept':1},
-        age_symptom_discount = {'slope':-0.02545, 'intercept':0.854545},
+        age_transmission_risk_discount = \
+             {'slope':-0.02,
+              'intercept':1},
+        age_symptom_discount = \
+             {'slope':-0.02545,
+              'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
-        seed=None):
+        seed = None):
 
 
-        super().__init__(G, verbosity, base_transmission_risk, testing,
-            exposure_duration, time_until_symptoms, infection_duration,
-            quarantine_duration, subclinical_modifier,
-            infection_risk_contact_type_weights,
-            K1_contact_types, diagnostic_test_type,
-            preventive_screening_test_type,
-            follow_up_testing_interval, liberating_testing,
-            index_case, agent_types, age_transmission_risk_discount,
-            age_symptom_discount, mask_filter_efficiency, 
-            transmission_risk_ventilation_modifier, seed)
+        super().__init__(G, 
+            verbosity = verbosity,
+            base_transmission_risk = base_transmission_risk,
+            testing = testing,
+            exposure_duration = exposure_duration,
+            time_until_symptoms = time_until_symptoms,
+            infection_duration = infection_duration, 
+            quarantine_duration = quarantine_duration, 
+            subclinical_modifier = subclinical_modifier,
+            infection_risk_contact_type_weights = \
+                         infection_risk_contact_type_weights,
+            K1_contact_types = K1_contact_types,
+            diagnostic_test_type = diagnostic_test_type,
+            preventive_screening_test_type = \
+                         preventive_screening_test_type,
+            follow_up_testing_interval = follow_up_testing_interval,
+            liberating_testing = liberating_testing,
+            index_case = index_case, 
+            agent_types = agent_types,
+            age_transmission_risk_discount = \
+                 age_transmission_risk_discount,
+            age_symptom_discount = age_symptom_discount,
+            mask_filter_efficiency = mask_filter_efficiency,
+            transmission_risk_ventilation_modifier = \
+                         transmission_risk_ventilation_modifier,
+            seed = seed)
 
         # agent types that are included in preventive, background & follow-up
         # screens

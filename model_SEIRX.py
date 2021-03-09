@@ -315,16 +315,45 @@ class SEIRX(Model):
     initialized at random.
     '''
 
-    def __init__(self, G, verbosity, base_transmission_risk, testing,
-    	exposure_duration, time_until_symptoms, infection_duration,
-        quarantine_duration, subclinical_modifier,
-    	infection_risk_contact_type_weights,
-        K1_contact_types, diagnostic_test_type,
-        preventive_screening_test_type,
-        follow_up_testing_interval, liberating_testing,
-        index_case, agent_types, age_transmission_risk_discount,
-        age_symptom_discount, mask_filter_efficiency, 
-        transmission_risk_ventilation_modifier, seed=None):
+    def __init__(self, G, 
+        verbosity = 0, 
+        base_transmission_risk = 0.05,
+        testing='diagnostic',
+        exposure_duration = [5.0, 1.9],
+        time_until_symptoms = [6.4, 0.8],
+        infection_duration = [10.91, 3.95], 
+        quarantine_duration = 10, 
+        subclinical_modifier = 0.6,
+        infection_risk_contact_type_weights = {
+            'very_far': 0.1,
+            'far': 0.25,
+            'intermediate': 0.5,
+            'close': 1},
+        K1_contact_types = ['close'],
+        diagnostic_test_type = 'one_day_PCR',
+        preventive_screening_test_type = 'same_day_antigen',
+        follow_up_testing_interval = None,
+        liberating_testing = False,
+        index_case = 'teacher', 
+        agent_types = {
+            'teacher':      {'screening_interval': None,
+                             'index_probability': 0,
+                             'mask':False},
+            'student':      {'screening_interval': None,
+                             'index_probability': 0,
+                             'mask':False},
+            'family_member':{'screening_interval': None,
+                             'index_probability': 0,
+                             'mask':False}},
+        age_transmission_risk_discount = \
+             {'slope':-0.02,
+              'intercept':1},
+        age_symptom_discount = \
+             {'slope':-0.02545,
+              'intercept':0.854545},
+        mask_filter_efficiency = {'exhale':0, 'inhale':0},
+        transmission_risk_ventilation_modifier = 0,
+        seed = None):
 
         # mesa models already implement fixed seeds through their own random
         # number generations. Sadly, we need to use the Weibull distribution
@@ -609,9 +638,9 @@ class SEIRX(Model):
         self.number_of_diagnostic_tests = 0
         self.number_of_preventive_screening_tests = 0
         self.positive_tests = {self.Testing.preventive_screening_test_type:
-                                {'student':0, 'teacher':0, 'family_member':0},
+                            {agent_type:0 for agent_type in self.agent_types},
                                self.Testing.diagnostic_test_type:
-                                {'student':0, 'teacher':0, 'family_member':0}}
+                            {agent_type:0 for agent_type in self.agent_types}}
 
         self.undetected_infections = 0
         self.predetected_infections = 0
