@@ -2215,6 +2215,143 @@ def make_half_classes(class_size, N_classes, G, student_schedule,
 		return G, student_schedule
 
 
+def reduce_class_size(ratio, class_size, N_classes, G, student_schedule, 
+					  copy=False):
+	"""
+	Reduce the size of a class by randomly removing a number of students
+	equal to ratio * class_size every day.
+	
+	Parameters
+	----------
+	ratio : float
+		Ratio of students that will be randomly removed every day
+	class_size : integer
+		Number of students in every class.
+	N_classes : integer
+		Number of classes in the school.
+	G : networkx MultiGraph
+		Graph in which the contacts (links) between all actors in the school
+		(students, teachers, household members of students & teachers) are 
+		stored for every day of the week (Monday=weekday 1, Sunday=weekday 7).
+	student_schedule : pandas DataFrame
+		Table of shape (N_classes * class_size * N_weekdays) X N_hours, where
+		N_weekdays=7 and N_hours=9 for the 9 hours a day at school (including)
+		lunch break usually covers. The table has a hierarchical index. 
+		[week, student_ID]. Entries in the table are the class (=room) in which
+		a student is at a given hour during a given day.
+	copy : bool, optional
+		If True, the graph and student schedule are copied before they are
+		modified and returned by the function, instead of being modified
+		inplace.
+		
+	Returns
+	-------
+	networkx MultiGraph
+		If copy=True, a modified copy of the graph is returned.
+	pandas DataFrame
+		If copy=True, a modified copy of the student schedule is returned.
+	"""
+	if copy:
+		G = G.copy()
+		student_schedule = student_schedule.copy()
+	
+	N_remove = round(ratio * class_size)
+
+	# link types that are affected by students not being present at school
+	affected_links = ['student_student_intra_class', 
+					  'student_student_table_neighbour',
+					  'student_student_daycare',
+					  'teaching_teacher_student',
+					  'daycare_supervision_teacher_student']
+
+	for wd in range(1, 6):
+		for c in range(1, N_classes + 1):
+			student_nodes = student_schedule[student_schedule['hour_1'] == c]\
+					.loc[wd].index
+			# pick a number of students from every class and remove them
+			students_to_remove = np.random.choice(student_nodes, N_remove, \
+				replace=False)
+
+			## remove edges from the graph
+			# find all edges on the given weekday in which at least one student
+			# from the list of students to remove is involved. Only edges with a
+			# link type that is affected by the absence from school are selected 
+			# (i.e. no family or friendship contacts)
+			edges_to_remove = [(u, v, k) for u, v, k, data in \
+			G.edges(keys=True, data=True) if data['link_type'] in \
+			affected_links and data['weekday'] == wd and \
+			(u in students_to_remove or v in students_to_remove)]
+			# remove affected edges from the graph
+			for e in edges_to_remove:
+				G.remove_edge(e[0], e[1], key=e[2])
+	
+			## remove entries in the student schedule at the corresponding days
+	
+			# set all entries for students on the given weekday to nan in the 
+			# student schedule
+			for s in students_to_remove:
+				for hour in range(1, 10):
+					student_schedule.loc[wd, s]['hour_{}'.format(hour)] = pd.NA
+									
+	if copy:
+		return G, student_schedule
+
+def add_between_class_contacts(ratio, class_size, N_classes, G, copy=False):
+	"""
+	Adds additional contacts of type "student_student_friends" between
+	a number of students equal to ratio * class_size from every class
+	and a number of students equal to ratio *class_size from other classes.
+	These pairs of students stay the same for every day of the week.
+	
+	Parameters
+	----------
+	ratio : float
+		Ratio of students that will be randomly removed every day
+	class_size : integer
+		Number of students in every class.
+	N_classes : integer
+		Number of classes in the school.
+	G : networkx MultiGraph
+		Graph in which the contacts (links) between all actors in the school
+		(students, teachers, household members of students & teachers) are 
+		stored for every day of the week (Monday=weekday 1, Sunday=weekday 7).
+	copy : bool
+		If true, copies the graph and returns the copy. Otherwise modifies the
+		graph inplace.
+		
+	Returns
+	-------
+	networkx MultiGraph
+		If copy=True, a modified copy of the graph is returned.
+	"""
+	if copy:
+		G = G.copy()
+
+	_, N_weekdays, _ = get_teaching_framework()
+
+	N_students = round(ratio * class_size)
+	for c in range(1, N_classes + 1):
+	    students_in_class = [n[0] for n in G.nodes(data=True) \
+	        if n[1]['type'] == 'student' and n[1]['unit'] == 'class_{}'.format(c)]
+	    sources = np.random.choice(students_in_class, N_students, replace=False)
+	    
+	    students_in_other_classes = [n[0] for n in G.nodes(data=True) \
+	        if n[1]['type'] == 'student' and n[1]['unit'] != 'class_{}'.format(c)]
+	    targets = np.random.choice(students_in_other_classes, N_students, replace=False)
+	    
+	    for source, target in zip(sources, targets):
+	    	for wd in range(1, N_weekdays + 1):
+		        tmp = [source, target]
+		        tmp.sort()
+		        n1, n2 = tmp
+		        G.add_edge(n1, n2, link_type='student_student_friends',
+		                            weekday = wd,
+		                            key = n1 + n2 + 'd{}'.format(wd))
+
+	if copy:
+		return G
+
+
 def get_node_list(G):
 	"""
 	Extract information about the family (household) number, location and node
