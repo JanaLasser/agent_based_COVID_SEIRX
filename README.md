@@ -5,8 +5,8 @@ A simulation tool to explore the spread of COVID-19 in small communities such as
 
 <img alt="Illustrative figure of infection spread in a nursing home" src="img/fig.png?raw=true" height="500" width="800" align="center">
 
-
 *This software is under development and intended to respond rapidly to the current situation. Please use it with caution and bear in mind that there might be bugs.*
+
 
 Reference:  
 
@@ -106,6 +106,8 @@ Test technologies for preventive screening and diagnostic testing (diagnostic te
 ### Model
 The simulation consists of a _model_ that stores model parameters, the agent contact network and references to all agents. In every step of the simulation, the model initiates agent interactions and executes the testing and tracing strategy as well as data collection. Model parameters and parameters for the testing strategy, as well as a specification of the agent types and their respective parameters have to be passed to the  model instance at time of creation, if values other than the specified default values (see sections [Epidemiological Parameters](#epidemiological-parameters) and [Intervention measure effectiveness](#intervention-measure-effectiveness)) should be used. The model is implemented as a class (```model_SEIRX```) that inherits from [mesa's](https://mesa.readthedocs.io/en/stable/) ```Model``` and implements a ```step()``` function that is called in every time-step. Every scenario (so far: nursing homes and schools) implements its own model class which inherits from ```model_SEIRX```, where functionality deviating from the behaviour specified in ```model_SEIRX``` is implemented. This can for example a custom ```step()``` or ```calculate_transmission_probability()``` function and specify scenario-specific data collection functions.
 
+Test technologies for preventive screening and diagnostic testing (diagnostic tests, background screens and follow-up screens) can be specified separately, using the model parameters ```diagnostic_test_type``` and ```preventive_screening_test_type```.
+
 ### Agents
 Similarly to the model, agents have a base-class ```agent_SEIRX``` that inherits from [mesa's](https://mesa.readthedocs.io/en/stable/) ```Agent```. The agent class implements agent states and counters and functions necessary for simulating contacts between agents and advancing states. Different agent types needed in the scenarios inherit from this base class and might implement additional functionality. Currently there are five agent types: resident and employee (nursing home scenario) and teacher, student and family member (school scenario). These agent types are implemented in separate classes which inherit from the agent base-class. 
 
@@ -120,6 +122,7 @@ The testing strategy is contained in ```testing_strategy.py```, a class differen
 ## Applications
 ### Nursing homes
 Nursing homes implement agents types ```resident``` and ```employee```, as well as the ```model_nursing_home``` (all located in the ```nursing_home``` sub-folder).  
+
 The contact networks for nursing homes are specified through resident relations in the homes (room neighbors, table neighbors at joint meals, other shared areas). Employees interact with all other employees and all residents in the same living quarter of the nursing home every day. We provide several exemplary contact networks (see ```data/nursing_homes```), representing different architectures of nursing homes with different numbers of living quarters. These contact networks are abstractions of empirically determined interaction relations in Austrian nursing homes. By default, resident roommates are defined as "close contact", residents that share tables during joint meals as well as all resident - employee contacts are considered "intermediate", and contacts between residents that only share the same living quarters but not the same room or table are considered to be "far". See the [example notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/example_nursing_home.ipynb) for an exemplary simulation of a nursing home scenario.
 
 ### Schools
@@ -129,6 +132,7 @@ The contact networks for schools are modeled to reflect common structures in Aus
 * **Representative schools**: We construct networks for the seven most common school types in Austria: Primary schools, primary schools with daycare, lower secondary schools, lower secondary schools with daycare, upper secondary schools, secondary schools (lower & upper secondary education) and secondary schools with daycare (only for students in the lower secondary age bracket). These schools are constructed with characteristics (number of classes, number of students per class) representing the average over all the existing schools of a given school type in Austria (statistics from the year 2017/18). See the respective [Jupyter notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/school/construct_school_networks_representative_schools.ipynb) for details.
 * **Calibration schools**: These contact networks are similar to those of the representative schools described above. There are only two differences: Firstly, we remove all household members that are not siblings that go to the same school from the households, since we do not need them for the calibration, and the simulations run faster on smaller networks. Secondly, we create 500 instances of each contact network for each school type. Sibling connections are generated randomly, based on the households that are generated for each child. To sample a range of sibling constellations that enable contacts between different classes in the same school, we create a number of networks equal to the size of the ensembles simulated for each parameter combination during calibration. See the respective [Jupyter notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/school/construct_school_network_calibration_schools.ipynb) for details.
 * **Various school layouts**: In the interactive visualization of the infection dynamics, we enable the user to explore schools with different characteristics (number of classes, number of students per class). We create the contact networks for all the different possible combinations of school characteristics. See the respective [Jupyter notebook](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/master/school/construct_school_network_all_layouts.ipynb) for details.
+
 
 ## Assumptions and Approximations
 The assumptions and approximations made by the model to simplify the dynamics of infection spread and estimates of relevant epidemiological parameters are detailed in the following. 
