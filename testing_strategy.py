@@ -33,6 +33,78 @@ class Testing():
 	         'time_testable':exposure_duration + 6,
 	         'time_until_test_result':0
 	     },
+	     'same_day_antigen0.1':
+	     {
+	         'sensitivity':0.1,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.2':
+	     {
+	         'sensitivity':0.2,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.3':
+	     {
+	         'sensitivity':0.3,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.4':
+	     {
+	         'sensitivity':0.4,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.5':
+	     {
+	         'sensitivity':0.5,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.6':
+	     {
+	         'sensitivity':0.6,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.7':
+	     {
+	         'sensitivity':0.7,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.8':
+	     {
+	         'sensitivity':0.8,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
+	     'same_day_antigen0.9':
+	     {
+	         'sensitivity':0.9,
+	         'specificity':1,
+	         'time_until_testable':exposure_duration + 2,
+	         'time_testable':exposure_duration + 6,
+	         'time_until_test_result':0
+	     },
 		'one_day_antigen':
 	     {
 	         'sensitivity':1,
