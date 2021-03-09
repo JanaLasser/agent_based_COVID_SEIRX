@@ -276,6 +276,18 @@ class SEIRX_school(SEIRX):
             'screen_family_members_preventive':check_preventive_family_member_screen,
             'N_diagnostic_tests':get_N_diagnostic_tests,
             'N_preventive_screening_tests':get_N_preventive_screening_tests,
+            'diagnostic_test_detected_infections_student':\
+                    get_diagnostic_test_detected_infections_student,
+            'diagnostic_test_detected_infections_teacher':\
+                    get_diagnostic_test_detected_infections_teacher,
+            'diagnostic_test_detected_infections_family_member':\
+                    get_diagnostic_test_detected_infections_family_member,
+            'preventive_test_detected_infections_student':\
+                    get_preventive_test_detected_infections_student,
+            'preventive_test_detected_infections_teacher':\
+                    get_preventive_test_detected_infections_teacher,
+            'preventive_test_detected_infections_family_member':\
+                    get_preventive_test_detected_infections_family_member,
             'undetected_infections':get_undetected_infections,
             'predetected_infections':get_predetected_infections,
             'pending_test_infections':get_pending_test_infections
