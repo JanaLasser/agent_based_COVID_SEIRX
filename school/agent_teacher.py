@@ -7,13 +7,13 @@ class teacher(agent_SEIRX):
 
     def __init__(self, unique_id, unit, model, 
         exposure_duration, time_until_symptoms, infection_duration,
-        verbosity):
+        voluntary_testing, verbosity):
 
         self.type = 'teacher'
 
         super().__init__(unique_id, unit, model, 
             exposure_duration, time_until_symptoms, infection_duration,
-            verbosity) 
+            voluntary_testing, verbosity) 
 
         self.age = 30
 

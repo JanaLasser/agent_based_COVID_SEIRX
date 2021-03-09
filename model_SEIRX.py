@@ -46,6 +46,35 @@ def get_predetected_infections(model):
 def get_pending_test_infections(model):
     return model.pending_test_infections
 
+
+def get_diagnostic_test_detected_infections_student(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['student']
+
+
+def get_diagnostic_test_detected_infections_teacher(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['teacher']
+
+
+def get_diagnostic_test_detected_infections_family_member(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]\
+        ['family_member']
+
+
+def get_preventive_test_detected_infections_student(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]\
+        ['student']
+
+
+def get_preventive_test_detected_infections_teacher(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]\
+        ['teacher']
+
+
+def get_preventive_test_detected_infections_family_member(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]\
+        ['family_member']
+
+
 # parameter sanity check functions
 
 
@@ -514,8 +543,8 @@ class SEIRX(Model):
 
                 # check if the agent participates in voluntary testing
                 p = self.voluntary_testing_rates[agent_type]
-                voluntary_testing = self.random.choice([True, False],
-                                         p=[p, 1-p])
+                voluntary_testing = np.random.choice([True, False],
+                         p=[p, 1-p])
 
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
@@ -579,10 +608,16 @@ class SEIRX(Model):
         # counters
         self.number_of_diagnostic_tests = 0
         self.number_of_preventive_screening_tests = 0
+        self.positive_tests = {self.Testing.preventive_screening_test_type:
+                                {'student':0, 'teacher':0, 'family_member':0},
+                               self.Testing.diagnostic_test_type:
+                                {'student':0, 'teacher':0, 'family_member':0}}
+
         self.undetected_infections = 0
         self.predetected_infections = 0
         self.pending_test_infections = 0
         self.quarantine_counters = {agent_type:0 for agent_type in agent_types.keys()}
+        self.false_negative = 0
 
         # data collectors to save population counts and agent states every
         # time step
@@ -591,6 +626,18 @@ class SEIRX(Model):
             	{
             	'N_diagnostic_tests':get_N_diagnostic_tests,
                 'N_preventive_screening_tests':get_N_preventive_screening_tests,
+                'diagnostic_test_detected_infections_student':\
+                        get_diagnostic_test_detected_infections_student,
+                'diagnostic_test_detected_infections_teacher':\
+                        get_diagnostic_test_detected_infections_teacher,
+                'diagnostic_test_detected_infections_family_member':\
+                        get_diagnostic_test_detected_infections_family_member,
+                'preventive_test_detected_infections_student':\
+                        get_preventive_test_detected_infections_student,
+                'preventive_test_detected_infections_teacher':\
+                        get_preventive_test_detected_infections_teacher,
+                'preventive_test_detected_infections_family_member':\
+                        get_preventive_test_detected_infections_family_member,
                 'undetected_infections':get_undetected_infections,
                 'predetected_infections':get_predetected_infections,
                 'pending_test_infections':get_pending_test_infections
@@ -752,6 +799,7 @@ class SEIRX(Model):
                     .format(a.type, a.ID))
                 a.sample = 'positive'
                 self.predetected_infections += 1
+                self.positive_tests[test_type][a.type] += 1
             else:
                 if self.verbosity > 1: print('{} {} sent negative sample'
                     .format(a.type, a.ID))
@@ -765,6 +813,7 @@ class SEIRX(Model):
                 if self.verbosity > 1:
                     print('{} {} sent positive sample'.format(a.type, a.ID))
                 a.sample = 'positive'
+                self.positive_tests[test_type][a.type] += 1
 
             # track the undetected infections to assess how important they are
             # for infection spread

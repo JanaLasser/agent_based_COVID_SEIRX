@@ -7,13 +7,13 @@ class student(agent_SEIRX):
 
     def __init__(self, unique_id, unit, model, 
         exposure_duration, time_until_symptoms, infection_duration,
-        verbosity):
+        voluntary_testing, verbosity):
 
         self.type = 'student'
 
         super().__init__(unique_id, unit, model, 
             exposure_duration, time_until_symptoms, infection_duration,
-            verbosity)
+            voluntary_testing, verbosity)
 
         self.age = model.G.nodes(data=True)[self.unique_id]['age']
         

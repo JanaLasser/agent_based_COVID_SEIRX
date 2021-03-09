@@ -155,6 +155,7 @@ class agent_SEIRX(Agent):
                     print('{} {} returned a negative test (false negative)'\
                         .format(self.type, self.ID))
                 self.known_positive = False
+                self.model.false_negative += 1
 
                 if self.model.Testing.liberating_testing:
                     self.quarantined = False
