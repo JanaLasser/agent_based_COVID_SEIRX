@@ -9,10 +9,10 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name='scseirx',
+    version='1.2.0',
     packages=find_packages(where='src'),
     package_dir={"": "src"},
     package_data={'scseirx':['data/nursing_home/*.bz2', 'data/school/*.bz2', 'img/*.png']},
-    version='1.2.0',
     description='A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures.',
     long_description=README,
     long_description_content_type="text/markdown",
