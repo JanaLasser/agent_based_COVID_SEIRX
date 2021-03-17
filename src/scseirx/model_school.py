@@ -4,9 +4,7 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
-import sys
-sys.path.insert(0,'..')
-from model_SEIRX import*
+from scseirx.model_SEIRX import *
 
 
 ## data collection functions ##

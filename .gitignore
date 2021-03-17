@@ -1,18 +1,7 @@
 .ipynb_checkpoints/
 __pycache__/
-/data
 
 *.ipynb    
 *.html
 !example_nursing_home.ipynb
 !example_school.ipynb
-!screening_frequency_data_creation.ipynb
-!screening_frequency_analysis.ipynb
-!outbreak_visualization.ipynb
-!construct_school_network.ipynb
-!parse_static_networsk.ipynb
-
-*.svg
-*.png
-*.pdf
-*.mp4

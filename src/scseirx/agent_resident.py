@@ -1,5 +1,4 @@
-from agent_SEIRX import agent_SEIRX
-
+from scseirx.agent_SEIRX import agent_SEIRX
 
 
 class resident(agent_SEIRX):

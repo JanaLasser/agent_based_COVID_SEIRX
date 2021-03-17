@@ -1,4 +1,4 @@
-from agent_SEIRX import agent_SEIRX
+from scseirx.agent_SEIRX import agent_SEIRX
 
 class student(agent_SEIRX):
     '''

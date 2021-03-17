@@ -4,13 +4,10 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
-import sys
-sys.path.insert(0,'..')
-from model_SEIRX import*
+from scseirx.model_SEIRX import *
 
 
 ## data collection functions ##
-
 def count_E_resident(model):
     E = np.asarray(
         [a.exposed for a in model.schedule.agents if a.type == 'resident']).sum()

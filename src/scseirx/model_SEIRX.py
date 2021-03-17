@@ -7,14 +7,9 @@ from mesa import Model
 from mesa.time import RandomActivation, SimultaneousActivation
 from mesa.datacollection import DataCollector
 
-import sys
-sys.path.insert(0,'school')
-sys.path.insert(0, 'nursing_home')
-
-from testing_strategy import Testing
+from scseirx.testing_strategy import Testing
 
 ## data collection functions ##
-
 def get_N_diagnostic_tests(model):
     return model.number_of_diagnostic_tests
 
@@ -460,19 +455,19 @@ class SEIRX(Model):
         # dictionary of available agent classes with agent types and classes
         self.agent_classes = {}
         if 'resident' in agent_types:
-            from agent_resident import resident
+            from scseirx.agent_resident import resident
             self.agent_classes['resident'] = resident
         if 'employee' in agent_types:
-            from agent_employee import employee
+            from scseirx.agent_employee import employee
             self.agent_classes['employee'] = employee
         if 'student' in agent_types:
-            from agent_student import student
+            from scseirx.agent_student import student
             self.agent_classes['student'] = student
         if 'teacher' in agent_types:
-            from agent_teacher import teacher
+            from scseirx.agent_teacher import teacher
             self.agent_classes['teacher'] = teacher
         if 'family_member' in agent_types:
-            from agent_family_member import family_member
+            from scseirx.agent_family_member import family_member
             self.agent_classes['family_member'] = family_member
 
         ## set agent characteristics for all agent groups
