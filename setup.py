@@ -11,8 +11,9 @@ setup(
     name='scseirx',
     packages=find_packages(where='src'),
     package_dir={"": "src"},
+    package_data={'scseirx':['data/nursing_home/*.bz2', 'data/school/*.bz2', 'img/*.png']},
     version='1.2.0',
-    description='A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures. The model follows an SEIRX approach, building on the agent based simulation framework mesa in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X) and is based on explicitly defined and dynamic contact networks between agents. The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and other interventions such as ventilation and mask-wearing.',
+    description='A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures.',
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/JanaLasser/agent_based_COVID_SEIRX",
@@ -32,6 +33,5 @@ setup(
         'pandas>=1.2.3'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest==6.2.2'],
-    test_suite='tests',
-    include_package_data=True
+    test_suite='tests'
 )
