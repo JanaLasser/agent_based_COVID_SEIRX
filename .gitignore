@@ -4,6 +4,7 @@ __pycache__/
 build/
 dist/
 src/scseirx.egg-info/
+scseirx.egg-info/
 
 
 *.ipynb    
