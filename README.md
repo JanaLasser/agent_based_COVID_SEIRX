@@ -10,7 +10,7 @@ A simulation tool to explore the spread of COVID-19 in small communities such as
 
 Reference:  
 
-_Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing homes. [DOI](https://doi.org/10.5281/zenodo.4613202): 10.5281/zenodo.4590995_
+_Lasser, J. (2020). Agent based simulation of the spread of COVID-19 in nursing homes. [DOI](https://doi.org/10.5281/zenodo.4613202): 10.5281/zenodo.4613202_
 
 ## Table of contents
 * [Simulation Design](#simulation-design)
