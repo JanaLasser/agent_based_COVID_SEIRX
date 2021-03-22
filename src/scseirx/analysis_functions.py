@@ -10,9 +10,7 @@ from os.path import join
 from random import shuffle
 import time
 
-import sys
-sys.path.insert(0,'school')
-import construct_school_network as csn
+from scseirx import construct_school_network as csn
 
 def get_agent(model, ID):
     for a in model.schedule.agents:
