@@ -125,7 +125,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 2,
+	         'time_until_testable':exposure_duration - 1,
 	         'time_testable':infection_duration,
 	         'time_until_test_result':0
 	     },
@@ -133,7 +133,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 2,
+	         'time_until_testable':exposure_duration - 1,
 	         'time_testable':infection_duration,
 	         'time_until_test_result':1
 	     },
@@ -141,7 +141,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 2,
+	         'time_until_testable':exposure_duration - 1,
 	         'time_testable':infection_duration,
 	         'time_until_test_result':2
 	     },
