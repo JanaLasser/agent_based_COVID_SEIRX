@@ -310,7 +310,7 @@ class SEIRX_school(SEIRX):
         # time step
         model_reporters = {}
         for agent_type in self.agent_types:
-            for state in ['E','I','I_asymptomatic','I_symptomatic','R','X']:
+            for state in ['S','E','I','I_asymptomatic','I_symptomatic','R','X']:
                 model_reporters.update({'{}_{}'.format(state, agent_type):\
                     data_collection_functions[agent_type][state]})
 
