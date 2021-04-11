@@ -8,6 +8,13 @@ from scseirx.model_SEIRX import *
 
 
 ## data collection functions ##
+def count_S_resident(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'resident' and\
+                    a.exposed == False and a.recovered == False \
+                    and a.infectious == False]).sum()
+    return S
+    
+    
 def count_E_resident(model):
     E = np.asarray(
         [a.exposed for a in model.schedule.agents if a.type == 'resident']).sum()
@@ -42,6 +49,12 @@ def count_X_resident(model):
     X = np.asarray(
         [a.quarantined for a in model.schedule.agents if a.type == 'resident']).sum()
     return X
+
+def count_S_employee(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'emloyee' and\
+                    a.exposed == False and a.recovered == False \
+                    and a.infectious == False]).sum()
+    return S
 
 
 def count_E_employee(model):
@@ -107,6 +120,7 @@ data_collection_functions = \
     {
     'resident':
         {
+        'S':count_S_resident,
         'E':count_E_resident,
         'I':count_I_resident,
         'I_asymptomatic':count_I_asymptomatic_resident,
@@ -116,6 +130,7 @@ data_collection_functions = \
          },
     'employee':
         {
+        'S':count_S_employee,
         'E':count_E_employee,
         'I':count_I_employee,
         'I_asymptomatic':count_I_asymptomatic_employee,

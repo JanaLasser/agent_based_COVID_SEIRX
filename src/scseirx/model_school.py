@@ -9,6 +9,13 @@ from scseirx.model_SEIRX import *
 
 ## data collection functions ##
 
+def count_S_student(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'student' and\
+                    a.exposed == False and a.recovered == False \
+                    and a.infectious == False]).sum()
+    return S
+
+
 def count_E_student(model):
     E = np.asarray(
         [a.exposed for a in model.schedule.agents if a.type == 'student']).sum()
@@ -45,6 +52,13 @@ def count_X_student(model):
     return X
 
 
+def count_S_teacher(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'feacher' and\
+                    a.exposed == False and a.recovered == False \
+                    and a.infectious == False]).sum()
+    return S
+
+
 def count_E_teacher(model):
     E = np.asarray(
         [a.exposed for a in model.schedule.agents if a.type == 'teacher']).sum()
@@ -79,6 +93,13 @@ def count_X_teacher(model):
     X = np.asarray(
         [a.quarantined for a in model.schedule.agents if a.type == 'teacher']).sum()
     return X
+
+
+def count_S_family_member(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'family_member' and\
+                    a.exposed == False and a.recovered == False \
+                    and a.infectious == False]).sum()
+    return S
 
 
 def count_E_family_member(model):
@@ -158,6 +179,7 @@ data_collection_functions = \
     {
     'student':
         {
+        'S':count_S_student,
         'E':count_E_student,
         'I':count_I_student,
         'I_asymptomatic':count_I_asymptomatic_student,
@@ -167,6 +189,7 @@ data_collection_functions = \
          },
     'teacher':
         {
+        'S':count_S_teacher,
         'E':count_E_teacher,
         'I':count_I_teacher,
         'I_asymptomatic':count_I_asymptomatic_teacher,
@@ -176,6 +199,7 @@ data_collection_functions = \
          },
     'family_member':
         {
+        'S':count_S_family_member,
         'E':count_E_family_member,
         'I':count_I_family_member,
         'I_asymptomatic':count_I_asymptomatic_family_member,
