@@ -51,7 +51,7 @@ def count_X_resident(model):
     return X
 
 def count_S_employee(model):
-    S = np.asarray([1 for a in model.schedule.agents if a.type == 'emloyee' and\
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'employee' and\
                     a.exposed == False and a.recovered == False \
                     and a.infectious == False]).sum()
     return S
