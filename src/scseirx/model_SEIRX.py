@@ -343,6 +343,10 @@ class SEIRX(Model):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
+        vaccination_agent = \
+             {'teacher': 0,
+             'student': 0,
+             'family_member': 0},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -438,8 +442,9 @@ class SEIRX(Model):
 
         self.mask_filter_efficiency = mask_filter_efficiency
         self.transmission_risk_ventilation_modifier = \
-            transmission_risk_ventilation_modifier
-
+            transmission_risk_ventilation_modifier            
+        self.transmission_risk_vaccination_modifier = \
+            transmission_risk_vaccination_modifier
         ## agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
@@ -474,6 +479,7 @@ class SEIRX(Model):
             from scseirx.agent_family_member import family_member
             self.agent_classes['family_member'] = family_member
 
+        self.vaccination_agent = vaccination_agent
         ## set agent characteristics for all agent groups
         # list of agent characteristics
         params = ['screening_interval','index_probability', 'mask',
@@ -575,7 +581,7 @@ class SEIRX(Model):
                          p=[p, 1-p])
 
                 # include whether true or false vacc - depending on percentage input of vaccination probability dict
-                vaccinated = self.agent_types[agent_type]['vaccination_probability'] > np.random.random()
+                vaccinated = self.vaccination_agent[agent_type] > np.random.random()
                 
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 

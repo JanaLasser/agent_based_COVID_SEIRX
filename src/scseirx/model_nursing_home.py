@@ -160,6 +160,9 @@ class SEIRX_nursing_home(SEIRX):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
+        vaccination_agent = \
+             {'employee': 0,
+              'resident': 0},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -191,6 +194,7 @@ class SEIRX_nursing_home(SEIRX):
             liberating_testing = liberating_testing,
             index_case = index_case, 
             agent_types = agent_types,
+            vaccination_agent = vaccination_agent,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
             age_symptom_discount = age_symptom_discount,
@@ -198,13 +202,13 @@ class SEIRX_nursing_home(SEIRX):
             transmission_risk_ventilation_modifier = \
                          transmission_risk_ventilation_modifier,
             transmission_risk_vaccination_modifier = \
-                        transmission_risk_vaccination_modifier,
+                         transmission_risk_vaccination_modifier,
             seed = seed)
 
 
         # agent types that are included in preventive, background & follow-up
         # screens
-        self.screening_agents = ['employee', 'resident']
+        self.sctmp_agreening_agents = ['employee', 'resident']
 
         # define, whether or not a multigraph that defines separate connections
         # for every day of the week is used
