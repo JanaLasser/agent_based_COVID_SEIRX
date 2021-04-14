@@ -221,13 +221,16 @@ class SEIRX_school(SEIRX):
         agent_types = {
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'student':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'family_member':{'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False}},
+                             'mask':False,
+                             'vaccination_probability': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -236,6 +239,8 @@ class SEIRX_school(SEIRX):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = 1,
+
         seed = None):
 
 
@@ -264,6 +269,8 @@ class SEIRX_school(SEIRX):
             mask_filter_efficiency = mask_filter_efficiency,
             transmission_risk_ventilation_modifier = \
                          transmission_risk_ventilation_modifier,
+            transmission_risk_vaccination_modifier = \
+                        transmission_risk_vaccination_modifier,
             seed = seed)
 
         # agent types that are included in preventive, background & follow-up
@@ -378,11 +385,12 @@ class SEIRX_school(SEIRX):
         q3 = self.get_transmission_risk_age_modifier_reception(target)
         q4 = self.get_transmission_risk_progression_modifier(source)
         q5 = self.get_transmission_risk_subclinical_modifier(source)
+        q9 = self.get_transmission_risk_vaccination_modifier(target)
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['student_household', 'teacher_household']:
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5))
+                (1 - q4) * (1 - q5) * (1 - q9))
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['student_student_intra_class',
@@ -399,7 +407,7 @@ class SEIRX_school(SEIRX):
             q8 = self.get_transmission_risk_ventilation_modifier()
 
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8))
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8) * (1 - q9))
 
         else:
             print('unknown link type: {}'.format(link_type))

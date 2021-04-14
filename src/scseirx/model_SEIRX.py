@@ -333,13 +333,16 @@ class SEIRX(Model):
         agent_types = {
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'student':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'family_member':{'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False}},
+                             'mask':False,
+                             'vaccination_probability': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -348,6 +351,7 @@ class SEIRX(Model):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = 1,
         seed = None):
 
         # mesa models already implement fixed seeds through their own random
@@ -570,10 +574,14 @@ class SEIRX(Model):
                 voluntary_testing = np.random.choice([True, False],
                          p=[p, 1-p])
 
+                # include whether true or false vacc - depending on percentage input of vaccination probability dict
+                vaccinated = self.agent_types[agent_type]['vaccination_probability'] > np.random.random()
+                
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
                     tmp_epi_params['time_until_symptoms'], 
                     tmp_epi_params['infection_duration'], 
+                    vaccinated,
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
@@ -804,6 +812,13 @@ class SEIRX(Model):
         # see description in get_transmission_risk_age_modifier_transmission
         q8 = 1 - ventilation_weight
         return q8
+
+    def get_transmission_risk_vacc_modifier(self, a):
+        if a.vaccinated:
+            q9 = self.transmission_risk_vaccination_modifier
+        else:
+            q9 = 1.0
+        return q9
 
 
     def test_agent(self, a, test_type):

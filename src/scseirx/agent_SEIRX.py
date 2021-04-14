@@ -10,7 +10,7 @@ class agent_SEIRX(Agent):
     '''
 
     def __init__(self, unique_id, unit, model,
-        exposure_duration, time_until_symptoms, infection_duration,
+        exposure_duration, time_until_symptoms, infection_duration, vaccinated,
         voluntary_testing, verbosity):
         super().__init__(unique_id, model)
         self.verbose = verbosity
@@ -28,6 +28,8 @@ class agent_SEIRX(Agent):
         self.time_until_symptoms = time_until_symptoms
         # number of days agents stay infectuous
         self.infection_duration = infection_duration
+        # vaccinated true or false (depending on chosen probability)
+        self.vaccinated = vaccinated
 
 
         ## agent-group wide parameters that are stored in the model class

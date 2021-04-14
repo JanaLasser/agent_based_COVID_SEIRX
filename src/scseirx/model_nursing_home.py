@@ -154,10 +154,12 @@ class SEIRX_nursing_home(SEIRX):
         agent_types = {
             'employee':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'resident':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False}},
+                             'mask':False,
+                             'vaccination_probability': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -166,6 +168,7 @@ class SEIRX_nursing_home(SEIRX):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = 1,
         seed = None):
 
 
@@ -194,6 +197,8 @@ class SEIRX_nursing_home(SEIRX):
             mask_filter_efficiency = mask_filter_efficiency,
             transmission_risk_ventilation_modifier = \
                          transmission_risk_ventilation_modifier,
+            transmission_risk_vaccination_modifier = \
+                        transmission_risk_vaccination_modifier,
             seed = seed)
 
 
@@ -279,10 +284,11 @@ class SEIRX_nursing_home(SEIRX):
         q1 = self.get_transmission_risk_contact_type_modifier(source, target)
         q2 = self.get_transmission_risk_progression_modifier(source)
         q3 = self.get_transmission_risk_subclinical_modifier(source)
+        q9 = self.get_transmission_risk_vaccination_modifier(target) 
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['resident_resident_room', 'resident_resident_table']:
-            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3))
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * (1 - q9))
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['resident_resident_quarters',
@@ -294,7 +300,7 @@ class SEIRX_nursing_home(SEIRX):
             q6 = self.get_transmission_risk_ventilation_modifier()
 
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q6))
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q9))
 
         else:
             print('unknown link type: {}'.format(link_type))
