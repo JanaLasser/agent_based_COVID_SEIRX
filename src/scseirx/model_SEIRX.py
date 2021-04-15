@@ -317,6 +317,7 @@ class SEIRX(Model):
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
         infection_duration = [10.91, 3.95], 
+        vaccinated = False, 
         quarantine_duration = 10, 
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
@@ -581,13 +582,13 @@ class SEIRX(Model):
                          p=[p, 1-p])
 
                 # include whether true or false vacc - depending on percentage input of vaccination probability dict
-                vaccinated = self.vaccination_agent[agent_type] > np.random.random()
+                self.vaccinated = self.vaccination_agent[agent_type] > np.random.random()
                 
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
                     tmp_epi_params['time_until_symptoms'], 
                     tmp_epi_params['infection_duration'], 
-                    vaccinated,
+                    #vaccinated,
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
@@ -819,7 +820,7 @@ class SEIRX(Model):
         q8 = 1 - ventilation_weight
         return q8
 
-    def get_transmission_risk_vacc_modifier(self, a):
+    def get_transmission_risk_vaccination_modifier(self, a):
         if a.vaccinated:
             q9 = self.transmission_risk_vaccination_modifier
         else:
