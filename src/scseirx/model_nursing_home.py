@@ -161,8 +161,8 @@ class SEIRX_nursing_home(SEIRX):
                              'mask':False,
                              'vaccination_probability': 0}},
         vaccination_agent = \
-             {'employee': 0,
-              'resident': 0},
+             {'employee': 0.1,
+              'resident': 0.1},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
