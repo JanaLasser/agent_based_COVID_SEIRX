@@ -24,6 +24,8 @@ def get_infection_state(agent):
     elif agent.recovered == True: return 'recovered'
     else: return 'susceptible'
 
+#def get_vaccination_state(model):
+#    return model.number_of_vaccinations
 
 def get_quarantine_state(agent):
     if agent.quarantined == True: return True
@@ -657,6 +659,7 @@ class SEIRX(Model):
         self.pending_test_infections = 0
         self.quarantine_counters = {agent_type:0 for agent_type in agent_types.keys()}
         self.false_negative = 0
+        #self.number_of_vaccinations = 0
 
         # data collectors to save population counts and agent states every
         # time step
@@ -679,7 +682,8 @@ class SEIRX(Model):
                         get_preventive_test_detected_infections_family_member,
                 'undetected_infections':get_undetected_infections,
                 'predetected_infections':get_predetected_infections,
-                'pending_test_infections':get_pending_test_infections
+                'pending_test_infections':get_pending_test_infections,
+                #'vaccination_state': get_vaccination_state
                 },
 
             agent_reporters=

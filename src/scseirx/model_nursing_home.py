@@ -25,6 +25,10 @@ def count_I_symptomatic_resident(model):
         (a.type == 'resident'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_resident(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+        (a.type == 'resident')]).sum()
+    return V
 
 def count_I_asymptomatic_resident(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -61,6 +65,10 @@ def count_I_symptomatic_employee(model):
         (a.type == 'employee'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_employee(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+        (a.type == 'employee')]).sum()
+    return V
 
 def count_I_asymptomatic_employee(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -110,6 +118,7 @@ data_collection_functions = \
         'E':count_E_resident,
         'I':count_I_resident,
         'I_asymptomatic':count_I_asymptomatic_resident,
+        'V':count_V_resident,
         'I_symptomatic':count_I_symptomatic_resident,
         'R':count_R_resident,
         'X':count_X_resident
@@ -119,6 +128,7 @@ data_collection_functions = \
         'E':count_E_employee,
         'I':count_I_employee,
         'I_asymptomatic':count_I_asymptomatic_employee,
+        'V':count_V_employee,
         'I_symptomatic':count_I_symptomatic_employee,
         'R':count_R_employee,
         'X':count_X_employee
@@ -220,7 +230,7 @@ class SEIRX_nursing_home(SEIRX):
         # time step
         model_reporters = {}
         for agent_type in self.agent_types:
-            for state in ['E','I','I_asymptomatic','I_symptomatic','R','X']:
+            for state in ['E','I','I_asymptomatic','V','I_symptomatic','R','X']:
                 model_reporters.update({'{}_{}'.format(state, agent_type):\
                     data_collection_functions[agent_type][state]})
 
@@ -242,7 +252,8 @@ class SEIRX_nursing_home(SEIRX):
         agent_reporters =\
             {
             'infection_state':get_infection_state,
-            'quarantine_state':get_quarantine_state
+            'quarantine_state':get_quarantine_state,
+            #'vaccination_state': get_vaccination_state
              }
 
         self.datacollector = DataCollector(
