@@ -119,17 +119,30 @@ def get_transmission_network(model):
     return G
 
 def get_statistics(df, col):
-    return {
-        '{}_mean'.format(col):df[col].mean(),
-        '{}_median'.format(col):df[col].median(),
-        '{}_0.025'.format(col):df[col].quantile(0.025),
-        '{}_0.10'.format(col):df[col].quantile(0.10),
-        '{}_0.25'.format(col):df[col].quantile(0.25),
-        '{}_0.75'.format(col):df[col].quantile(0.75),
-        '{}_0.90'.format(col):df[col].quantile(0.90),
-        '{}_0.975'.format(col):df[col].quantile(0.975),
-        '{}_std'.format(col):df[col].std(),
-    }
+    if len(df) == 0:
+        return {
+            '{}_mean'.format(col):np.nan,
+            '{}_median'.format(col):np.nan,
+            '{}_0.025'.format(col):np.nan,
+            '{}_0.10'.format(col):np.nan,
+            '{}_0.25'.format(col):np.nan,
+            '{}_0.75'.format(col):np.nan,
+            '{}_0.90'.format(col):np.nan,
+            '{}_0.975'.format(col):np.nan,
+            '{}_std'.format(col):np.nan
+        }
+    else:
+        return {
+            '{}_mean'.format(col):df[col].mean(),
+            '{}_median'.format(col):df[col].median(),
+            '{}_0.025'.format(col):df[col].quantile(0.025),
+            '{}_0.10'.format(col):df[col].quantile(0.10),
+            '{}_0.25'.format(col):df[col].quantile(0.25),
+            '{}_0.75'.format(col):df[col].quantile(0.75),
+            '{}_0.90'.format(col):df[col].quantile(0.90),
+            '{}_0.975'.format(col):df[col].quantile(0.975),
+            '{}_std'.format(col):df[col].std(),
+        }
 
 def get_agent_states(model, tm_events):
     if type(tm_events) == type(None):
