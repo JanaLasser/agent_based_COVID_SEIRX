@@ -206,9 +206,10 @@ class SEIRX_nursing_home(SEIRX):
             seed = seed)
 
 
+
         # agent types that are included in preventive, background & follow-up
         # screens
-        self.sctmp_agreening_agents = ['employee', 'resident']
+        self.screening_agents = ['employee', 'resident']
 
         # define, whether or not a multigraph that defines separate connections
         # for every day of the week is used
