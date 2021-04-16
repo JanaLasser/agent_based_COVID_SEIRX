@@ -67,12 +67,13 @@ We currently account for eight different factors that can influence the transmis
 * q_6: Modification of the transmission risk due to mask wearing of the _transmitting agent_. This parameter is set via the model parameter ```mask_filter_efficiency["exhale"]``` at model setup. Whether or not an agent group is wearing masks has to be specified via the ```agent_types["mask"]``` parameter and the contact types that are affected by mask-wearing are hard-coded in the model (for example, household contacts are generally not affected by mask-wearing).
 * q_7: Modification of the reception risk due to mask wearing of the _receiving agent_. This parameter is set via the model parameter ```mask_filter_efficiency["inhale"]``` at model setup. Whether or not an agent group is wearing masks has to be specified via the ```agent_types["mask"]``` parameter and the contact types that are affected by mask-wearing are hard-coded in the model (for example, household contacts are generally not affected by mask-wearing).
 * q_8: Modification of the transmission risk due to room ventilation. This parameter is set via the model parameter ```transmission_risk_ventilation_modifier``` at model setup.  
+* q_9: Modification of the transmission risk due to vaccination. This parameter is set via the midel parameter ```transmission_risk_vaccination_modifier``` at model setup.
 
 The baseline transmission risk is set via the model parameter ```base_transmission_risk``` at model setup.
 
 Therefore, for example in a school setting where agents are wearing masks, rooms are ventilated and the age of agents is important for the transmission dynamics, the overall success probability for a transmission is defined as  
 
-p = 1 - [1 - b(1 - q_1)(1 - q_2)(1-q_3)(1 - q_4)(1 - q_5)(1 - q_6)(1 - q_7)(1 - q_8)].
+p = 1 - [1 - b(1 - q_1)(1 - q_2)(1-q_3)(1 - q_4)(1 - q_5)(1 - q_6)(1 - q_7)(1 - q_8)(1 - q9)].
 
 ### Containment strategies
 #### Testing strategies
@@ -177,6 +178,8 @@ The assumptions and approximations made by the model to simplify the dynamics of
 * **Tests**: The class ```testing_strategy.py``` implements a variety of different tests, including antigen, PCR and LAMP tests. These tests differ regarding their sensitivity, specificity, the time a test takes until it delivers a result, the time it takes until an infected agent is testable and the time an infected agent stays testable. The test used for diagnostic and preventive testing can be specified at model setup (default is one day turnover PCR test).
 
 * **Quarantine duration**: We assume that agents that were tested positive are isolated (quarantined) for 14 days, according to [recommendations by the WHO](https://www.who.int/publications/i/item/considerations-for-quarantine-of-individuals-in-the-context-of-containment-for-coronavirus-disease-(covid-19)). This time can be changed by supplying the parameter ```quarantine_duration``` to the simulation.
+
+* **Vaccination**: Using the the inout dictionary ```vaccination agent``` the probabilities for the different agent types can be modified. A default of 10 percent for every agent type is assumed. The ```transmission_risk_vaccination_modifier``` is set to 1 by default which means that vaccination has no impact on the transmission of an infected agent to a susceptible, vaccinated agent. It is recommended to set the ```transmission_risk_vaccination_modifier``` to 0.95 for assessing the effects of the vaccines BNT162b2 (BioN-Tech/Pfizer) and mRNA-1273 (Moderna) [Polack et al. (2020)](https://www.nejm.org/doi/10.1056/NEJMoa2034577), [Voysey et al. (2020)](https://www.thelancet.com/action/showPdf?pii=S0140-6736%2820%2932661-1).
 
 ## Calibration
 The most important part of any agent based model is its calibration. As described above, the model has many parameters that can be set and will influence the dynamics of infection spread. Some parameter choices can be based on existing literature (such as the effectiveness of masks or ventilation) or directly observable characteristics of infection spread in our settings (such as the age dependence of the probability to develop a symptomatic course). Depending on the setting, there will be a number of free parameters in the model that have to be calibrated to reproduce the observed dynamics of infection spread as closely as possible. In our application, these are a total of three parameters for nursing homes and four parameters for schools:
