@@ -11,3 +11,4 @@ scseirx.egg-info/
 *.html
 !example_nursing_home.ipynb
 !example_school.ipynb
+.DS_Store

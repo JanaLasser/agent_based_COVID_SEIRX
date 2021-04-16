@@ -26,6 +26,10 @@ def count_I_symptomatic_student(model):
         (a.type == 'student'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_student(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+        (a.type == 'student')]).sum()
+    return V
 
 def count_I_asymptomatic_student(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -62,6 +66,10 @@ def count_I_symptomatic_teacher(model):
         (a.type == 'teacher'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_teacher(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+        (a.type == 'teacher')]).sum()
+    return V
 
 def count_I_asymptomatic_teacher(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -98,6 +106,10 @@ def count_I_symptomatic_family_member(model):
         (a.type == 'family_member'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_family_member(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+        (a.type == 'family_member')]).sum()
+    return V
 
 def count_I_asymptomatic_family_member(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -161,6 +173,7 @@ data_collection_functions = \
         'E':count_E_student,
         'I':count_I_student,
         'I_asymptomatic':count_I_asymptomatic_student,
+        'V':count_V_student,
         'I_symptomatic':count_I_symptomatic_student,
         'R':count_R_student,
         'X':count_X_student
@@ -170,6 +183,7 @@ data_collection_functions = \
         'E':count_E_teacher,
         'I':count_I_teacher,
         'I_asymptomatic':count_I_asymptomatic_teacher,
+        'V':count_V_teacher,
         'I_symptomatic':count_I_symptomatic_teacher,
         'R':count_R_teacher,
         'X':count_X_teacher
@@ -179,6 +193,7 @@ data_collection_functions = \
         'E':count_E_family_member,
         'I':count_I_family_member,
         'I_asymptomatic':count_I_asymptomatic_family_member,
+        'V':count_V_family_member,
         'I_symptomatic':count_I_symptomatic_family_member,
         'R':count_R_family_member,
         'X':count_X_family_member
@@ -231,6 +246,10 @@ class SEIRX_school(SEIRX):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
+        vaccination_agent = \
+             {'teacher': 0.1,
+              'student': 0.1,
+              'family_member': 0.1},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -263,6 +282,7 @@ class SEIRX_school(SEIRX):
             liberating_testing = liberating_testing,
             index_case = index_case, 
             agent_types = agent_types,
+            vaccination_agent = vaccination_agent,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
             age_symptom_discount = age_symptom_discount,
@@ -293,7 +313,7 @@ class SEIRX_school(SEIRX):
         # time step
         model_reporters = {}
         for agent_type in self.agent_types:
-            for state in ['E','I','I_asymptomatic','I_symptomatic','R','X']:
+            for state in ['E','I','I_asymptomatic','V','I_symptomatic','R','X']:
                 model_reporters.update({'{}_{}'.format(state, agent_type):\
                     data_collection_functions[agent_type][state]})
 
