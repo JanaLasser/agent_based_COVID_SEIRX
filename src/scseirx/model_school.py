@@ -246,10 +246,6 @@ class SEIRX_school(SEIRX):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
-        #vaccination_agent = \
-        #     {'teacher': 0.1,
-         #     'student': 0.1,
-         #     'family_member': 0.1},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -282,7 +278,6 @@ class SEIRX_school(SEIRX):
             liberating_testing = liberating_testing,
             index_case = index_case, 
             agent_types = agent_types,
-            #vaccination_agent = vaccination_agent,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
             age_symptom_discount = age_symptom_discount,

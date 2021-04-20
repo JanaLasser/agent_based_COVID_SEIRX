@@ -170,9 +170,6 @@ class SEIRX_nursing_home(SEIRX):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
-        #vaccination_agent = \
-        #     {'employee': 0.1,
-        #      'resident': 0.1},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -204,7 +201,6 @@ class SEIRX_nursing_home(SEIRX):
             liberating_testing = liberating_testing,
             index_case = index_case, 
             agent_types = agent_types,
-            #vaccination_agent = vaccination_agent,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
             age_symptom_discount = age_symptom_discount,
@@ -252,8 +248,7 @@ class SEIRX_nursing_home(SEIRX):
         agent_reporters =\
             {
             'infection_state':get_infection_state,
-            'quarantine_state':get_quarantine_state,
-            #'vaccination_state': get_vaccination_state
+            'quarantine_state':get_quarantine_state
              }
 
         self.datacollector = DataCollector(
