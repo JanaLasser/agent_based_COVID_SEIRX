@@ -580,7 +580,7 @@ class SEIRX(Model):
                          p=[p, 1-p])
 
                 # check if the agent is vaccinated depending on percentage input of vaccination probability 
-                vaccinated =  (np.random.random() < self.vaccination_probabilities[agent_type])
+                vaccinated =  (self.random.random() < self.vaccination_probabilities[agent_type])
                 
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
