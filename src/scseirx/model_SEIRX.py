@@ -346,10 +346,10 @@ class SEIRX(Model):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
-        vaccination_agent = \
-             {'teacher': 0,
-             'student': 0,
-             'family_member': 0},
+        #vaccination_agent = \
+        #     {'teacher': 0,
+        #     'student': 0,
+        #     'family_member': 0},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -482,10 +482,11 @@ class SEIRX(Model):
             from scseirx.agent_family_member import family_member
             self.agent_classes['family_member'] = family_member
 
-        self.vaccination_agent = vaccination_agent
+        #self.vaccination_agent = vaccination_agent
+
         ## set agent characteristics for all agent groups
         # list of agent characteristics
-        params = ['screening_interval','index_probability', 'mask',
+        params = ['screening_interval','index_probability', 'mask' ,'vaccination_probability', 
                   'voluntary_testing_rate']
 
         # default values that are used in case a characteristic is not specified
@@ -493,21 +494,25 @@ class SEIRX(Model):
         defaults = {'screening_interval':None,
                     'index_probability':0,
                     'mask':False,
-                    'voluntary_testing_rate':1}
+                    'vaccination_probability':0,
+                    'voluntary_testing_rate':1
+                    }
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
         check_funcs = [check_positive_int, check_probability, check_bool,
-                       check_probability]
+                       check_probability, check_probability]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.masks = {}
+        self.vaccination_probabilities = {}
         self.voluntary_testing_rates = {}
+        
 
         param_dicts = [self.screening_intervals, self.index_probabilities, 
-                    self.masks, self.voluntary_testing_rates]
+                    self.masks, self.vaccination_probabilities, self.voluntary_testing_rates]
 
         # iterate over all possible agent parameters and agent groups: set the
         # respective value to the value passed through the constructor or to 
@@ -584,7 +589,7 @@ class SEIRX(Model):
                          p=[p, 1-p])
 
                 # include whether true or false vacc - depending on percentage input of vaccination probability dict
-                vaccinated =  (np.random.random() < self.vaccination_agent[agent_type])
+                vaccinated =  (np.random.random() < self.vaccination_probabilities[agent_type])
                 
                 a = self.agent_classes[agent_type](ID, unit, self, 
                     tmp_epi_params['exposure_duration'], 
