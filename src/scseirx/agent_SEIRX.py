@@ -214,6 +214,7 @@ class agent_SEIRX(Agent):
         self.infectious = True
 
         # determine if infected agent will show symptoms
+        # if infected agent is vaccinated the agent will not show symptoms
         # NOTE: it is important to determine whether the course of the
         # infection is symptomatic already at this point, to allow
         # for a modification of transmissibility by symptomticity.
@@ -224,6 +225,9 @@ class agent_SEIRX(Agent):
             self.symptomatic_course = True
             if self.verbose > 0:
                 print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
+        elif self.vaccinated:
+            if self.verbose > 0:
+                print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
         else:
             if self.verbose > 0:
                 print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
