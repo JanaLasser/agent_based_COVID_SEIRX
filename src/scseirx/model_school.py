@@ -27,7 +27,7 @@ def count_I_symptomatic_student(model):
     return I
 
 def count_V_student(model):
-    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if
         (a.type == 'student')]).sum()
     return V
 
@@ -67,7 +67,7 @@ def count_I_symptomatic_teacher(model):
     return I
 
 def count_V_teacher(model):
-    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if
         (a.type == 'teacher')]).sum()
     return V
 
@@ -107,7 +107,7 @@ def count_I_symptomatic_family_member(model):
     return I
 
 def count_V_family_member(model):
-    V = np.asarray([a.vaccinated for a in model.schedule.agents if 
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if
         (a.type == 'family_member')]).sum()
     return V
 
@@ -205,22 +205,22 @@ data_collection_functions = \
 class SEIRX_school(SEIRX):
     '''
     Model specific parameters:
-        age_risk_discount: discount factor that lowers the transmission and 
+        age_risk_discount: discount factor that lowers the transmission and
         reception risk of agents based on age for children. This is only applied
-        to student agents as all other agents are assumed to be adults. This 
+        to student agents as all other agents are assumed to be adults. This
         parameter needs to be calibrated against data.
 
     See documentation of model_SEIRX for the description of other parameters.
     '''
 
-    def __init__(self, G, 
-        verbosity = 0, 
+    def __init__(self, G,
+        verbosity = 0,
         base_transmission_risk = 0.05,
         testing = 'diagnostic',
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
-        infection_duration = [10.91, 3.95], 
-        quarantine_duration = 10, 
+        infection_duration = [10.91, 3.95],
+        quarantine_duration = 10,
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
             'very_far': 0.1,
@@ -232,7 +232,7 @@ class SEIRX_school(SEIRX):
         preventive_screening_test_type = 'same_day_antigen',
         follow_up_testing_interval = None,
         liberating_testing = False,
-        index_case = 'teacher', 
+        index_case = 'teacher',
         agent_types = {
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
@@ -254,19 +254,18 @@ class SEIRX_school(SEIRX):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
-        transmission_risk_vaccination_modifier = 1,
-
+        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
         seed = None):
 
 
-        super().__init__(G, 
+        super().__init__(G,
             verbosity = verbosity,
             base_transmission_risk = base_transmission_risk,
             testing = testing,
             exposure_duration = exposure_duration,
             time_until_symptoms = time_until_symptoms,
-            infection_duration = infection_duration, 
-            quarantine_duration = quarantine_duration, 
+            infection_duration = infection_duration,
+            quarantine_duration = quarantine_duration,
             subclinical_modifier = subclinical_modifier,
             infection_risk_contact_type_weights = \
                          infection_risk_contact_type_weights,
@@ -276,7 +275,7 @@ class SEIRX_school(SEIRX):
                          preventive_screening_test_type,
             follow_up_testing_interval = follow_up_testing_interval,
             liberating_testing = liberating_testing,
-            index_case = index_case, 
+            index_case = index_case,
             agent_types = agent_types,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
@@ -302,8 +301,8 @@ class SEIRX_school(SEIRX):
         for i in range(1, N_weekdays + 1):
             wd_edges = [(u, v, k) for (u, v, k, wd) in all_edges if wd == i]
             self.weekday_connections[i] = G.edge_subgraph(wd_edges).copy()
-        
-        
+
+
         # data collectors to save population counts and agent states every
         # time step
         model_reporters = {}
@@ -362,13 +361,13 @@ class SEIRX_school(SEIRX):
         success p. The probability of transmission without any modifications
         by for example masks or ventilation is given by the base_risk, which
         is calibrated in the model. The probability is modified by contact type
-        q1 (also calibrated in the model), age of the transmitting agent q2 
-        & age of the receiving agent q3 (both age dependencies are linear in 
+        q1 (also calibrated in the model), age of the transmitting agent q2
+        & age of the receiving agent q3 (both age dependencies are linear in
         age and the same, and they are calibrated), infection progression q4
         (from literature), reduction of viral load due to a sublclinical course
         of the disease q5 (from literature), reduction of exhaled viral load of
-        the source by mask wearing q6 (from literature), reduction of inhaled 
-        viral load by the target q7 (from literature), and ventilation of the 
+        the source by mask wearing q6 (from literature), reduction of inhaled
+        viral load by the target q7 (from literature), and ventilation of the
         rooms q8 (from literature).
 
         Parameters
@@ -376,7 +375,7 @@ class SEIRX_school(SEIRX):
         source : agent_SEIRX
             Source agent that transmits the infection to the target.
         target: agent_SEIRX
-            Target agent that (potentially) receives the infection from the 
+            Target agent that (potentially) receives the infection from the
             source.
         base_risk : float
             Probability p of infection transmission without any modifications
@@ -400,12 +399,13 @@ class SEIRX_school(SEIRX):
         q3 = self.get_transmission_risk_age_modifier_reception(target)
         q4 = self.get_transmission_risk_progression_modifier(source)
         q5 = self.get_transmission_risk_subclinical_modifier(source)
-        q9 = self.get_transmission_risk_vaccination_modifier(target)
+        q9 = self.get_transmission_risk_vaccination_modifier_reception(target)
+        q10 = self.get_transmission_risk_vaccination_modifier_transmission(source)
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['student_household', 'teacher_household']:
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q9))
+                (1 - q4) * (1 - q5) * (1 - q9)*(1-q10))
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['student_student_intra_class',
@@ -422,10 +422,9 @@ class SEIRX_school(SEIRX):
             q8 = self.get_transmission_risk_ventilation_modifier()
 
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8) * (1 - q9))
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8) * (1 - q9)*(1-q10))
 
         else:
             print('unknown link type: {}'.format(link_type))
             p = None
         return p
-
