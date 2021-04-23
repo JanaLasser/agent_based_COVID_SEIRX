@@ -284,26 +284,26 @@ class SEIRX(Model):
                         agents from this group can become index cases.
 
 
-	agent_types: dictionary of the structure
-		{
-		agent type:
-			{
-			screening interval : integer, number of days between each preventive
-			screen in this agent group
+    agent_types: dictionary of the structure
+        {
+        agent type:
+            {
+            screening interval : integer, number of days between each preventive
+            screen in this agent group
 
-			index probability : float in the range [0, 1], sets the probability
-			to become an index case in each time step
+            index probability : float in the range [0, 1], sets the probability
+            to become an index case in each time step
 
-			mask : bool
+            mask : bool
                 whether or not the agent type is wearing a mask
-			}
-		}
+            }
+        }
 
-	The dictionary's keys are the names of the agent types which have to
-	correspond to the node attributes in the contact graph. The screening
-	interval sets the time-delay between preventive screens of this agent group,
-	the index probability sets the probability of a member of this agent group
-	becoming an index case in every time step
+    The dictionary's keys are the names of the agent types which have to
+    correspond to the node attributes in the contact graph. The screening
+    interval sets the time-delay between preventive screens of this agent group,
+    the index probability sets the probability of a member of this agent group
+    becoming an index case in every time step
 
     seed: positive integer, fixes the seed of the simulation to enable
     repeatable simulation runs. If seed = None, the simulation will be 
