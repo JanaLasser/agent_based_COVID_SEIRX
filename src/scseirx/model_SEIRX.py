@@ -816,8 +816,12 @@ class SEIRX(Model):
 
         if a.exposed:
             # tests that happen in the period of time in which the agent is
-            # exposed but not yet infectious
-            if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable']:
+            # exposed but not yet infectious. 
+            # Note: tests[test_type]['time_until_testable'] is negative for
+            # tests that can detect an infection before agents become infectious
+            if a.days_since_exposure >= a.exposure_duration + \
+                    self.Testing.tests[test_type]['time_until_testable']:
+                
                 if self.verbosity > 1:
                     print('{} {} sent positive sample (even though not infectious yet)'
                     .format(a.type, a.ID))
@@ -832,8 +836,15 @@ class SEIRX(Model):
         elif a.infectious:
             # tests that happen in the period of time in which the agent is
             # infectious and the infection is detectable by a given test
-            if a.days_since_exposure >= self.Testing.tests[test_type]['time_until_testable'] and \
-               a.days_since_exposure <= self.Testing.tests[test_type]['time_testable']:
+            # Note: tests[test_type]['time_until_testable'] is negative for 
+            # tests that can detect an infection before agents become 
+            # infectious. tests[test_type]['time_testable'] is negative for
+            # tests that cease to detect an infection before agents stop being
+            # infectious
+            if a.days_since_exposure >= a.exposure_duration + \
+                    self.Testing.tests[test_type]['time_until_testable'] and \
+               a.days_since_exposure <= a.infection_duration + \
+                    self.Testing.tests[test_type]['time_testable']:
                 if self.verbosity > 1:
                     print('{} {} sent positive sample'.format(a.type, a.ID))
                 a.sample = 'positive'

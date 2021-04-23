@@ -19,154 +19,158 @@ class Testing():
 		self.verbosity = verbosity
 		self.K1_contact_types = K1_contact_types
 
-		# mean parameters for exposure and infection duration to base
-		# estimates for test detection thresholds on
-		exposure_duration = 5
-		infection_duration = 11
-
+        # in the following dictionary, the parameters "time_until_testable" and
+        # "time_testable" refer to a shift (in days) as compared to an agent's
+        # individual exposure_duration and infection_duration. For example, if
+        # an agent has an exposure duration of 5 days and an infection duration
+        # of 11 days, a "same_day_antigen" Test will be able to detect an
+        # infection after 5 + time_until_testable = 7 days. It will also be able
+        # to detect an infection for as long as 11 + time_testable = 10 days.
+        # The values chosen for the different test technologies here reflect
+        # their detection thresholds with respect to viral load.
 		self.tests = {
 		'same_day_antigen':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.1':
 	     {
 	         'sensitivity':0.1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.2':
 	     {
 	         'sensitivity':0.2,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.3':
 	     {
 	         'sensitivity':0.3,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.4':
 	     {
 	         'sensitivity':0.4,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.5':
 	     {
 	         'sensitivity':0.5,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.6':
 	     {
 	         'sensitivity':0.6,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.7':
 	     {
 	         'sensitivity':0.7,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.8':
 	     {
 	         'sensitivity':0.8,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 	     'same_day_antigen0.9':
 	     {
 	         'sensitivity':0.9,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
 		'one_day_antigen':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':1
 	     },
 		'two_day_antigen':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration + 2,
-	         'time_testable':exposure_duration + 6,
+	         'time_until_testable': 2,
+	         'time_testable': -1,
 	         'time_until_test_result':2
 	     },
 	     'same_day_PCR':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 1,
-	         'time_testable':infection_duration,
+	         'time_until_testable': - 1,
+	         'time_testable': 0,
 	         'time_until_test_result':0
 	     },
 	     'one_day_PCR':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 1,
-	         'time_testable':infection_duration,
+	         'time_until_testable': - 1,
+	         'time_testable':0,
 	         'time_until_test_result':1
 	     },
 	      'two_day_PCR':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration - 1,
-	         'time_testable':infection_duration,
+	         'time_until_testable': - 1,
+	         'time_testable':0,
 	         'time_until_test_result':2
 	     },
 	    'same_day_LAMP':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration,
-	         'time_testable':infection_duration,
+	         'time_until_testable':0,
+	         'time_testable':0,
 	         'time_until_test_result':0
 	     },
 	    'one_day_LAMP':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration,
-	         'time_testable':infection_duration,
+	         'time_until_testable':0,
+	         'time_testable':0,
 	         'time_until_test_result':1
 	     },
 	    'two_day_LAMP':
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable':exposure_duration,
-	         'time_testable':infection_duration,
+	         'time_until_testable':0,
+	         'time_testable':0,
 	         'time_until_test_result':2
 	     }
 	    }
