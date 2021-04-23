@@ -567,7 +567,7 @@ class SEIRX(Model):
 
                 # check if the agent participates in voluntary testing
                 p = self.voluntary_testing_rates[agent_type]
-                voluntary_testing = np.random.choice([True, False],
+                voluntary_testing = self.random.choice([True, False],
                          p=[p, 1-p])
 
                 a = self.agent_classes[agent_type](ID, unit, self, 
