@@ -33,7 +33,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -41,7 +41,7 @@ class Testing():
 	     {
 	         'sensitivity':0.1,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -49,7 +49,7 @@ class Testing():
 	     {
 	         'sensitivity':0.2,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -57,7 +57,7 @@ class Testing():
 	     {
 	         'sensitivity':0.3,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -65,7 +65,7 @@ class Testing():
 	     {
 	         'sensitivity':0.4,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -73,7 +73,7 @@ class Testing():
 	     {
 	         'sensitivity':0.5,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -81,7 +81,7 @@ class Testing():
 	     {
 	         'sensitivity':0.6,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -89,7 +89,7 @@ class Testing():
 	     {
 	         'sensitivity':0.7,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -105,7 +105,7 @@ class Testing():
 	     {
 	         'sensitivity':0.9,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':0
 	     },
@@ -113,7 +113,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':1
 	     },
@@ -121,7 +121,7 @@ class Testing():
 	     {
 	         'sensitivity':1,
 	         'specificity':1,
-	         'time_until_testable': 2,
+	         'time_until_testable': 1,
 	         'time_testable': -1,
 	         'time_until_test_result':2
 	     },
