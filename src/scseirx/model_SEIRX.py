@@ -109,7 +109,8 @@ def check_K1_contact_types(var):
 
 
 def check_testing(var):
-    assert var in ['diagnostic', 'background', 'preventive', False], \
+    assert var in ['diagnostic', 'background', 'preventive',
+                   'background+preventive', False], \
         'unknown testing mode: {}'.format(var)
 
     return var
@@ -200,9 +201,12 @@ class SEIRX(Model):
         'diagnostic':   only diagnostic tests for symptomatic agents
         'background':   adds background screens of all agents after a positive 
                         diagnostic test
-        'preventive':   adds preventive screens of agent groups in time 
-                        intervals specified separately for each agent group in
-                        the variable 'screening_interval' 
+        'preventive':   adds preventive screens of agent groups to diagnostic
+                        testing. Screens happen in time intervals specified 
+                        separately for each agent group in the variable 
+                        'screening_interval'.
+        'background+preventive': preventive screens AND background screens on
+                        top of diagnostic testing.
 
     infection_duration, default = 11 NOTE: includes the time an agent is exposed 
     but not yet infectious at the beginning of an infection
@@ -1007,7 +1011,7 @@ class SEIRX(Model):
             # a preventive screen in a given agent group
 
             # (a)
-            if (self.testing == 'background' or self.testing == 'preventive')\
+            if (self.testing == 'background' or self.testing == 'background+preventive')\
                and self.new_positive_tests == True:
                 for agent_type in self.screening_agents:
                     self.screen_agents(
@@ -1015,7 +1019,7 @@ class SEIRX(Model):
                     self.scheduled_follow_up_screen[agent_type] = True
 
             # (b)
-            elif (self.testing == 'background' or self.testing == 'preventive') and \
+            elif (self.testing == 'background' or self.testing == 'background+preventive') and \
                 self.Testing.follow_up_testing_interval != None and \
                 sum(list(self.scheduled_follow_up_screen.values())) > 0:
                 for agent_type in self.screening_agents:
@@ -1030,7 +1034,7 @@ class SEIRX(Model):
                                 .format(agent_type))
 
             # (c) 
-            elif self.testing == 'preventive' and \
+            elif (self.testing == 'preventive' or self.testing == 'background+preventive')and \
                 np.any(list(self.Testing.screening_intervals.values())):
 
                 for agent_type in self.screening_agents:
