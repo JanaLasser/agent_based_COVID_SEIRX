@@ -590,10 +590,9 @@ class SEIRX(Model):
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
-                #gives n agents of agent_type the vaccination status
+            #gives n agents of agent_type the vaccination status
             agent_list = [a for a in self.schedule.agents if a.type == agent_type]
             n=round(self.vaccination_probabilities[agent_type]*len(agent_list))
-            print(n)
             for a in self.random.sample(agent_list,n):
                 a.vaccinated=True
 		# infect the first agent in single index case mode
