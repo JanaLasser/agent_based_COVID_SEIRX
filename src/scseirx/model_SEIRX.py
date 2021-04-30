@@ -580,7 +580,7 @@ class SEIRX(Model):
                          p=[p, 1-p])
 
                 # check if the agent is vaccinated depending on percentage input of vaccination probability
-                vaccinated =  (self.random.random() < self.vaccination_probabilities[agent_type])
+                vaccinated =  False
 
                 a = self.agent_classes[agent_type](ID, unit, self,
                     tmp_epi_params['exposure_duration'],
@@ -590,7 +590,12 @@ class SEIRX(Model):
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
-
+                #gives n agents of agent_type the vaccination status
+            agent_list = [a for a in self.schedule.agents if a.type == agent_type]
+            n=round(self.vaccination_probabilities[agent_type]*len(agent_list))
+            print(n)
+            for a in self.random.sample(agent_list,n):
+                a.vaccinated=True
 		# infect the first agent in single index case mode
         if self.index_case != 'continuous':
             infection_targets = [
