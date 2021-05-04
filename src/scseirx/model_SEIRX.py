@@ -1065,7 +1065,6 @@ class SEIRX(Model):
 
             # (c) 
             elif (self.testing == 'preventive' or self.testing == 'background+preventive')and \
-
                 np.any(list(self.Testing.screening_intervals.values())):
 
                 for agent_type in self.screening_agents:
