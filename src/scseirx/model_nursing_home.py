@@ -32,6 +32,10 @@ def count_I_symptomatic_resident(model):
         (a.type == 'resident'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_resident(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if
+        (a.type == 'resident')]).sum()
+    return V
 
 def count_I_asymptomatic_resident(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -75,6 +79,10 @@ def count_I_symptomatic_employee(model):
         (a.type == 'employee'and a.symptomatic_course)]).sum()
     return I
 
+def count_V_employee(model):
+    V = np.asarray([a.vaccinated for a in model.schedule.agents if
+        (a.type == 'employee')]).sum()
+    return V
 
 def count_I_asymptomatic_employee(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
@@ -125,6 +133,7 @@ data_collection_functions = \
         'E':count_E_resident,
         'I':count_I_resident,
         'I_asymptomatic':count_I_asymptomatic_resident,
+        'V':count_V_resident,
         'I_symptomatic':count_I_symptomatic_resident,
         'R':count_R_resident,
         'X':count_X_resident
@@ -135,6 +144,7 @@ data_collection_functions = \
         'E':count_E_employee,
         'I':count_I_employee,
         'I_asymptomatic':count_I_asymptomatic_employee,
+        'V':count_V_employee,
         'I_symptomatic':count_I_symptomatic_employee,
         'R':count_R_employee,
         'X':count_X_employee
@@ -145,16 +155,16 @@ data_collection_functions = \
 
 
 class SEIRX_nursing_home(SEIRX):
-        
 
-    def __init__(self, G, 
-        verbosity = 0, 
+
+    def __init__(self, G,
+        verbosity = 0,
         base_transmission_risk = 0.05,
         testing='diagnostic',
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
-        infection_duration = [10.91, 3.95], 
-        quarantine_duration = 10, 
+        infection_duration = [10.91, 3.95],
+        quarantine_duration = 10,
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
             'very_far': 0.1,
@@ -166,14 +176,16 @@ class SEIRX_nursing_home(SEIRX):
         preventive_screening_test_type = 'same_day_antigen',
         follow_up_testing_interval = None,
         liberating_testing = False,
-        index_case = 'teacher', 
+        index_case = 'teacher',
         agent_types = {
             'employee':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'resident':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False}},
+                             'mask':False,
+                             'vaccination_probability': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -182,17 +194,18 @@ class SEIRX_nursing_home(SEIRX):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
         seed = None):
 
 
-        super().__init__(G, 
+        super().__init__(G,
             verbosity = verbosity,
             base_transmission_risk = base_transmission_risk,
             testing = testing,
             exposure_duration = exposure_duration,
             time_until_symptoms = time_until_symptoms,
-            infection_duration = infection_duration, 
-            quarantine_duration = quarantine_duration, 
+            infection_duration = infection_duration,
+            quarantine_duration = quarantine_duration,
             subclinical_modifier = subclinical_modifier,
             infection_risk_contact_type_weights = \
                          infection_risk_contact_type_weights,
@@ -202,7 +215,7 @@ class SEIRX_nursing_home(SEIRX):
                          preventive_screening_test_type,
             follow_up_testing_interval = follow_up_testing_interval,
             liberating_testing = liberating_testing,
-            index_case = index_case, 
+            index_case = index_case,
             agent_types = agent_types,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
@@ -210,7 +223,10 @@ class SEIRX_nursing_home(SEIRX):
             mask_filter_efficiency = mask_filter_efficiency,
             transmission_risk_ventilation_modifier = \
                          transmission_risk_ventilation_modifier,
+            transmission_risk_vaccination_modifier = \
+                         transmission_risk_vaccination_modifier,
             seed = seed)
+
 
 
         # agent types that are included in preventive, background & follow-up
@@ -221,12 +237,14 @@ class SEIRX_nursing_home(SEIRX):
         # for every day of the week is used
         self.dynamic_connections = False
 
-        
+
         # data collectors to save population counts and agent states every
         # time step
         model_reporters = {}
         for agent_type in self.agent_types:
-            for state in ['S','E','I','I_asymptomatic','I_symptomatic','R','X']:
+
+            for state in ['S','E','I','I_asymptomatic','I_symptomatic','R','X', 'V']:
+
                 model_reporters.update({'{}_{}'.format(state, agent_type):\
                     data_collection_functions[agent_type][state]})
 
@@ -269,7 +287,7 @@ class SEIRX_nursing_home(SEIRX):
         (from literature), reduction of the viral load due to a sublclinical
         course of the disease q3 (from literature), reduction of exhaled viral
         load of the source by mask wearing q4 (from literature), reduction of
-        inhaled viral load by the target q5 (from literature), and ventilation 
+        inhaled viral load by the target q5 (from literature), and ventilation
         of the rooms q6 (from literature).
 
         Parameters
@@ -277,7 +295,7 @@ class SEIRX_nursing_home(SEIRX):
         source : agent_SEIRX
             Source agent that transmits the infection to the target.
         target: agent_SEIRX
-            Target agent that (potentially) receives the infection from the 
+            Target agent that (potentially) receives the infection from the
             source.
         base_risk : float
             Probability p of infection transmission without any modifications
@@ -295,10 +313,13 @@ class SEIRX_nursing_home(SEIRX):
         q1 = self.get_transmission_risk_contact_type_modifier(source, target)
         q2 = self.get_transmission_risk_progression_modifier(source)
         q3 = self.get_transmission_risk_subclinical_modifier(source)
+        q9 = self.get_transmission_risk_vaccination_modifier_reception(target)
+        q10 = self.get_transmission_risk_vaccination_modifier_transmission(source)
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['resident_resident_room', 'resident_resident_table']:
-            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3))
+            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * (1 - q9) \
+                * (1 - q10))
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['resident_resident_quarters',
@@ -310,7 +331,7 @@ class SEIRX_nursing_home(SEIRX):
             q6 = self.get_transmission_risk_ventilation_modifier()
 
             p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q6))
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q9) * (1 - q10))
 
         else:
             print('unknown link type: {}'.format(link_type))

@@ -24,7 +24,6 @@ def get_infection_state(agent):
     elif agent.recovered == True: return 'recovered'
     else: return 'susceptible'
 
-
 def get_quarantine_state(agent):
     if agent.quarantined == True: return True
     else: return False
@@ -172,7 +171,7 @@ def get_weibull_scale(mu, k):
 
 def weibull_two_param(shape, scale):
     '''
-    A two-parameter Weibull distribution, based on numpy ramdon's single 
+    A two-parameter Weibull distribution, based on numpy ramdon's single
     parameter distribution. We use this distribution in the simulation to draw
     random epidemiological parameters for agents from the given distribution
     See https://numpy.org/doc/stable/reference/random/generated/numpy.random.weibull.html
@@ -187,8 +186,8 @@ class SEIRX(Model):
     all times are set to correspond to days
 
     G: networkx undirected graph, interaction graph between agents. Edges have
-    to have edge the edge attribute 'contact_type' specifying the closeness of 
-    contacts, which can be ['very far', 'far', 'intermediate' and 'close']. 
+    to have edge the edge attribute 'contact_type' specifying the closeness of
+    contacts, which can be ['very far', 'far', 'intermediate' and 'close'].
     Nodes have to have the node attribute 'type' which specifies the agent type
     of the given node (for example 'student' or 'teacher' in a school scenario).
     In addition, nodes can have the attribute 'unit', which assigns them to a
@@ -197,9 +196,9 @@ class SEIRX(Model):
     verbosity: integer in [0, 1, 2], controls text output to std out to track
     simulation progress and transmission dynamics. Default = 0.
 
-    testing, default = 'diagnostic'  
+    testing, default = 'diagnostic'
         'diagnostic':   only diagnostic tests for symptomatic agents
-        'background':   adds background screens of all agents after a positive 
+        'background':   adds background screens of all agents after a positive
                         diagnostic test
         'preventive':   adds preventive screens of agent groups to diagnostic
                         testing. Screens happen in time intervals specified 
@@ -208,35 +207,35 @@ class SEIRX(Model):
         'background+preventive': preventive screens AND background screens on
                         top of diagnostic testing.
 
-    infection_duration, default = 11 NOTE: includes the time an agent is exposed 
+    infection_duration, default = 11 NOTE: includes the time an agent is exposed
     but not yet infectious at the beginning of an infection
         positive integer:   mean or median of the infection duration in days
-        list of two floats: mean and standard deviation of a distribution 
-                            specifying the infection duration in days. These 
-                            numbers will be used to construct a Weibull 
-                            distribution from which the infection duration will 
+        list of two floats: mean and standard deviation of a distribution
+                            specifying the infection duration in days. These
+                            numbers will be used to construct a Weibull
+                            distribution from which the infection duration will
                             be drawn for every agent individually
 
-    exposure_duration, default = 4. Sets the time from transmission to becoming 
+    exposure_duration, default = 4. Sets the time from transmission to becoming
     infectious
         positive integer:   mean or median of the exposure duration in days
-        list of two floats: mean and standard deviation of a distribution 
-                            specifying the exposure duration in days. These 
-                            numbers will be used to construct a Weibull 
-                            distributoin from which the exposure duration will 
+        list of two floats: mean and standard deviation of a distribution
+                            specifying the exposure duration in days. These
+                            numbers will be used to construct a Weibull
+                            distributoin from which the exposure duration will
                             be drawn for every agent individually.
 
-    time_until_symptoms, default = 6. Sets the time from transmission to 
+    time_until_symptoms, default = 6. Sets the time from transmission to
     (potentially) developing symptoms. Symptom probability has to be set for
     each agent group individually using the parameter 'symptom_probability'
         positive integer:   mean or median of the time until symptoms in days
-        list of two floats: mean and standard deviation of a distribution 
-                            specifying the time until symptoms in days. These 
-                            numbers will be used to construct a Weibull 
+        list of two floats: mean and standard deviation of a distribution
+                            specifying the time until symptoms in days. These
+                            numbers will be used to construct a Weibull
                             distribution from which the time until symptoms will
                             be drawn for every agent individually.
 
-    quarantine_duration, default = 14. Positive integer, sets the time a 
+    quarantine_duration, default = 14. Positive integer, sets the time a
     positively tested agent is quarantined in days
 
     infection_risk_contact_type_weights: dictionary of the form
@@ -245,42 +244,42 @@ class SEIRX(Model):
     agents specified in the contact network G. Default: {'very_far': 0.1,
     'far': 0.5, 'intermediate': 1, 'close': 3}
 
-    subclinical_modifier: default = 1.0. Float, modifies the infectiousness of 
-    asymptomatic cases. Example: if subclinical_modifier = 0.5, the 
+    subclinical_modifier: default = 1.0. Float, modifies the infectiousness of
+    asymptomatic cases. Example: if subclinical_modifier = 0.5, the
     infectiousness of an asymptomatic case will be reduced to 50%.
 
     K1_contact_types: list of strings from ['very_far', 'far', 'intermediate',
-    'close']. Definition of contact types for which agents are considered 
-    "K1 contact persons" if they had contact to a positively tested person wtith 
+    'close']. Definition of contact types for which agents are considered
+    "K1 contact persons" if they had contact to a positively tested person wtith
     a specified contact intensity. Default = ['close'].
 
-    diagnostic_test_type, default = 'one_day_PCR'. String, specifies the test 
-    technology and test result turnover time used for diagnostic testing. For 
-    example 'same_day_antigen' or 'two_day_PCR'. See module "Testing" for 
+    diagnostic_test_type, default = 'one_day_PCR'. String, specifies the test
+    technology and test result turnover time used for diagnostic testing. For
+    example 'same_day_antigen' or 'two_day_PCR'. See module "Testing" for
     different implemented testing techologies.
 
-    preventive_screening_test_type:, default = 'one_day_PCR', String, specifies 
-    the test technology and test result turnover time used for preventive 
-    sreening. For example 'same_day_antigen' or 'two_day_PCR'. See module 
+    preventive_screening_test_type:, default = 'one_day_PCR', String, specifies
+    the test technology and test result turnover time used for preventive
+    sreening. For example 'same_day_antigen' or 'two_day_PCR'. See module
     "Testing" for different implemented testing techologies.
 
-    follow_up_testing_interval, default = None. Positive integer, sets the time 
-    a follow-up screen (background screen) is initiated after an initial screen 
+    follow_up_testing_interval, default = None. Positive integer, sets the time
+    a follow-up screen (background screen) is initiated after an initial screen
     triggered by a positive test result. Only applies if the testing strategy is
     'background' or preventive.
 
-    liberating_testing, default = False. Boolean, flag that specifies, whether 
-    or not an agent is released from quarantine after returning a negative test 
+    liberating_testing, default = False. Boolean, flag that specifies, whether
+    or not an agent is released from quarantine after returning a negative test
     result.
 
-	index_case, default = 'employee' (nursing home scenario) or 'teacher' 
+	index_case, default = 'employee' (nursing home scenario) or 'teacher'
     (school scenario). Specifies how infections are introduced into the facility.
-        agent_type:     If an agent type (for example 'student' or 'teacher' in 
+        agent_type:     If an agent type (for example 'student' or 'teacher' in
                         the school scenario) is specified, a single randomly
                         chosen agent from this agent group will become the index
                         case and no further index cases will be introduced into
                         the scenario.
-        'continuous':   In this case, agents have a continuous risk to become 
+        'continuous':   In this case, agents have a continuous risk to become
                         index cases in every simulation step. The risk has to
                         be specified for every agent group individually, using
                         the 'index_probability' parameter. If only a single
@@ -310,18 +309,19 @@ class SEIRX(Model):
     becoming an index case in every time step
 
     seed: positive integer, fixes the seed of the simulation to enable
-    repeatable simulation runs. If seed = None, the simulation will be 
+    repeatable simulation runs. If seed = None, the simulation will be
     initialized at random.
     '''
 
-    def __init__(self, G, 
-        verbosity = 0, 
+    def __init__(self, G,
+        verbosity = 0,
         base_transmission_risk = 0.05,
         testing='diagnostic',
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
-        infection_duration = [10.91, 3.95], 
-        quarantine_duration = 10, 
+        infection_duration = [10.91, 3.95],
+        vaccinated = False,
+        quarantine_duration = 10,
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
             'very_far': 0.1,
@@ -333,17 +333,20 @@ class SEIRX(Model):
         preventive_screening_test_type = 'same_day_antigen',
         follow_up_testing_interval = None,
         liberating_testing = False,
-        index_case = 'teacher', 
+        index_case = 'teacher',
         agent_types = {
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'student':      {'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False},
+                             'mask':False,
+                             'vaccination_probability': 0},
             'family_member':{'screening_interval': None,
                              'index_probability': 0,
-                             'mask':False}},
+                             'mask':False,
+                             'vaccination_probability': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -352,6 +355,7 @@ class SEIRX(Model):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
         seed = None):
 
         # mesa models already implement fixed seeds through their own random
@@ -412,10 +416,10 @@ class SEIRX(Model):
                             method='toms748', bracket=[0.2, 500]).root
                 scale = get_weibull_scale(mu, shape)
 
-                self.epi_params[param_name] = [shape, scale]         
+                self.epi_params[param_name] = [shape, scale]
             else:
                 print('{} format not recognized, should be either a single '+\
-                  'int or a tuple of two positive numbers'.format(param_name))       
+                  'int or a tuple of two positive numbers'.format(param_name))
 
 
         # duration of quarantine
@@ -439,13 +443,14 @@ class SEIRX(Model):
         self.mask_filter_efficiency = mask_filter_efficiency
         self.transmission_risk_ventilation_modifier = \
             transmission_risk_ventilation_modifier
-
+        self.transmission_risk_vaccination_modifier = \
+            transmission_risk_vaccination_modifier
         ## agents and their interactions
         # interaction graph of agents
         self.G = check_graph(G)
         # add weights as edge attributes so they can be visualised easily
         if type(self.G) == nx.MultiGraph:
-            for (u, v, key, contact_type) in self.G.edges(keys=True, 
+            for (u, v, key, contact_type) in self.G.edges(keys=True,
                     data='contact_type'):
                 self.G[u][v][key]['weight'] = \
                     self.infection_risk_contact_type_weights[contact_type]
@@ -476,7 +481,7 @@ class SEIRX(Model):
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
-        params = ['screening_interval','index_probability', 'mask',
+        params = ['screening_interval','index_probability', 'mask' ,'vaccination_probability',
                   'voluntary_testing_rate']
 
         # default values that are used in case a characteristic is not specified
@@ -484,24 +489,28 @@ class SEIRX(Model):
         defaults = {'screening_interval':None,
                     'index_probability':0,
                     'mask':False,
-                    'voluntary_testing_rate':1}
+                    'vaccination_probability':0,
+                    'voluntary_testing_rate':1
+                    }
 
         # sanity checks that are applied to parameters passed to the class
         # constructor to make sure they conform to model expectations
         check_funcs = [check_positive_int, check_probability, check_bool,
-                       check_probability]
+                       check_probability, check_probability]
 
         # member dicts that store the parameter values for each agent group
         self.screening_intervals = {}
         self.index_probabilities = {}
         self.masks = {}
+        self.vaccination_probabilities = {}
         self.voluntary_testing_rates = {}
 
-        param_dicts = [self.screening_intervals, self.index_probabilities, 
-                    self.masks, self.voluntary_testing_rates]
+
+        param_dicts = [self.screening_intervals, self.index_probabilities,
+                    self.masks, self.vaccination_probabilities, self.voluntary_testing_rates]
 
         # iterate over all possible agent parameters and agent groups: set the
-        # respective value to the value passed through the constructor or to 
+        # respective value to the value passed through the constructor or to
         # the default value if no value has been passed
         for param,param_dict,check_func in zip(params,param_dicts,check_funcs):
             for at in self.agent_types:
@@ -511,8 +520,8 @@ class SEIRX(Model):
                     param_dict.update({at:defaults[param]})
 
         # pass all parameters relevant for the testing strategy to the testing
-        # class. NOTE: this separation is not a strictly necessary design 
-        # decision but I like to keep the parameters related to testing and 
+        # class. NOTE: this separation is not a strictly necessary design
+        # decision but I like to keep the parameters related to testing and
         # tracing in a separate place
         self.Testing = Testing(self, diagnostic_test_type,
              preventive_screening_test_type,
@@ -543,8 +552,8 @@ class SEIRX(Model):
                 tmp_epi_params = {}
                 # for each of the three epidemiological parameters, check if
                 # the parameter is an integer (if yes, pass it directly to the
-                # agent constructor), or if it is specified by the shape and 
-                # scale parameters of a Weibull distribution. In the latter 
+                # agent constructor), or if it is specified by the shape and
+                # scale parameters of a Weibull distribution. In the latter
                 # case, draw a new number for every agent from the distribution
                 # NOTE: parameters drawn from the distribution are rounded to
                 # the nearest integer
@@ -574,14 +583,22 @@ class SEIRX(Model):
                 voluntary_testing = np.random.choice([True, False],
                          p=[p, 1-p])
 
-                a = self.agent_classes[agent_type](ID, unit, self, 
-                    tmp_epi_params['exposure_duration'], 
-                    tmp_epi_params['time_until_symptoms'], 
-                    tmp_epi_params['infection_duration'], 
+                # check if the agent is vaccinated depending on percentage input of vaccination probability
+                vaccinated =  False
+
+                a = self.agent_classes[agent_type](ID, unit, self,
+                    tmp_epi_params['exposure_duration'],
+                    tmp_epi_params['time_until_symptoms'],
+                    tmp_epi_params['infection_duration'],
+                    vaccinated,
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
-
+            #gives n agents of agent_type the vaccination status
+            agent_list = [a for a in self.schedule.agents if a.type == agent_type]
+            n=round(self.vaccination_probabilities[agent_type]*len(agent_list))
+            for a in self.random.sample(agent_list,n):
+                a.vaccinated=True
 		# infect the first agent in single index case mode
         if self.index_case != 'continuous':
             infection_targets = [
@@ -592,7 +609,7 @@ class SEIRX(Model):
             if self.verbosity > 0:
                 print('{} exposed: {}'.format(index_case,
                     infection_targets[target].ID))
-                
+
 
         # list of agents that were tested positive this turn
         self.newly_positive_agents = []
@@ -693,7 +710,7 @@ class SEIRX(Model):
         # contacts of type "close" have, by definition, a weight of 1. Contacts
         # of type intermediate, far or very far have a weight < 1 and therefore
         # are less likely to transmit an infection. For example, if the contact
-        # type far has a weight of 0.2, a contact of type far has only a 20% 
+        # type far has a weight of 0.2, a contact of type far has only a 20%
         # chance of transmitting an infection, when compared to a contact of
         # type close. To calculate the probability of success p in the Bernoulli
         # trial, we need to reduce the base risk (or base probability of success)
@@ -716,12 +733,12 @@ class SEIRX(Model):
             age_weight = self.age_transmission_risk_discount['slope'] * \
                  np.abs(age - max_age) + self.age_transmission_risk_discount['intercept']
 
-            # The age weight can be interpreted as multiplicative factor that 
+            # The age weight can be interpreted as multiplicative factor that
             # reduces the chance for transmission with decreasing age. The slope
-            # of the age_transmission_discount function is the decrease (in % of 
+            # of the age_transmission_discount function is the decrease (in % of
             # the transmission risk for an 18 year old or above) of transmission
             # risk with every year a person is younger than 18 (the intercept is
-            # 1 by definition). 
+            # 1 by definition).
             # To calculate the probability of success p in the Bernoulli
             # trial, we need to reduce the base risk (or base probability of success)
             # by the modifications introduced by preventive measures. These
@@ -753,8 +770,8 @@ class SEIRX(Model):
 
 
     # infectiousness is constant and high until symptom onset and then
-    # decreases monotonically until agents are not infectious anymore 
-    # at the end of the infection_duration 
+    # decreases monotonically until agents are not infectious anymore
+    # at the end of the infection_duration
     def get_transmission_risk_progression_modifier(self, source):
         if source.days_since_exposure < source.exposure_duration:
             progression_weight = 0
@@ -762,7 +779,7 @@ class SEIRX(Model):
             progression_weight = 1
         elif source.days_since_exposure > source.time_until_symptoms and \
              source.days_since_exposure <= source.infection_duration:
-            # we add 1 in the denominator, such that the source is also 
+            # we add 1 in the denominator, such that the source is also
             # (slightly) infectious on the last day of the infection_duration
             progression_weight = \
                  (source.days_since_exposure - source.time_until_symptoms) / \
@@ -771,7 +788,7 @@ class SEIRX(Model):
             progression_weight = 0
         # see description in get_transmission_risk_age_modifier_transmission
         q4 = 1 - progression_weight
-            
+
         return q4
 
     def get_transmission_risk_subclinical_modifier(self, source):
@@ -809,6 +826,19 @@ class SEIRX(Model):
         q8 = 1 - ventilation_weight
         return q8
 
+    def get_transmission_risk_vaccination_modifier_reception(self, a):
+        if a.vaccinated:
+            q9 = self.transmission_risk_vaccination_modifier['reception']
+        else:
+            q9 = 0
+        return q9
+
+    def get_transmission_risk_vaccination_modifier_transmission(self, a):
+        if a.vaccinated:
+            q10 = self.transmission_risk_vaccination_modifier['transmission']
+        else:
+            q10 = 0
+        return q10
 
     def test_agent(self, a, test_type):
         a.tested = True
@@ -876,7 +906,7 @@ class SEIRX(Model):
         # only test agents that have not been tested already in this simulation
         # step and that are not already known positive cases
 
-        if self.verbosity > 0: 
+        if self.verbosity > 0:
             print('initiating {} {} screen'\
                                 .format(screen_type, agent_group))
 
@@ -989,17 +1019,17 @@ class SEIRX(Model):
                 for screen_type in ['reactive', 'follow_up', 'preventive']:
                     self.screened_agents[screen_type][agent_type] = False
 
-            if self.verbosity > 0: 
+            if self.verbosity > 0:
                 print('* testing and tracing *')
-            
+
             self.test_symptomatic_agents()
-            
+
 
             # collect and act on new test results
             agents_with_test_results = self.collect_test_results()
             for a in agents_with_test_results:
                 a.act_on_test_result()
-            
+
             self.quarantine_contacts()
 
             # screening:
@@ -1029,12 +1059,13 @@ class SEIRX(Model):
                         self.screen_agents(
                             agent_type, self.Testing.diagnostic_test_type, 'follow_up')
                     else:
-                        if self.verbosity > 0: 
+                        if self.verbosity > 0:
                             print('not initiating {} follow-up screen (last screen too close)'\
                                 .format(agent_type))
 
             # (c) 
             elif (self.testing == 'preventive' or self.testing == 'background+preventive')and \
+
                 np.any(list(self.Testing.screening_intervals.values())):
 
                 for agent_type in self.screening_agents:
@@ -1058,7 +1089,7 @@ class SEIRX(Model):
                             self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type,\
                              'preventive')
-                    # No interval specified = no testing, even if testing 
+                    # No interval specified = no testing, even if testing
                     # mode == preventive
                     elif interval == None:
                         pass
@@ -1081,4 +1112,3 @@ class SEIRX(Model):
         self.datacollector.collect(self)
         self.schedule.step()
         self.Nstep += 1
-

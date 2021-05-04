@@ -10,7 +10,7 @@ class agent_SEIRX(Agent):
     '''
 
     def __init__(self, unique_id, unit, model,
-        exposure_duration, time_until_symptoms, infection_duration,
+        exposure_duration, time_until_symptoms, infection_duration, vaccinated,
         voluntary_testing, verbosity):
         super().__init__(unique_id, model)
         self.verbose = verbosity
@@ -28,6 +28,8 @@ class agent_SEIRX(Agent):
         self.time_until_symptoms = time_until_symptoms
         # number of days agents stay infectuous
         self.infection_duration = infection_duration
+        # vaccinated true or false (depending on chosen probability)
+        self.vaccinated = vaccinated
 
 
         ## agent-group wide parameters that are stored in the model class
@@ -212,6 +214,7 @@ class agent_SEIRX(Agent):
         self.infectious = True
 
         # determine if infected agent will show symptoms
+        # if infected agent is vaccinated the agent will not show symptoms
         # NOTE: it is important to determine whether the course of the
         # infection is symptomatic already at this point, to allow
         # for a modification of transmissibility by symptomticity.
@@ -222,6 +225,9 @@ class agent_SEIRX(Agent):
             self.symptomatic_course = True
             if self.verbose > 0:
                 print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
+        elif self.vaccinated:
+            if self.verbose > 0:
+                print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
         else:
             if self.verbose > 0:
                 print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
