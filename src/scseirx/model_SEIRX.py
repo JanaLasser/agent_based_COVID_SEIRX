@@ -338,15 +338,15 @@ class SEIRX(Model):
             'teacher':      {'screening_interval': None,
                              'index_probability': 0,
                              'mask':False,
-                             'vaccination_probability': 0},
+                             'vaccination_ratio': 0},
             'student':      {'screening_interval': None,
                              'index_probability': 0,
                              'mask':False,
-                             'vaccination_probability': 0},
+                             'vaccination_ratio': 0},
             'family_member':{'screening_interval': None,
                              'index_probability': 0,
                              'mask':False,
-                             'vaccination_probability': 0}},
+                             'vaccination_ratio': 0}},
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
@@ -481,7 +481,7 @@ class SEIRX(Model):
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
-        params = ['screening_interval','index_probability', 'mask' ,'vaccination_probability',
+        params = ['screening_interval','index_probability', 'mask' ,'vaccination_ratio',
                   'voluntary_testing_rate']
 
         # default values that are used in case a characteristic is not specified
@@ -489,7 +489,7 @@ class SEIRX(Model):
         defaults = {'screening_interval':None,
                     'index_probability':0,
                     'mask':False,
-                    'vaccination_probability':0,
+                    'vaccination_ratio':0,
                     'voluntary_testing_rate':1
                     }
 
