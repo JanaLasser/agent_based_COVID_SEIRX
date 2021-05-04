@@ -1,5 +1,5 @@
 # Agent based simulation of the spread of COVID-19 in confined spaces
-**Author: Jana Lasser, Complexity Science Hub Vienna (lasser@csh.ac.at)**  
+**Author: Jana Lasser, Graz University of Technology & CSH Vienna (jana.lasser@tugraz.at)**  
 **Contributors:**
 * Katharina Ledebur
 * Simon David Lindner
