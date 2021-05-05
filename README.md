@@ -1,8 +1,5 @@
 # Agent based simulation of the spread of COVID-19 in confined spaces
-**Author: Jana Lasser, Graz University of Technology & CSH Vienna (jana.lasser@tugraz.at)**  
-**Contributors:**
-* Katharina Ledebur
-* Simon David Lindner
+**Author: Jana Lasser, Complexity Science Hub Vienna (lasser@csh.ac.at)**
 
 A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures. The model follows an SEIRX approach, building on the agent based simulation framework [mesa](https://mesa.readthedocs.io/en/master/) in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X) and is based on explicitly defined and dynamic contact networks between agents. The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and other interventions such as ventilation and mask-wearing.
 
@@ -81,15 +78,14 @@ p = 1 - [1 - b(1 - q_1)(1 - q_2)(1-q_3)(1 - q_4)(1 - q_5)(1 - q_6)(1 - q_7)(1 - 
 ### Containment strategies
 #### Testing strategies
 Next to the transmission of the infection, containment measures (quarantine) and a testing and tracing strategy can be implemented to curb the spread of the virus. The general testing strategy can be specified via the model parameter ```testing```. 
-* If ```testing='diagnostic'```, symptomatic cases are immediately quarantined and tested. Once a positive test result is returned, all K1 contacts of the positive agent are immediately quarantined too. This strategy is dubbed "test-trace-isolate" (TTI).
-* If ```testing='background'```, **in addition to** TTI, if there is a positive test result, a "background screen" of the population will be launched. In the nursing home scenario, all residents and employees are tested in such a background screen. In the school scenario, all teachers and students (but not family members) are tested in such a background screen. If a ```follow_up_testing```-interval is specified, each background screen is followed by a "follow up screen" that is similar to the background screen with the specified time-delay, testing the same agent groups as in the background screen and using the same testing technology.
-* If ```testing='preventive'```, preventive screens will be performed independently of diagnostic testing and (potential) background/follow-up screens **in addtion to** TTI. These preventive screens are performed in given intervals, which are to be specified for each agent group using the parameter ```agent_types[screening_interval]```. These screening intervals are tied to specific days of the week:
+* If ```testing='diagnostic'```, symptomatic cases are immediately quarantined and tested. Once a positive test result is returned, all K1 contacts of the positive agent are immediately quarantined too.  
+* If ```testing='background'```, in addition to testing of single symptomatic agents, if there is a positive test result, a "background screen" of the population will be launched. In the nursing home scenario, all residents and employees are tested in such a background screen. In the school scenario, all teachers and students (but not family members) are tested in such a background screen. If a ```follow_up_testing```-interval is specified, each background screen is followed by a "follow up screen" that is similar to the background screen with the specified time-delay, testing the same agent groups as in the background screen and using the same testing technology.
+* Next to population screening that is triggered by positive test results, if ```testing='preventive'```, preventive screens will be performed independently of diagnostic testing and background/follow-up screens. These preventive screens are performed in given intervals, which are to be specified for each agent group using the parameter ```agent_types[screening_interval]```. These screening intervals are tied to specific days of the week:
     * An interval of 7 days will cause preventive screens to be launched on Mondays
     * An interval of 3 days will cause preventive screens to be launched on Mondays and Thursdays
     * An interval of 2 days will cause preventive screens to be launched on Mondays, Wednesdays and Fridays.
     * An interval of None will not initiate any preventive screens, even if ```testing=preventive``` and will fall back to diagnostic testing and background screens.
     * Other intervals are currently not supported.
-* If ```testing='background+preventive'```, both background screens **and** preventive testing will be performed.
     
 Tests take a certain amount of time to return results, depending on the chosen testing technology. Agents can have a pending test result, which will prevent them from getting tested again before the pending result arrives.  Tests can return positive or negative results, depending on whether the agent was testable at the time of testing (see section [Viral Load](#viral-load)) and on the sensitivity/specificity of the chosen test (see section [Test Technologies](#test-technologies)). 
 
@@ -313,7 +309,9 @@ Nikolai, L. A., Meyer, C. G., Kremsner, P. G., & Velavan, T. P. (2020). Asymptom
 
 Pan, J., Harb, C., Leng, W., & Marr, L. C. (2020). Inward and outward effectiveness of cloth masks, a surgical mask, and a face shield. medRxiv. [DOI: 10.1101/2020.11.18.20233353](https://doi.org/10.1101/2020.11.18.20233353)
 
-Sharif-Askari, N. S., Sharif-Askari, F. S., Alabed, M., Temsah, M. H., Al Heialy, S., Hamid, Q., & Halwani, R. (2020). Airways Expression of SARS-CoV-2 Receptor, ACE2, and TMPRSS2 Is Lower in Children Than Adults and Increases with Smoking and COPD. Mol Ther Methods Clin Dev, 18, 1-6. [DOI: 10.1016%2Fj.omtm.2020.05.013](https://dx.doi.org/10.1016%2Fj.omtm.2020.05.013)
+Polack, F.P., Thomas, S.J., Kitchin, N., Absalon, J., Gurtman, A., Lockhart, S., Perez, J.L., Pérez, M.G., et al. (2020). N Engl J Med. [DOI: 10.1056/NEJMoa2034577](10.1056/NEJMoa2034577)
+
+Voysey, M., Clemens, S.A.C., Mahi, S.A., Weckx, L.Y., Folegatti, M.D., Aley, P.K., et al. (2020). Safety and efficacy of the ChAdOx1 nCoV-19 vaccine (AZD1222) against SARS-CoV-2: an interim analysis of four randomised controlled trials in Brazil, South Africa, and the UK. The Lancet. [DOI:10.1016/S0140-6736(20)32661-1](https://doi.org/10.1016/S0140-6736(20)32661-1)
 
 Walsh, K. A., Jordan, K., Clyne, B., Rohde, D., Drummond, L., Byrne, P., ... & O'Neill, M. (2020). SARS-CoV-2 detection, viral load and infectivity over the course of an infection: SARS-CoV-2 detection, viral load and infectivity. Journal of Infection. [DOI: 10.1016/j.jinf.2020.06.067](10.1016/j.jinf.2020.06.067)  
 
