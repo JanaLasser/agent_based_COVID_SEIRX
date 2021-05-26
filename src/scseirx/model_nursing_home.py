@@ -176,7 +176,7 @@ class SEIRX_nursing_home(SEIRX):
         preventive_screening_test_type = 'same_day_antigen',
         follow_up_testing_interval = None,
         liberating_testing = False,
-        index_case = 'teacher',
+        index_case = 'employee',
         agent_types = {
             'employee':      {'screening_interval': None,
                              'index_probability': 0,
