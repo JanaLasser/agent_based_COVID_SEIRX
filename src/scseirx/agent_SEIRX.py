@@ -50,8 +50,8 @@ class agent_SEIRX(Agent):
         ## age adjustments
         # adjust symptom probability based on age
         self.symptom_probability = \
-                        self.age * self.model.age_symptom_discount['slope'] + \
-                        self.model.age_symptom_discount['intercept']
+                        self.age * self.model.age_symptom_modification['slope'] + \
+                        self.model.age_symptom_modification['intercept']
 
 
         ## infection states

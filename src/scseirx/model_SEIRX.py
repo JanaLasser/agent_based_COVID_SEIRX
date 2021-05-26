@@ -350,7 +350,7 @@ class SEIRX(Model):
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
-        age_symptom_discount = \
+        age_symptom_modification = \
              {'slope':-0.02545,
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
@@ -433,12 +433,13 @@ class SEIRX(Model):
         # modifiers for the infection risk, depending on contact type
         self.infection_risk_contact_type_weights = infection_risk_contact_type_weights
 
-        # discounts for age-dependent transmission and reception risks and
+        # modifications for age-dependent transmission and reception risks and
         # symptom probabilities
         self.age_transmission_risk_discount = \
             check_discount(age_transmission_risk_discount)
-        self.age_symptom_discount = \
-            check_discount(age_symptom_discount)
+
+        self.age_symptom_modification = age_symptom_modification
+            #check_discount(age_symptom_modification)
 
         self.mask_filter_efficiency = mask_filter_efficiency
         self.transmission_risk_ventilation_modifier = \
