@@ -548,7 +548,18 @@ class SEIRX(Model):
 
             # get the agent locations (units) from the graph node attributes
             units = [self.G.nodes[ID]['unit'] for ID in IDs]
-            for ID, unit in zip(IDs, units):
+
+            # determine the agents that will be vaccinated, given the 
+            # vaccination ratio of the respective agent group
+            vaccination_status = np.asarray([False] * len(IDs))
+            if self.vaccination_probabilities[agent_type] > 0:
+                n = round(self.vaccination_probabilities[agent_type] * len(IDs))
+                idx = list(range(len(IDs)))
+                rnd_idx = np.asarray(self.random.sample(idx, n))
+                vaccination_status[rnd_idx] = True
+
+
+            for ID, unit, vaccinated in zip(IDs, units, vaccination_status):
 
                 tmp_epi_params = {}
                 # for each of the three epidemiological parameters, check if
@@ -584,9 +595,7 @@ class SEIRX(Model):
                 voluntary_testing = np.random.choice([True, False],
                          p=[p, 1-p])
 
-                # check if the agent is vaccinated depending on percentage input of vaccination probability
-                vaccinated =  False
-
+                # construct the agent object
                 a = self.agent_classes[agent_type](ID, unit, self,
                     tmp_epi_params['exposure_duration'],
                     tmp_epi_params['time_until_symptoms'],
@@ -595,11 +604,8 @@ class SEIRX(Model):
                     voluntary_testing,
                     verbosity)
                 self.schedule.add(a)
-            #gives n agents of agent_type the vaccination status
-            agent_list = [a for a in self.schedule.agents if a.type == agent_type]
-            n=round(self.vaccination_probabilities[agent_type]*len(agent_list))
-            for a in self.random.sample(agent_list,n):
-                a.vaccinated=True
+
+
 		# infect the first agent in single index case mode
         if self.index_case != 'continuous':
             infection_targets = [

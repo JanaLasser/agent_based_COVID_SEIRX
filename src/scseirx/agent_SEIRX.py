@@ -63,6 +63,7 @@ class agent_SEIRX(Agent):
             self.model.random.random() <= self.symptom_probability:
             self.symptomatic_course = True
 
+
         self.symptoms = False
         self.recovered = False
         self.tested = False
