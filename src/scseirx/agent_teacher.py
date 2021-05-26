@@ -15,8 +15,6 @@ class teacher(agent_SEIRX):
             exposure_duration, time_until_symptoms, infection_duration,
             voluntary_testing, vaccinated, verbosity) 
 
-        self.age = 30
-
 
     def step(self):
         '''

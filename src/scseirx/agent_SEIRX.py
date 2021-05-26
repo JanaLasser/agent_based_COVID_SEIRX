@@ -34,8 +34,25 @@ class agent_SEIRX(Agent):
 
         ## agent-group wide parameters that are stored in the model class
         self.index_probability = self.model.index_probabilities[self.type]
-        self.symptom_probability = self.model.age_symptom_discount['intercept']
         self.mask = self.model.masks[self.type]
+
+        # try to set the agent's age from information in the graph. The age info
+        # is later needed to adjust transmission risk and the probability to
+        # develop a symptomatic course. If the age information doees not exist,
+        # age is set to 0, the transmission risk remains unmodified and the
+        # probability to develop a symptomatic course is set to the intercept
+        # specified at model setup
+        try: 
+            self.age = model.G.nodes(data=True)[self.unique_id]['age']
+        except KeyError:
+            self.age = 0
+
+        ## age adjustments
+        # adjust symptom probability based on age
+        self.symptom_probability = \
+                        self.age * self.model.age_symptom_discount['slope'] + \
+                        self.model.age_symptom_discount['intercept']
+
 
         ## infection states
         self.exposed = False

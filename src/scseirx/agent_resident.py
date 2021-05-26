@@ -1,14 +1,13 @@
 from scseirx.agent_SEIRX import agent_SEIRX
 
-
 class resident(agent_SEIRX):
     '''
-    An inhabitant with an infection status
+    A resident with an infection status
     '''
 
     def __init__(self, unique_id, unit, model, 
-            exposure_duration, time_until_symptoms, infection_duration,
-            voluntary_testing, vaccinated,  verbosity):
+        exposure_duration, time_until_symptoms, infection_duration,
+        voluntary_testing, vaccinated,  verbosity):
 
         self.type = 'resident'
 
