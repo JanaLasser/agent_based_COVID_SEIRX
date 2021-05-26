@@ -189,9 +189,9 @@ class SEIRX_nursing_home(SEIRX):
         age_transmission_risk_discount = \
              {'slope':-0.02,
               'intercept':1},
-        age_symptom_discount = \
-             {'slope':-0.02545,
-              'intercept':0.854545},
+        age_symptom_modification = \
+             {'slope':0.00777777,
+              'intercept':-0.022222},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
         transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
@@ -219,7 +219,7 @@ class SEIRX_nursing_home(SEIRX):
             agent_types = agent_types,
             age_transmission_risk_discount = \
                  age_transmission_risk_discount,
-            age_symptom_discount = age_symptom_discount,
+            age_symptom_modification = age_symptom_modification,
             mask_filter_efficiency = mask_filter_efficiency,
             transmission_risk_ventilation_modifier = \
                          transmission_risk_ventilation_modifier,
