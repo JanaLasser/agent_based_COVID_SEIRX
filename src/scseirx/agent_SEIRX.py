@@ -58,6 +58,11 @@ class agent_SEIRX(Agent):
         self.exposed = False
         self.infectious = False
         self.symptomatic_course = False
+
+        if not self.vaccinated and \
+            self.model.random.random() <= self.symptom_probability:
+            self.symptomatic_course = True
+
         self.symptoms = False
         self.recovered = False
         self.tested = False
@@ -230,24 +235,13 @@ class agent_SEIRX(Agent):
         self.exposed = False
         self.infectious = True
 
-        # determine if infected agent will show symptoms
-        # if infected agent is vaccinated the agent will not show symptoms
-        # NOTE: it is important to determine whether the course of the
-        # infection is symptomatic already at this point, to allow
-        # for a modification of transmissibility by symptomticity.
-        # I.e. agents that will become symptomatic down the road might
-        # already be more infectious before they show any symptoms than
-        # agents that stay asymptomatic
-        if self.model.random.random() <= self.symptom_probability:
-            self.symptomatic_course = True
-            if self.verbose > 0:
-                print('{} infectious: {} (symptomatic course)'.format(self.type, self.unique_id))
-        elif self.vaccinated:
-            if self.verbose > 0:
-                print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
-        else:
-            if self.verbose > 0:
-                print('{} infectious: {} (asymptomatic course)'.format(self.type, self.unique_id))
+        if self.verbose > 0:
+            if self.symptomatic_course:
+                print('{} infectious: {} (symptomatic course)'\
+                    .format(self.type, self.unique_id))
+            else:
+                print('{} infectious: {} (asymptomatic course)'\
+                    .format(self.type, self.unique_id))
 
 
     def show_symptoms(self):
