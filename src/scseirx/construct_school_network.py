@@ -450,7 +450,7 @@ def generate_teachers(G, school_type, N_classes, family_member_counter,
 		
 		ages = list(ages)
 		for adult in range(N_adults - 1):
-			ages.append(30) # default age for adults
+			ages.append(20.5) # default age for adults
 		
 		# add the family member nodes and their attributes to the graph
 		for age in ages:
