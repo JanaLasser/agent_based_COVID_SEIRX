@@ -320,7 +320,7 @@ class SEIRX(Model):
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
         infection_duration = [10.91, 3.95],
-        vaccinated = False,
+        #vaccinated = False,
         quarantine_duration = 10,
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
