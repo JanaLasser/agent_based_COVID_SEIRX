@@ -430,8 +430,8 @@ class SEIRX_school(SEIRX):
 
         # contact types where masks and ventilation are irrelevant
         if link_type in ['student_household', 'teacher_household']:
-            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q9)*(1-q10))
+            p = 1 - (1 - base_risk * (1 - q1) * (1 - q2) * (1 - q3) * \
+                (1 - q4) * (1 - q5) * (1 - q9) * (1 - q10))
 
         # contact types were masks and ventilation are relevant
         elif link_type in ['student_student_intra_class',
@@ -447,8 +447,9 @@ class SEIRX_school(SEIRX):
             q7 = self.get_transmission_risk_inhale_modifier(target)
             q8 = self.get_transmission_risk_ventilation_modifier()
 
-            p = 1 - (1 - base_risk * (1- q1) * (1 - q2) * (1 - q3) * \
-                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8) * (1 - q9)*(1-q10))
+            p = 1 - (1 - base_risk * (1 - q1) * (1 - q2) * (1 - q3) * \
+                (1 - q4) * (1 - q5) * (1 - q6) * (1 - q7) * (1 - q8) * \
+                (1 - q9) * (1 - q10))
 
         else:
             print('unknown link type: {}'.format(link_type))
