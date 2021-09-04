@@ -355,7 +355,9 @@ class SEIRX(Model):
               'intercept':0.854545},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
-        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
+        transmission_risk_vaccination_modifier = {
+            'reception':1,
+            'transmission':0},
         seed = None):
 
         # mesa models already implement fixed seeds through their own random
@@ -747,11 +749,11 @@ class SEIRX(Model):
             # risk with every year a person is younger than 18 (the intercept is
             # 1 by definition).
             # To calculate the probability of success p in the Bernoulli
-            # trial, we need to reduce the base risk (or base probability of success)
-            # by the modifications introduced by preventive measures. These
-            # modifications are formulated in terms of "probability of failure", or
-            # "q". A low age weight has a high probability of failure, therefore
-            # we return q = 1 - age_weight here.
+            # trial, we need to reduce the base risk (or base probability of 
+            # success) by the modifications introduced by preventive measures. 
+            # These modifications are formulated in terms of "probability of 
+            # failure", or "q". A low age weight has a high probability of 
+            # failure, therefore we return q = 1 - age_weight here.
             q2 = 1 - age_weight
         else:
             q2 = 0
