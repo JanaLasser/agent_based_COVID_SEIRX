@@ -429,7 +429,8 @@ class SEIRX_school(SEIRX):
         q10 = self.get_transmission_risk_vaccination_modifier_transmission(source)
 
         # contact types where masks and ventilation are irrelevant
-        if link_type in ['student_household', 'teacher_household']:
+        if link_type in ['student_household', 'teacher_household', 
+                         'student_student_friends']:
             p = 1 - (1 - base_risk * (1 - q1) * (1 - q2) * (1 - q3) * \
                 (1 - q4) * (1 - q5) * (1 - q9) * (1 - q10))
 
