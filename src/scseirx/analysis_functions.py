@@ -585,7 +585,8 @@ def dump_JSON(path, school,
 
 def get_measures(measure_string, test_participation_rate=False,
         reduced_class_size=False, added_friendship_contacts=False,
-        reduced_mask_efficiency=False, transmission_risk_modifier=False):
+        reduced_mask_efficiency=False, transmission_risk_modifier=False,
+        vaccinations=False):
     '''
     Convenience function to get the individual measures given a string (filename)
     of measures
@@ -644,9 +645,16 @@ def get_measures(measure_string, test_participation_rate=False,
         tmp = [stype, ttpype, turnover, index, tf, sf,
             tmask, smask, haf, meffexh, meffinh, vent]
     else:
-        ttpype, turnover, index, tf, sf, tmask, smask, haf, vent = \
-            rest.split('_')
-        tmp = [stype, ttpype, turnover, index, tf, sf, tmask, smask, haf, vent]
+        if vaccinations:
+            ttpype, turnover, index, tf, sf, tmask, smask, haf, vent, \
+                tvacc, svacc = rest.split('_')
+            tmp = [stype, ttpype, turnover, index, tf, sf, tmask, smask,
+                   haf, vent, tvacc, svacc]
+        else:
+            ttpype, turnover, index, tf, sf, tmask, smask, haf, vent = \
+                rest.split('_')
+            tmp = [stype, ttpype, turnover, index, tf, sf, tmask, smask,
+                   haf, vent]
 
     tmp = [m.split('-') for m in tmp]
     screening_params = {}
@@ -688,6 +696,10 @@ def get_measures(measure_string, test_participation_rate=False,
             screening_params['mask_efficiency_inhale'] = float(m[1])
         elif m[0] == 'trisk':
             screening_params['transmission_risk_modifier'] = float(m[1])
+        elif m[0] == 'tvacc':
+            agents['teacher']['vaccination_ratio'] = float(m[1])
+        elif m[0] == 'svacc':
+            agents['student']['vaccination_ratio'] = float(m[1])
         else:
             print('unknown measure type ', m[0])
     
@@ -696,7 +708,8 @@ def get_measures(measure_string, test_participation_rate=False,
 
 def get_data(stype, src_path, test_participation_rate=False,
             reduced_class_size=False, added_friendship_contacts=False,
-            reduced_mask_efficiency=False, transmission_risk_modifier=False):
+            reduced_mask_efficiency=False, transmission_risk_modifier=False,
+            vaccinations=False):
     '''
     Convenience function to read all ensembles from different measures
     of a given school type and return one single data frame
@@ -710,13 +723,15 @@ def get_data(stype, src_path, test_participation_rate=False,
                 reduced_class_size=reduced_class_size, 
                 added_friendship_contacts=added_friendship_contacts,
                 reduced_mask_efficiency=reduced_mask_efficiency,
-                transmission_risk_modifier=transmission_risk_modifier)
+                transmission_risk_modifier=transmission_risk_modifier,
+                vaccinations=vaccinations)
 
         ensmbl = pd.read_csv(join(stype_path, f))
         try:
             ensmbl = ensmbl.drop(columns=['Unnamed: 0'])
         except KeyError:
             pass
+
         ensmbl['preventive_test_type'] = screening_params['preventive_test_type']
         ensmbl['index_case'] = screening_params['index_case']
         ensmbl['transmission_risk_ventilation_modifier'] = \
@@ -739,6 +754,10 @@ def get_data(stype, src_path, test_participation_rate=False,
             
         if transmission_risk_modifier:
             ensmbl['transmission_risk_modifier'] = screening_params['transmission_risk_modifier']
+        
+        if vaccinations:
+            ensmbl['teacher_vaccination_ratio'] = agents['teacher']['vaccination_ratio']
+            ensmbl['student_vaccination_ratio'] = agents['student']['vaccination_ratio']
         data = pd.concat([data, ensmbl])
 
     data = data.reset_index(drop=True)
