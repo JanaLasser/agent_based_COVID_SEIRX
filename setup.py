@@ -9,7 +9,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name='scseirx',
-    version='1.4.0',
+    version='1.4.1',
     packages=find_packages(where='src'),
     package_dir={"": "src"},
     package_data={'scseirx':['data/nursing_home/*.bz2', 'data/school/*.bz2', 'img/*.png']},
@@ -18,7 +18,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/JanaLasser/agent_based_COVID_SEIRX",
     author='Jana Lasser',
-    author_email='lasser@csh.ac.at',
+    author_email='lasser@tugraz.at',
     license='MIT',
     classifiers=[
     "License :: OSI Approved :: MIT License",
