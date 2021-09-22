@@ -2073,19 +2073,6 @@ def map_contacts(G, contact_map, copy=False):
 	if copy:
 		G = G.copy()
 
-	# links for which purely student mask wearing is important to determine the
-	# contact type
-	student_links = [c for c in contact_map.keys() if c.startswith('student_')]
-	# links for which purely teacher mask wearing is important to determine the
-	# contact type
-	teacher_links = [c for c in contact_map.keys() if c.startswith('teacher_')]
-	# links for which mask wearing behavuour of both students and teachers is
-	# important to determine the contact type
-	student_teacher_links = ['teaching_teacher_student', 
-							 'daycare_supervision_teacher_student']
-
-	household_links = ['student_household', 'teacher_household']
-
 	_, N_weekdays, _ = get_teaching_framework()
 	for wd in range(1, N_weekdays + 1):
 		for n1, n2 in [(n1, n2) for (n1, n2, linkday) \
