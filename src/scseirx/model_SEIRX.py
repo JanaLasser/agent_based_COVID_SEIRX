@@ -43,30 +43,53 @@ def get_pending_test_infections(model):
 
 def get_diagnostic_test_detected_infections_student(model):
     return model.positive_tests[model.Testing.diagnostic_test_type]['student']
-
-
 def get_diagnostic_test_detected_infections_teacher(model):
     return model.positive_tests[model.Testing.diagnostic_test_type]['teacher']
-
-
 def get_diagnostic_test_detected_infections_family_member(model):
-    return model.positive_tests[model.Testing.diagnostic_test_type]\
-        ['family_member']
+    return model.positive_tests[model.Testing.diagnostic_test_type]['family_member']
+def get_diagnostic_test_detected_infections_resident(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['resident']
+def get_diagnostic_test_detected_infections_employee(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['employee']
+def get_diagnostic_test_detected_infections_unistudent(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['unistudent']
+def get_diagnostic_test_detected_infections_lecturer(model):
+    return model.positive_tests[model.Testing.diagnostic_test_type]['lecturer']
 
+diagnostic_test_detected_infections_funcs = {
+    'student':get_diagnostic_test_detected_infections_student,
+    'teacher':get_diagnostic_test_detected_infections_teacher,
+    'family_member':get_diagnostic_test_detected_infections_family_member,
+    'resident':get_diagnostic_test_detected_infections_resident,
+    'employee':get_diagnostic_test_detected_infections_employee,
+    'unistudent':get_diagnostic_test_detected_infections_unistudent,
+    'lecturer':get_diagnostic_test_detected_infections_lecturer
+}
 
 def get_preventive_test_detected_infections_student(model):
-    return model.positive_tests[model.Testing.preventive_screening_test_type]\
-        ['student']
-
-
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['student']
 def get_preventive_test_detected_infections_teacher(model):
-    return model.positive_tests[model.Testing.preventive_screening_test_type]\
-        ['teacher']
-
-
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['teacher']
 def get_preventive_test_detected_infections_family_member(model):
-    return model.positive_tests[model.Testing.preventive_screening_test_type]\
-        ['family_member']
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['family_member']
+def get_preventive_test_detected_infections_resident(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['resident']
+def get_preventive_test_detected_infections_employee(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['employee']
+def get_preventive_test_detected_infections_unistudent(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['unistudent']
+def get_preventive_test_detected_infections_lecturer(model):
+    return model.positive_tests[model.Testing.preventive_screening_test_type]['lecturer']
+
+preventive_test_detected_infections_funcs = {
+    'student':get_preventive_test_detected_infections_student,
+    'teacher':get_preventive_test_detected_infections_teacher,
+    'family_member':get_preventive_test_detected_infections_family_member,
+    'resident':get_preventive_test_detected_infections_resident,
+    'employee':get_preventive_test_detected_infections_employee,
+    'unistudent':get_preventive_test_detected_infections_unistudent,
+    'lecturer':get_preventive_test_detected_infections_lecturer
+}
 
 
 # parameter sanity check functions
@@ -481,6 +504,12 @@ class SEIRX(Model):
         if 'family_member' in agent_types:
             from scseirx.agent_family_member import family_member
             self.agent_classes['family_member'] = family_member
+        if 'lecturer' in agent_types:
+            from scseirx.agent_lecturer import lecturer
+            self.agent_classes['lecturer'] = lecturer
+        if 'unistudent' in agent_types:
+            from scseirx.agent_unistudent import unistudent
+            self.agent_classes['unistudent'] = unistudent
 
         ## set agent characteristics for all agent groups
         # list of agent characteristics
@@ -680,22 +709,20 @@ class SEIRX(Model):
             	{
             	'N_diagnostic_tests':get_N_diagnostic_tests,
                 'N_preventive_screening_tests':get_N_preventive_screening_tests,
-                'diagnostic_test_detected_infections_student':\
-                        get_diagnostic_test_detected_infections_student,
-                'diagnostic_test_detected_infections_teacher':\
-                        get_diagnostic_test_detected_infections_teacher,
-                'diagnostic_test_detected_infections_family_member':\
-                        get_diagnostic_test_detected_infections_family_member,
-                'preventive_test_detected_infections_student':\
-                        get_preventive_test_detected_infections_student,
-                'preventive_test_detected_infections_teacher':\
-                        get_preventive_test_detected_infections_teacher,
-                'preventive_test_detected_infections_family_member':\
-                        get_preventive_test_detected_infections_family_member,
                 'undetected_infections':get_undetected_infections,
                 'predetected_infections':get_predetected_infections,
                 'pending_test_infections':get_pending_test_infections
                 },
+
+        for agent_type in self.agent_types:
+            model_reporters.update({
+                'diagnostic_test_detected_infections_{}'.format(agent_type):\
+                diagnostic_test_detected_infections_funcs[agent_type]
+                })
+            model_reporters.update({
+                'preventive_test_detected_infections_{}'.format(agent_type):\
+                preventive_test_detected_infections_funcs[agent_type]
+                })
 
             agent_reporters=
             	{
