@@ -311,6 +311,9 @@ class SEIRX_school(SEIRX):
                         transmission_risk_vaccination_modifier,
             seed = seed)
 
+        # type of the model for some type-specific functionality
+        self.model = 'school'
+
         # agent types that are included in preventive, background & follow-up
         # screens
         self.screening_agents = ['teacher', 'student']

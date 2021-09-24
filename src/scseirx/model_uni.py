@@ -9,50 +9,50 @@ from scseirx.model_SEIRX import *
 
 ## data collection functions ##
 
-def count_S_student(model):
-    S = np.asarray([1 for a in model.schedule.agents if a.type == 'student' and\
+def count_S_unistudent(model):
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'unistudent' and\
                     a.exposed == False and a.recovered == False \
                     and a.infectious == False]).sum()
     return S
 
 
-def count_E_student(model):
+def count_E_unistudent(model):
     E = np.asarray(
-        [a.exposed for a in model.schedule.agents if a.type == 'student']).sum()
+        [a.exposed for a in model.schedule.agents if a.type == 'unistudent']).sum()
     return E
 
 
-def count_I_student(model):
+def count_I_unistudent(model):
     I = np.asarray(
-        [a.infectious for a in model.schedule.agents if a.type == 'student']).sum()
+        [a.infectious for a in model.schedule.agents if a.type == 'unistudent']).sum()
     return I
 
 
-def count_I_symptomatic_student(model):
+def count_I_symptomatic_unistudent(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'student'and a.symptomatic_course)]).sum()
+        (a.type == 'unistudent'and a.symptomatic_course)]).sum()
     return I
 
-def count_V_student(model):
+def count_V_unistudent(model):
     V = np.asarray([a.vaccinated for a in model.schedule.agents if
-        (a.type == 'student')]).sum()
+        (a.type == 'unistudent')]).sum()
     return V
 
-def count_I_asymptomatic_student(model):
+def count_I_asymptomatic_unistudent(model):
     I = np.asarray([a.infectious for a in model.schedule.agents if
-        (a.type == 'student'and a.symptomatic_course == False)]).sum()
+        (a.type == 'unistudent'and a.symptomatic_course == False)]).sum()
     return I
 
 
-def count_R_student(model):
+def count_R_unistudent(model):
     R = np.asarray(
-        [a.recovered for a in model.schedule.agents if a.type == 'student']).sum()
+        [a.recovered for a in model.schedule.agents if a.type == 'unistudent']).sum()
     return R
 
 
-def count_X_student(model):
+def count_X_unistudent(model):
     X = np.asarray(
-        [a.quarantined for a in model.schedule.agents if a.type == 'student']).sum()
+        [a.quarantined for a in model.schedule.agents if a.type == 'unistudent']).sum()
     return X
 
 
@@ -103,16 +103,16 @@ def count_X_lecturer(model):
     return X
 
 
-def check_reactive_student_screen(model):
-    return model.screened_agents['reactive']['student']
+def check_reactive_unistudent_screen(model):
+    return model.screened_agents['reactive']['unistudent']
 
 
-def check_follow_up_student_screen(model):
-    return model.screened_agents['follow_up']['student']
+def check_follow_up_unistudent_screen(model):
+    return model.screened_agents['follow_up']['unistudent']
 
 
-def check_preventive_student_screen(model):
-    return model.screened_agents['preventive']['student']
+def check_preventive_unistudent_screen(model):
+    return model.screened_agents['preventive']['unistudent']
 
 
 def check_reactive_lecturer_screen(model):
@@ -130,16 +130,16 @@ def check_preventive_lecturer_screen(model):
 
 data_collection_functions = \
     {
-    'student':
+    'unistudent':
         {
-        'S':count_S_student,
-        'E':count_E_student,
-        'I':count_I_student,
-        'I_asymptomatic':count_I_asymptomatic_student,
-        'V':count_V_student,
-        'I_symptomatic':count_I_symptomatic_student,
-        'R':count_R_student,
-        'X':count_X_student
+        'S':count_S_unistudent,
+        'E':count_E_unistudent,
+        'I':count_I_unistudent,
+        'I_asymptomatic':count_I_asymptomatic_unistudent,
+        'V':count_V_unistudent,
+        'I_symptomatic':count_I_symptomatic_unistudent,
+        'R':count_R_unistudent,
+        'X':count_X_unistudent
          },
     'lecturer':
         {
@@ -188,21 +188,21 @@ class SEIRX_uni(SEIRX):
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0},
-            'student':      {'screening_interval': None,
+            'unistudent':      {'screening_interval': None,
                              'index_probability': 0,
                              'mask':False,
                              'vaccination_probability': 0}},
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
-        transmission_risk_ventilation_modifier = 0,
-        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
-        seed = None):
-
         age_transmission_risk_discount = \
              {'slope':0,
               'intercept':1},
         age_symptom_modification = \
              {'slope':0,
-              'intercept':1}
+              'intercept':0.6},
+        transmission_risk_ventilation_modifier = 0,
+        transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
+        seed = None):
+
 
         super().__init__(G,
             verbosity = verbosity,
@@ -233,9 +233,12 @@ class SEIRX_uni(SEIRX):
                         transmission_risk_vaccination_modifier,
             seed = seed)
 
+        # type of the model for some type-specific functionality
+        self.model = 'uni'
+
         # agent types that are included in preventive, background & follow-up
         # screens
-        self.screening_agents = ['lecturer', 'student']
+        self.screening_agents = ['lecturer', 'unistudent']
 
         # define, whether or not a multigraph that defines separate connections
         # for every day of the week is used
@@ -261,20 +264,20 @@ class SEIRX_uni(SEIRX):
 
         model_reporters.update(\
             {
-            'screen_students_reactive':check_reactive_student_screen,
-            'screen_students_follow_up':check_follow_up_student_screen,
-            'screen_students_preventive':check_preventive_student_screen,
+            'screen_unistudents_reactive':check_reactive_unistudent_screen,
+            'screen_unistudents_follow_up':check_follow_up_unistudent_screen,
+            'screen_unistudents_preventive':check_preventive_unistudent_screen,
             'screen_lecturers_reactive':check_reactive_lecturer_screen,
             'screen_lecturers_follow_up':check_follow_up_lecturer_screen,
             'screen_lecturers_preventive':check_preventive_lecturer_screen,
             'N_diagnostic_tests':get_N_diagnostic_tests,
             'N_preventive_screening_tests':get_N_preventive_screening_tests,
-            'diagnostic_test_detected_infections_student':\
-                    get_diagnostic_test_detected_infections_student,
+            'diagnostic_test_detected_infections_unistudent':\
+                    get_diagnostic_test_detected_infections_unistudent,
             'diagnostic_test_detected_infections_lecturer':\
                     get_diagnostic_test_detected_infections_lecturer,
-            'preventive_test_detected_infections_student':\
-                    get_preventive_test_detected_infections_student,
+            'preventive_test_detected_infections_unistudent':\
+                    get_preventive_test_detected_infections_unistudent,
             'preventive_test_detected_infections_lecturer':\
                     get_preventive_test_detected_infections_lecturer,
             'undetected_infections':get_undetected_infections,

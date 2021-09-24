@@ -227,7 +227,8 @@ class SEIRX_nursing_home(SEIRX):
                          transmission_risk_vaccination_modifier,
             seed = seed)
 
-
+        # type of the model for some type-specific functionality
+        self.model = 'nursing_home'
 
         # agent types that are included in preventive, background & follow-up
         # screens
