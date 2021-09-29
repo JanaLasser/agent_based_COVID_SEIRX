@@ -38,10 +38,10 @@ class lecturer(agent_SEIRX):
 
                 # get contacts to other agent groups according to the
                 # interaction network
-                lecturer = self.get_contacts('lecturer')
-                students = self.get_contacts('student')
+                lecturers = self.get_contacts('lecturer')
+                unistudents = self.get_contacts('unistudent')
 
                 # code transmission to other agent groups
                 # separately to allow for differences in transmission risk
-                self.transmit_infection(teachers)
-                self.transmit_infection(students)
+                self.transmit_infection(lecturers)
+                self.transmit_infection(unistudents)

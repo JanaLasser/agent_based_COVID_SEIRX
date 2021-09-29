@@ -343,7 +343,6 @@ class SEIRX(Model):
         exposure_duration = [5.0, 1.9],
         time_until_symptoms = [6.4, 0.8],
         infection_duration = [10.91, 3.95],
-        #vaccinated = False,
         quarantine_duration = 10,
         subclinical_modifier = 0.6,
         infection_risk_contact_type_weights = {
@@ -704,15 +703,14 @@ class SEIRX(Model):
 
         # data collectors to save population counts and agent states every
         # time step
-        self.datacollector = DataCollector(
-            model_reporters=
-            	{
-            	'N_diagnostic_tests':get_N_diagnostic_tests,
+
+        model_reporters = {
+                'N_diagnostic_tests':get_N_diagnostic_tests,
                 'N_preventive_screening_tests':get_N_preventive_screening_tests,
                 'undetected_infections':get_undetected_infections,
                 'predetected_infections':get_predetected_infections,
                 'pending_test_infections':get_pending_test_infections
-                },
+                }
 
         for agent_type in self.agent_types:
             model_reporters.update({
@@ -724,6 +722,9 @@ class SEIRX(Model):
                 preventive_test_detected_infections_funcs[agent_type]
                 })
 
+
+        self.datacollector = DataCollector(
+            model_reporters=model_reporters,
             agent_reporters=
             	{
             	'infection_state': get_infection_state,
@@ -739,7 +740,7 @@ class SEIRX(Model):
         tmp = [n1, n2]
         tmp.sort()
         n1, n2 = tmp
-        key = n1 + n2 + 'd{}'.format(self.weekday)
+        key = '{}{}d{}'.format(n1, n2, self.weekday)
         contact_weight = self.G.get_edge_data(n1, n2, key)['weight']
 
         # the link weight is a multiplicative modifier of the link strength.
@@ -994,16 +995,17 @@ class SEIRX(Model):
         # find all agents that share edges with the agent
         # that are classified as K1 contact types in the testing
         # strategy
-        K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if
-            e[2]['contact_type'] in self.Testing.K1_contact_types]
-        K1_contacts = [a for a in self.schedule.agents if a.ID in K1_contacts]
+        if a in self.G.nodes():
+            K1_contacts = [e[1] for e in self.G.edges(a.ID, data=True) if
+                e[2]['contact_type'] in self.Testing.K1_contact_types]
+            K1_contacts = [a for a in self.schedule.agents if a.ID in K1_contacts]
 
-        for K1_contact in K1_contacts:
-            if self.verbosity > 0:
-                print('quarantined {} {} (K1 contact of {} {})'
-                    .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
-            K1_contact.quarantined = True
-            K1_contact.quarantine_start = self.Nstep
+            for K1_contact in K1_contacts:
+                if self.verbosity > 0:
+                    print('quarantined {} {} (K1 contact of {} {})'
+                        .format(K1_contact.type, K1_contact.ID, a.type, a.ID))
+                K1_contact.quarantined = True
+                K1_contact.quarantine_start = self.Nstep
 
     def test_symptomatic_agents(self):
         # find symptomatic agents that have not been tested yet and are not
