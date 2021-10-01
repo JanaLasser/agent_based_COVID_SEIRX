@@ -36,13 +36,12 @@ def count_infection_endpoints(model):
     return len(endpoints)
 
 def count_typed_transmissions(model, source_type, target_type):
-    type_dict = {'t':'teacher', 's':'student', 'f':'family_member', \
-        'r':'resident', 'e':'employee'}
     sources = [a for a in model.schedule.agents if a.type == source_type]
     transmissions = 0
     for source in sources:
-        for target, step in source.transmission_targets.items():
-            if type_dict[target[0]] == target_type:
+        for target_node, step in source.transmission_targets.items():
+            target = model.MG.nodes[target_node]['type']
+            if target == target_type:
                 transmissions += 1
     return transmissions
 
