@@ -764,3 +764,72 @@ def get_data(stype, src_path, test_participation_rate=False,
     data['teacher_screening_interval'] = data['teacher_screening_interval'].replace({None:'never'})
     data['student_screening_interval'] = data['student_screening_interval'].replace({None:'never'})
     return data
+
+
+def get_ensemble_observables_uni(model, run):
+    R0, _ = calculate_finite_size_R0(model)
+    N_uni_agents = len([a for a in model.schedule.agents if \
+        a.type == 'lecturer' or a.type == 'unistudent'])
+    infected_unistudents = count_infected(model, 'unistudent')
+    infected_lecturers = count_infected(model, 'lecturer')
+    infected_agents = infected_unistudents + infected_lecturers
+    data = model.datacollector.get_model_vars_dataframe()
+    N_diagnostic_tests = data['N_diagnostic_tests'].max()
+    N_preventive_screening_tests = data['N_preventive_screening_tests'].max()
+    transmissions = sum([a.transmissions for a in model.schedule.agents])
+    infected_without_transmissions = count_infection_endpoints(model)
+    unistudent_unistudent_transmissions = count_typed_transmissions(model, 'unistudent', 'unistudent')
+    lecturer_unistudent_transmissions = count_typed_transmissions(model, 'lecturer', 'unistudent')
+    unistudent_lecturer_transmissions = count_typed_transmissions(model, 'unistudent', 'lecturer')
+    lecturer_lecturer_transmissions = count_typed_transmissions(model, 'lecturer', 'lecturer')
+    quarantine_days_unistudent = model.quarantine_counters['unistudent']
+    quarantine_days_lecturer = model.quarantine_counters['lecturer']
+    diagnostic_test_detected_infections_unistudent = \
+        data['diagnostic_test_detected_infections_unistudent'].max()
+    diagnostic_test_detected_infections_lecturer = \
+        data['diagnostic_test_detected_infections_lecturer'].max()
+    preventive_test_detected_infections_unistudent = \
+        data['preventive_test_detected_infections_unistudent'].max()
+    preventive_test_detected_infections_lecturer = \
+        data['preventive_test_detected_infections_lecturer'].max()
+    pending_test_infections = data['pending_test_infections'].max()
+    undetected_infections = data['undetected_infections'].max()
+    predetected_infections = data['predetected_infections'].max()
+    duration = len(data)
+    diagnostic_tests_per_day_per_agent = N_diagnostic_tests / duration / N_uni_agents
+    preventive_tests_per_day_per_agent = N_preventive_screening_tests / duration / N_uni_agents
+    tests_per_day_per_agent = (N_diagnostic_tests + N_preventive_screening_tests) / duration / N_uni_agents
+
+    row = {'run':run, 
+          'R0':R0,
+          'N_uni_agents':N_uni_agents,
+          'infected_students':infected_unistudents,
+          'infected_lecturers':infected_lecturers,
+          'infected_agents':infected_agents,
+          'N_diagnostic_tests':N_diagnostic_tests,
+          'N_preventive_tests':N_preventive_screening_tests,
+          'transmissions':transmissions,
+          'infected_without_transmissions':infected_without_transmissions,
+          'unistudent_unistudent_transmissions':unistudent_unistudent_transmissions,
+          'lecturer_unistudent_transmissions':lecturer_unistudent_transmissions,
+          'unistudent_lecturer_transmissions':unistudent_lecturer_transmissions,
+          'lecturer_lecturer_transmissions':lecturer_lecturer_transmissions,
+          'quarantine_days_unistudent':quarantine_days_unistudent,
+          'quarantine_days_lecturer':quarantine_days_lecturer,
+          'preventive_test_detected_infections_unistudent':\
+                preventive_test_detected_infections_unistudent,
+          'preventive_test_detected_infections_lecturer':\
+                preventive_test_detected_infections_lecturer,
+          'diagnostic_test_detected_infections_unistudent':\
+                diagnostic_test_detected_infections_unistudent,
+          'diagnostic_test_detected_infections_lecturer':\
+                diagnostic_test_detected_infections_lecturer,
+          'pending_test_infections':pending_test_infections,
+          'undetected_infections':undetected_infections,
+          'predetected_infections':predetected_infections,
+          'duration':duration,
+          'diagnostic_tests_per_day_per_agent':diagnostic_tests_per_day_per_agent,
+          'preventive_tests_per_day_per_agent':preventive_tests_per_day_per_agent,
+          'tests_per_day_per_agent':tests_per_day_per_agent}
+
+    return row
