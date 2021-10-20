@@ -296,7 +296,6 @@ class SEIRX_uni(SEIRX):
             agent_reporters = agent_reporters)
         
     def get_transmission_risk_contact_duration_modifier(self, source, target):
-        print('duration')
         # construct the edge key as combination between agent IDs and weekday
         n1 = source.ID
         n2 = target.ID
