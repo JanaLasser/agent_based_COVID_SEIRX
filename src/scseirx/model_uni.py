@@ -294,6 +294,41 @@ class SEIRX_uni(SEIRX):
         self.datacollector = DataCollector(
             model_reporters = model_reporters,
             agent_reporters = agent_reporters)
+        
+    def get_transmission_risk_contact_duration_modifier(self, source, target):
+        print('duration')
+        # construct the edge key as combination between agent IDs and weekday
+        n1 = source.ID
+        n2 = target.ID
+        tmp = [n1, n2]
+        tmp.sort()
+        n1, n2 = tmp
+        key = '{}{}d{}'.format(n1, n2, self.weekday)
+        # duration of the contact in minutes
+        duration = self.G.get_edge_data(n1, n2, key)['duration']
+
+        # the link weight is a multiplicative modifier of the link strength.
+        # contacts of type "close" have, by definition, a weight of 1. Contacts
+        # of type intermediate, far or very far have a weight < 1 and therefore
+        # are less likely to transmit an infection. For example, if the contact
+        # type far has a weight of 0.2, a contact of type far has only a 20%
+        # chance of transmitting an infection, when compared to a contact of
+        # type close. To calculate the probability of success p in the Bernoulli
+        # trial, we need to reduce the base risk (or base probability of success)
+        # by the modifications introduced by preventive measures. These
+        # modifications are formulated in terms of "probability of failure", or
+        # "q". A low contact weight has a high probability of failure, therefore
+        # we return q = 1 - contact_weight here.
+        
+        # assumed average contact duration between students in school
+        calibrated_duration = 360 
+        # contact weight calibrated to contacts of students in school
+        calibrated_contact_weight = self.infection_risk_contact_type_weights['far']
+        contact_weight = calibrated_contact_weight * duration /  calibrated_duration
+        
+        q1 = 1 - contact_weight
+
+        return q1
 
     def calculate_transmission_probability(self, source, target, base_risk):
         """
@@ -331,7 +366,7 @@ class SEIRX_uni(SEIRX):
             Modified transmission risk.
         """
 
-        q1 = self.get_transmission_risk_contact_type_modifier(source, target)
+        q1 = self.get_transmission_risk_contact_duration_modifier(source, target)
         q2 = self.get_transmission_risk_progression_modifier(source)
         q3 = self.get_transmission_risk_subclinical_modifier(source)
         q4 = self.get_transmission_risk_exhale_modifier(source)
