@@ -323,8 +323,10 @@ class SEIRX_uni(SEIRX):
         calibrated_duration = 360 
         # contact weight calibrated to contacts of students in school
         calibrated_contact_weight = self.infection_risk_contact_type_weights['far']
-        contact_weight = calibrated_contact_weight * duration /  calibrated_duration
         
+        #contact_weight = calibrated_contact_weight * duration /  calibrated_duration
+        contact_weight = 1
+
         q1 = 1 - contact_weight
 
         return q1
