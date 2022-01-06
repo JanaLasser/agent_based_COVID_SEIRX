@@ -1064,7 +1064,7 @@ def get_data(
 
 
 def get_ensemble_observables_uni(model, run):
-    R0, transmissions = calculate_finite_size_R0(model)
+    R0, transmission_df = calculate_finite_size_R0(model)
     R5, _ = calculate_finite_size_R0(model, t=5)
     R10, _ = calculate_finite_size_R0(model, t=10)
     R15, _ = calculate_finite_size_R0(model, t=15)
@@ -1162,4 +1162,4 @@ def get_ensemble_observables_uni(model, run):
         "tests_per_day_per_agent": tests_per_day_per_agent,
     }
 
-    return row, transmissions
+    return row, transmission_df
