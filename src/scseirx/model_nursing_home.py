@@ -195,6 +195,7 @@ class SEIRX_nursing_home(SEIRX):
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
         transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
+        N_days_in_network = 7,
         seed = None):
 
 
@@ -225,6 +226,7 @@ class SEIRX_nursing_home(SEIRX):
                          transmission_risk_ventilation_modifier,
             transmission_risk_vaccination_modifier = \
                          transmission_risk_vaccination_modifier,
+            N_days_in_network = N_days_in_network,
             seed = seed)
 
         # type of the model for some type-specific functionality

@@ -201,6 +201,7 @@ class SEIRX_uni(SEIRX):
               'intercept':0.6},
         transmission_risk_ventilation_modifier = 0,
         transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
+        N_days_in_network = 7,
         seed = None):
 
 
@@ -231,6 +232,7 @@ class SEIRX_uni(SEIRX):
                          transmission_risk_ventilation_modifier,
             transmission_risk_vaccination_modifier = \
                         transmission_risk_vaccination_modifier,
+            N_days_in_network = N_days_in_network,
             seed = seed)
 
         # type of the model for some type-specific functionality
@@ -244,12 +246,11 @@ class SEIRX_uni(SEIRX):
         # for every day of the week is used
         self.dynamic_connections = True
         self.MG = G
-        self.weekday_connections = {}
-        all_edges = self.MG.edges(keys=True, data='weekday')
-        N_weekdays = 7
-        for i in range(1, N_weekdays + 1):
-            wd_edges = [(u, v, k) for (u, v, k, wd) in all_edges if wd == i]
-            self.weekday_connections[i] = G.edge_subgraph(wd_edges).copy()
+        self.day_connections = {}
+        all_edges = self.MG.edges(keys=True, data='day')
+        for i in range(1, self.N_days_in_network + 1):
+            day_edges = [(u, v, k) for (u, v, k, day) in all_edges if day == i]
+            self.day_connections[i] = G.edge_subgraph(day_edges).copy()
 
 
         # data collectors to save population counts and agent states every
@@ -296,13 +297,13 @@ class SEIRX_uni(SEIRX):
             agent_reporters = agent_reporters)
         
     def get_transmission_risk_contact_duration_modifier(self, source, target):
-        # construct the edge key as combination between agent IDs and weekday
+        # construct the edge key as combination between agent IDs and day
         n1 = source.ID
         n2 = target.ID
         tmp = [n1, n2]
         tmp.sort()
         n1, n2 = tmp
-        key = '{}{}d{}'.format(n1, n2, self.weekday)
+        key = '{}{}d{}'.format(n1, n2, self.day)
         # duration of the contact in minutes
         duration = self.G.get_edge_data(n1, n2, key)['duration']
 

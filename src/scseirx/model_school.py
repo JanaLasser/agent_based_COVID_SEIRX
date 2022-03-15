@@ -279,6 +279,7 @@ class SEIRX_school(SEIRX):
         mask_filter_efficiency = {'exhale':0, 'inhale':0},
         transmission_risk_ventilation_modifier = 0,
         transmission_risk_vaccination_modifier = {'reception':1, 'transmission':0},
+        N_days_in_network = 7,
         seed = None):
 
 
@@ -309,6 +310,7 @@ class SEIRX_school(SEIRX):
                          transmission_risk_ventilation_modifier,
             transmission_risk_vaccination_modifier = \
                         transmission_risk_vaccination_modifier,
+            N_days_in_network = N_days_in_network,
             seed = seed)
 
         # type of the model for some type-specific functionality
@@ -322,12 +324,11 @@ class SEIRX_school(SEIRX):
         # for every day of the week is used
         self.dynamic_connections = True
         self.MG = G
-        self.weekday_connections = {}
+        self.day_connections = {}
         all_edges = self.MG.edges(keys=True, data='weekday')
-        N_weekdays = 7
-        for i in range(1, N_weekdays + 1):
-            wd_edges = [(u, v, k) for (u, v, k, wd) in all_edges if wd == i]
-            self.weekday_connections[i] = G.edge_subgraph(wd_edges).copy()
+        for i in range(1, self.N_days_in_network + 1):
+            day_edges = [(u, v, k) for (u, v, k, day) in all_edges if day == i]
+            self.day_connections[i] = G.edge_subgraph(day_edges).copy()
 
 
         # data collectors to save population counts and agent states every
@@ -420,7 +421,7 @@ class SEIRX_school(SEIRX):
         tmp = [n1, n2]
         tmp.sort()
         n1, n2 = tmp
-        key = n1 + n2 + 'd{}'.format(self.weekday)
+        key = n1 + n2 + 'd{}'.format(self.day)
         link_type = self.G.get_edge_data(n1, n2, key)['link_type']
 
         q1 = self.get_transmission_risk_contact_type_modifier(source, target)

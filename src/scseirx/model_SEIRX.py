@@ -467,7 +467,7 @@ class SEIRX(Model):
         transmission_risk_vaccination_modifier = {
             'reception':1,
             'transmission':0},
-        #N_days_in_network = 7,
+        N_days_in_network = 7,
         seed = None):
 
         # mesa models already implement fixed seeds through their own random
@@ -497,14 +497,14 @@ class SEIRX(Model):
         # internal step counter used to launch screening tests
         self.Nstep = 0
 
-        # since we may have weekday-specific contact networks, we need
+        # since we may have day-specific contact networks, we need
         # to keep track of the day of the week. Since the index case
         # per default is introduced at step 0 in index case mode, we
-        # need to offset the starting weekday by a random number of weekdays
+        # need to offset the starting day by a random number of days
         # to prevent artifacts from always starting on the same day of the week
-
-        self.weekday_offset = self.random.randint(1, 8)
-        self.weekday = self.Nstep + self.weekday_offset
+        self.N_days_in_network = N_days_in_network
+        self.day_offset = self.random.randint(1, 8)
+        self.day = self.Nstep + self.day_offset
 
         ## epidemiological parameters: can be either a single integer or the
         # mean and standard deviation of a distribution
@@ -822,13 +822,13 @@ class SEIRX(Model):
 
     ## transmission risk modifiers
     def get_transmission_risk_contact_type_modifier(self, source, target):
-        # construct the edge key as combination between agent IDs and weekday
+        # construct the edge key as combination between agent IDs and day
         n1 = source.ID
         n2 = target.ID
         tmp = [n1, n2]
         tmp.sort()
         n1, n2 = tmp
-        key = '{}{}d{}'.format(n1, n2, self.weekday)
+        key = '{}{}d{}'.format(n1, n2, self.day)
         contact_weight = self.G.get_edge_data(n1, n2, key)['weight']
 
         # the link weight is a multiplicative modifier of the link strength.
@@ -1130,15 +1130,15 @@ class SEIRX(Model):
 
 
     def step(self):
-        self.weekday = (self.Nstep + self.weekday_offset) % 7 + 1
+        self.day = (self.Nstep + self.day_offset) % self.N_days_in_network + 1
         # if the connection graph is time-resloved, set the graph that is
         # used to determine connections in this step to the sub-graph corres-
         # ponding to the current day of the week
         if self.dynamic_connections:
-            self.G = self.weekday_connections[self.weekday]
+            self.G = self.day_connections[self.day]
 
         if self.verbosity > 0:
-            print('weekday {}'.format(self.weekday))
+            print('day {}'.format(self.day))
 
         if self.testing:
             for agent_type in self.agent_types:
@@ -1200,17 +1200,17 @@ class SEIRX(Model):
                         .format(interval, agent_type)
 
                     # (c.1) testing every 7 days = testing on Mondays
-                    if interval == 7 and self.weekday == 1:
+                    if interval == 7 and self.day % interval == 1:
                         self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type,\
                              'preventive')
                     # (c.2) testing every 3 days = testing on Mo & Turs
-                    elif interval == 3 and self.weekday in [1, 4]:
+                    elif interval == 3 and self.day % interval in [1, 4]:
                             self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type,\
                              'preventive')
                     # (c.3) testing every 2 days = testing on Mo, Wed & Fri
-                    elif interval == 2 and self.weekday in [1, 3, 5]:
+                    elif interval == 2 and self.day % interval in [1, 3, 5]:
                             self.screen_agents(agent_type,
                             self.Testing.preventive_screening_test_type,\
                              'preventive')
@@ -1220,7 +1220,7 @@ class SEIRX(Model):
                         pass
                     else:
                         if self.verbosity > 0:
-                            print('not initiating {} preventive screen (wrong weekday)'\
+                            print('not initiating {} preventive screen (wrong day)'\
                                     .format(agent_type))
             else:
                 # do nothing
