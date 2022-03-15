@@ -208,18 +208,26 @@ class SEIRX(Model):
     the SEIRX dynamics of pandemic spread in a facility. Note:
     all times are set to correspond to days
 
-    G: networkx undirected graph, interaction graph between agents. Edges have
-    to have edge the edge attribute 'contact_type' specifying the closeness of
-    contacts, which can be ['very far', 'far', 'intermediate' and 'close'].
-    Nodes have to have the node attribute 'type' which specifies the agent type
-    of the given node (for example 'student' or 'teacher' in a school scenario).
-    In addition, nodes can have the attribute 'unit', which assigns them to a
-    unit in space (for example a 'class' in a school scenario).
+    G : networkx undirected graph
+        Interaction graph between agents. Edges have to have edge the edge 
+        attribute 'contact_type' specifying the closeness of contacts, which can
+        be ['very far', 'far', 'intermediate' and 'close']. Nodes have to have 
+        the node attribute 'type' which specifies the agent type of the given 
+        node (for example 'student' or 'teacher' in a school scenario).
+        In addition, nodes can have the attribute 'unit', which assigns them to 
+        a unit in space (for example a 'class' in a school scenario).
 
-    verbosity: integer in [0, 1, 2], controls text output to std out to track
-    simulation progress and transmission dynamics. Default = 0.
+    verbosity : integer in [0, 1, 2]
+        Controls text output to std out to track simulation progress and 
+        transmission dynamics. Default = 0.
 
-    testing, default = 'diagnostic'
+    base_transmission_risk : float
+        Base probability to transmit an infection durig a contact of type 
+        "close" if no other measures or biological parameters influence the
+        infection risk.
+
+    testing : str
+        Determines the testing strategy of the model. Default: 'diagnostic'.
         'diagnostic':   only diagnostic tests for symptomatic agents
         'background':   adds background screens of all agents after a positive
                         diagnostic test
@@ -230,8 +238,10 @@ class SEIRX(Model):
         'background+preventive': preventive screens AND background screens on
                         top of diagnostic testing.
 
-    infection_duration, default = 11 NOTE: includes the time an agent is exposed
-    but not yet infectious at the beginning of an infection
+    infection_duration : int or [float, float] 
+        Parameter determining the infection duration. Default: 11 
+        NOTE: includes the time an agent is exposed but not yet infectious at 
+        the beginning of an infection.
         positive integer:   mean or median of the infection duration in days
         list of two floats: mean and standard deviation of a distribution
                             specifying the infection duration in days. These
@@ -239,8 +249,9 @@ class SEIRX(Model):
                             distribution from which the infection duration will
                             be drawn for every agent individually
 
-    exposure_duration, default = 4. Sets the time from transmission to becoming
-    infectious
+    exposure_duration : int or [float, float] 
+        Parameter determining the exposure duration. Default: 4. 
+        Sets the time from transmission to becoming infectious
         positive integer:   mean or median of the exposure duration in days
         list of two floats: mean and standard deviation of a distribution
                             specifying the exposure duration in days. These
@@ -248,9 +259,10 @@ class SEIRX(Model):
                             distributoin from which the exposure duration will
                             be drawn for every agent individually.
 
-    time_until_symptoms, default = 6. Sets the time from transmission to
-    (potentially) developing symptoms. Symptom probability has to be set for
-    each agent group individually using the parameter 'symptom_probability'
+    time_until_symptoms : int or [float, float] 
+        Sets the time from transmission to (potentially) developing symptoms. 
+        Default: 6. Symptom probability has to be set for each agent group 
+        individually using the parameter 'symptom_probability'
         positive integer:   mean or median of the time until symptoms in days
         list of two floats: mean and standard deviation of a distribution
                             specifying the time until symptoms in days. These
@@ -258,82 +270,157 @@ class SEIRX(Model):
                             distribution from which the time until symptoms will
                             be drawn for every agent individually.
 
-    quarantine_duration, default = 14. Positive integer, sets the time a
-    positively tested agent is quarantined in days
+    quarantine_duration : int
+        Positive integer, sets the time a positively tested agent is quarantined
+        in days. Default: 14. 
 
-    infection_risk_contact_type_weights: dictionary of the form
-    {'very_far':float, 'far':float, 'intermediate':float, 'close':float}
-    that sets transmission risk multipliers for different contact types of
-    agents specified in the contact network G. Default: {'very_far': 0.1,
+    subclinical_modifier : float
+        Modifies the infectiousness of asymptomatic cases. Example: if 
+        subclinical_modifier = 0.5, the infectiousness of an asymptomatic case 
+        will be reduced to 50%. Default: 1.0.
+
+    infection_risk_contact_type_weights: dictionary 
+        Has to have the form
+        {
+        'very_far':    float, 
+        'far':         float, 
+        'intermediate':float, 
+        'close':       float
+        }
+    Sets transmission risk multipliers for different contact types of agents 
+    specified in the contact network G. Default: {'very_far': 0.1,
     'far': 0.5, 'intermediate': 1, 'close': 3}
 
-    subclinical_modifier: default = 1.0. Float, modifies the infectiousness of
-    asymptomatic cases. Example: if subclinical_modifier = 0.5, the
-    infectiousness of an asymptomatic case will be reduced to 50%.
 
-    K1_contact_types: list of strings from ['very_far', 'far', 'intermediate',
-    'close']. Definition of contact types for which agents are considered
-    "K1 contact persons" if they had contact to a positively tested person wtith
-    a specified contact intensity. Default = ['close'].
+    K1_contact_types : list of strings
+        Definition of contact types for which agents are considered "K1 contact 
+        persons" if they had contact to a positively tested person with a 
+        specified contact intensity. The list may only include strings from the
+        list ['very_far', 'far', 'intermediate', 'close'], i.e. the keys of the
+        infection_risk_contact_type_weights dictionary.  Default = ['close'].
 
-    diagnostic_test_type, default = 'one_day_PCR'. String, specifies the test
-    technology and test result turnover time used for diagnostic testing. For
-    example 'same_day_antigen' or 'two_day_PCR'. See module "Testing" for
-    different implemented testing techologies.
+    diagnostic_test_type : str 
+        Specifies the test technology and test result turnover time used for 
+        diagnostic testing. For example 'same_day_antigen' or 'two_day_PCR'. 
+        See module "Testing" for different implemented testing techologies.
+        Default: 'one_day_PCR'. 
 
-    preventive_screening_test_type:, default = 'one_day_PCR', String, specifies
-    the test technology and test result turnover time used for preventive
-    sreening. For example 'same_day_antigen' or 'two_day_PCR'. See module
-    "Testing" for different implemented testing techologies.
+    preventive_screening_test_type : str
+        Specifies the test technology and test result turnover time used for 
+        preventive sreening. For example 'same_day_antigen' or 'two_day_PCR'. 
+        See module "Testing" for different implemented testing techologies.
+        Default: 'one_day_PCR'.
 
-    follow_up_testing_interval, default = None. Positive integer, sets the time
-    a follow-up screen (background screen) is initiated after an initial screen
-    triggered by a positive test result. Only applies if the testing strategy is
-    'background' or preventive.
+    follow_up_testing_interval : int or None
+        Sets the time a follow-up screen (background screen) is initiated after 
+        an initial screen triggered by a positive test result. Only applies if 
+        the testing strategy is 'background' or 'preventive'. If "None" is 
+        chosen, no background screens are performed. Default: None. 
 
-    liberating_testing, default = False. Boolean, flag that specifies, whether
-    or not an agent is released from quarantine after returning a negative test
-    result.
+    liberating_testing : bool 
+        Flag that specifies, whether or not an agent is released from quarantine 
+        after returning a negative test result. Default: False.
 
-	index_case, default = 'employee' (nursing home scenario) or 'teacher'
-    (school scenario). Specifies how infections are introduced into the facility.
-        agent_type:     If an agent type (for example 'student' or 'teacher' in
-                        the school scenario) is specified, a single randomly
-                        chosen agent from this agent group will become the index
-                        case and no further index cases will be introduced into
-                        the scenario.
+	index_case: str
+        Specifies how infections are introduced into the facility. Can bei 
+        either a scenario-specific agent type (for example "student" or 
+        "teacher" in the school scenario) or "continuous". 
+        agent_type:     If an agent type is specified, a single randomly chosen 
+                        agent from this agent group will become the index case 
+                        and no further index cases will be introduced into the 
+                        scenario.
         'continuous':   In this case, agents have a continuous risk to become
                         index cases in every simulation step. The risk has to
                         be specified for every agent group individually, using
                         the 'index_probability' parameter. If only a single
                         agent group has a non-zero index probability, then only
                         agents from this group can become index cases.
+        Default = 'employee' (nursing home scenario), 'teacher' (school 
+        scenario), 'lecturer' (university scenario). 
 
 
-    agent_types: dictionary of the structure
+    agent_types: dictionary of dictionaries
+        Specifies the parameters 'screening_interval', 'index_probability', 
+        'mask' and 'vaccination_probability' individually for every agent group
+        in the model. The dictionary therefore needs to have an entry for every
+        agent type and every entry needs to have the following form:
         {
-        agent type:
+        agent_type:
             {
-            screening interval : integer, number of days between each preventive
-            screen in this agent group
-
-            index probability : float in the range [0, 1], sets the probability
-            to become an index case in each time step
-
+            screening_interval : int
+                Number of days between each preventive screen in this agent 
+                group.
+            index_probability : float 
+                Probability to become an index case in each time step. Needs to
+                be in in the range [0, 1]. 
             mask : bool
-                whether or not the agent type is wearing a mask
+                Whether or not the agent type is wearing a mask.
+            vaccination_probability : float
+                Probability of an agent in the agent group to be vaccinated.
+                Needs to be in the range [0, 1].
             }
         }
-
     The dictionary's keys are the names of the agent types which have to
-    correspond to the node attributes in the contact graph. The screening
-    interval sets the time-delay between preventive screens of this agent group,
-    the index probability sets the probability of a member of this agent group
-    becoming an index case in every time step
+    correspond to the node attributes in the contact graph. 
 
-    seed: positive integer, fixes the seed of the simulation to enable
-    repeatable simulation runs. If seed = None, the simulation will be
-    initialized at random.
+    age_transmission_risk_discount : dictionary
+        Specifies the linear relationship between agent age and transmission 
+        risk. Applies both to the risk of transmitting and the risk of receiving 
+        an infection. This is only used in scenarios in which agents have an age
+        attribute (school). The dictionary needs to have the following fields:
+            'slope' : float
+                The slope of the linear relationship.
+            'intercept' : float
+                The intercept of the linear relationship.
+        Default: {'slope':-0.02, 'intercept:1'}
+
+
+    age_symptom_modification : dictionary
+        Specifies the linear relationship between agent age and the probability
+        to develop symptoms. This is only used in scenarios in which agents have
+        an age attribute (school). The dictionary needs to have the following
+        fields:
+            'slope' : float
+                The slope of the linear relationship.
+            'intercept' : float
+                The intercept of the linear relationship.
+        Default: {'slope':-0.02545, 'intercept:0.854545'}
+
+    mask_filter_efficiency : dictionary
+        Specifies the effectiveness of masks to prevent the transmission and
+        reception of an infection. The dictionary needs to have the following
+        fields:
+            'inhale' : float
+                Reduction of the risk to become infected if the receiving agent
+                wears a mask.
+            'exhale' : float
+                Reduction of the risk to transmit an infection if the 
+                transmitting agent wears a mask.
+        Default: {'inhale':0, 'exhale':0}
+
+    transmission_risk_ventilation_modifier : float
+        Reduction of the transmission risk due to ventilation. Default: 0.
+
+    transmission_risk_vaccination_modifier : dictionary
+        Reduction of the transmission and reception risk due to vaccination.
+        The dictionary needs to have the following fields:
+            'reception' : float
+                Reduction of the probability to get infected if the infectee is
+                vaccinated.
+            'transmission' : float
+                Reduction of the probability to transmit the infection if the
+                infected agent is vaccinated.
+        Default: {'reception':1, 'transmission':0}
+
+    N_days_in_network : int
+        Number of distinct days the graph object contains. If the simulation
+        duration (in days) surpasses the number of days in the graph, the
+        simulation loops back to the first day etc. Default: 7.
+
+    seed : int
+        Fixes the seed of the simulation to enable repeatable simulation runs. 
+        If seed = None, the simulation will be initialized at random.
+        Default: None.
     '''
 
     def __init__(self, G,
@@ -380,6 +467,7 @@ class SEIRX(Model):
         transmission_risk_vaccination_modifier = {
             'reception':1,
             'transmission':0},
+        #N_days_in_network = 7,
         seed = None):
 
         # mesa models already implement fixed seeds through their own random
