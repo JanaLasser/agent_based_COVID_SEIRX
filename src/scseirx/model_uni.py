@@ -57,7 +57,7 @@ def count_X_unistudent(model):
 
 
 def count_S_lecturer(model):
-    S = np.asarray([1 for a in model.schedule.agents if a.type == 'feacher' and\
+    S = np.asarray([1 for a in model.schedule.agents if a.type == 'lecturer' and\
                     a.exposed == False and a.recovered == False \
                     and a.infectious == False]).sum()
     return S
