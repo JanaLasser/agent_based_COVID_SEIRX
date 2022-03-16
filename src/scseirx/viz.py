@@ -151,8 +151,7 @@ def draw_infection_timeline(model, agent_type, ax):
 	linewidth = 3
 	pop_numbers = model.datacollector.get_model_vars_dataframe()
 
-	N = len(set([x for x,y in model.G.nodes(data=True) \
-		if y['type'] == agent_type]))
+	N = pop_numbers.loc[0, f"S_{agent_type}"] + pop_numbers.loc[0, f"E_{agent_type}"]
 
 	pop_numbers['S_{}'.format(agent_type)] = N - pop_numbers['E_{}'.format(agent_type)]\
 											   - pop_numbers['I_{}'.format(agent_type)]\
