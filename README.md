@@ -1,7 +1,7 @@
 # Agent based simulation of the spread of COVID-19 in confined spaces
 **Author: Jana Lasser, Complexity Science Hub Vienna (lasser@csh.ac.at)**
 
-A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures. The model follows an SEIRX approach, building on the agent based simulation framework [mesa](https://mesa.readthedocs.io/en/master/) in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X) and is based on explicitly defined and dynamic contact networks between agents. The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and other interventions such as ventilation and mask-wearing.
+A simulation tool to explore the spread of COVID-19 in small communities such as nursing homes or schools via agent-based modeling (ABM) and the impact of prevention measures. The model follows an SEIRX approach, building on the agent based simulation framework [mesa](https://mesa.readthedocs.io/en/latest/) in which agents can be susceptible (S), exposed (E), infected (I), removed (R) or quarantined (X) and is based on explicitly defined and dynamic contact networks between agents. The model offers the possibility to explore the effectiveness of various testing, tracing and quarantine strategies and other interventions such as ventilation and mask-wearing.
 
 ![](https://github.com/JanaLasser/agent_based_COVID_SEIRX/blob/packaging/src/scseirx/img/nursing_home_contact_network_illustration.png?raw=true)
 
